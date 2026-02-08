@@ -12,6 +12,7 @@ import {
 } from '../../utils/improvementPlanUtils';
 import { ImprovementPlanWizard } from './ExecutiveSummary/ImprovementPlanWizard';
 import Dimension2Results from './dimension2/Dimension2Results';
+import TrendChart from './common/TrendChart';
 import { getDimensionQuestion } from './common/ThemeSection';
 import ComparisonExplainer from './common/ComparisonExplainer';
 import ComparisonGroupModal from './common/ComparisonGroupModal';
@@ -110,6 +111,7 @@ const AssessmentResultsLayout: React.FC<AssessmentResultsLayoutProps> = ({
   }>({});
 
   // Tooltip state for spectrum
+  const [showScoreHistory, setShowScoreHistory] = useState(false);
   const [tooltip, setTooltip] = useState<TooltipState>({
     visible: false,
     x: 0,
@@ -579,6 +581,8 @@ const AssessmentResultsLayout: React.FC<AssessmentResultsLayoutProps> = ({
                           const trendLabel = overallTrend === 'up' ? 'Improving' : overallTrend === 'down' ? 'Declining' : 'Stable';
                           const trendColor = overallTrend === 'up' ? '#36B37E' : overallTrend === 'down' ? '#DE350B' : '#6B778C';
 
+                          const sparkTrend = overallTrend === 'up' ? 'improving' as const : overallTrend === 'down' ? 'declining' as const : 'stable' as const;
+
                           return (
                             <>
                               <div style={styles.heroScoreBlock}>
@@ -586,16 +590,51 @@ const AssessmentResultsLayout: React.FC<AssessmentResultsLayoutProps> = ({
                                 <span style={styles.heroBigDenom}>/100</span>
                               </div>
 
-                              {/* Category + trend */}
+                              {/* Category + trend as unified status chip */}
                               <div style={styles.heroMetaRow}>
-                                <span style={{...styles.heroCategoryPill, backgroundColor: `${tier.color}30`, color: tier.color, border: `1.5px solid ${tier.color}60`}}>
-                                  {tier.name}
+                                <span style={{
+                                  ...styles.heroStatusChip,
+                                  backgroundColor: `${tier.color}18`,
+                                  border: `1.5px solid ${tier.color}40`,
+                                }}>
+                                  <span style={{...styles.heroStatusDot, backgroundColor: tier.color}} />
+                                  <span style={{...styles.heroStatusTier, color: tier.color}}>{tier.name}</span>
+                                  <span style={styles.heroStatusDivider} />
+                                  <span style={{...styles.heroStatusTrend, color: trendColor}}>
+                                    {trendIcon} {trendLabel}
+                                  </span>
                                 </span>
-                                <span style={styles.heroMetaDot}>·</span>
-                                <span style={{...styles.heroTrend, color: trendColor}}>
-                                  <span style={styles.heroTrendIcon}>{trendIcon}</span> {trendLabel}
-                                </span>
+                                {dimension.trendData && dimension.trendData.length >= 2 && (
+                                  <button
+                                    onClick={() => setShowScoreHistory(true)}
+                                    style={styles.heroHistoryBtn}
+                                    title="View score history"
+                                  >
+                                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                                      <polyline points="1,11 3.5,7 6,8.5 8.5,3.5 11,6 13,2" stroke="#6B778C" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                                    </svg>
+                                  </button>
+                                )}
                               </div>
+
+                              {/* Score history modal */}
+                              {showScoreHistory && dimension.trendData && dimension.trendData.length >= 2 && (
+                                <div style={styles.scoreHistoryOverlay} onClick={() => setShowScoreHistory(false)}>
+                                  <div style={styles.scoreHistoryModal} onClick={(e) => e.stopPropagation()}>
+                                    <div style={styles.scoreHistoryHeader}>
+                                      <h3 style={styles.scoreHistoryTitle}>Score History</h3>
+                                      <button onClick={() => setShowScoreHistory(false)} style={styles.scoreHistoryClose}>✕</button>
+                                    </div>
+                                    <div style={styles.scoreHistoryBody}>
+                                      <TrendChart
+                                        data={dimension.trendData}
+                                        height={280}
+                                        dimensionName="Information Health"
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
                             </>
                           );
                         })()}
@@ -1155,15 +1194,102 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'baseline',
   },
+  heroHistoryBtn: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '30px',
+    height: '30px',
+    padding: 0,
+    backgroundColor: 'rgba(9, 30, 66, 0.06)',
+    border: '1px solid rgba(9, 30, 66, 0.12)',
+    borderRadius: '50%',
+    cursor: 'pointer',
+    outline: 'none',
+    transition: 'background-color 0.15s ease',
+  },
+  scoreHistoryOverlay: {
+    position: 'fixed' as const,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(9, 30, 66, 0.54)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+  },
+  scoreHistoryModal: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: '12px',
+    boxShadow: '0 8px 32px rgba(9, 30, 66, 0.25)',
+    maxWidth: '640px',
+    width: '90%',
+    overflow: 'hidden',
+  },
+  scoreHistoryHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '20px 24px',
+    borderBottom: '1px solid #E4E6EB',
+  },
+  scoreHistoryTitle: {
+    margin: 0,
+    fontSize: '18px',
+    fontWeight: 600,
+    color: '#172B4D',
+  },
+  scoreHistoryClose: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '32px',
+    height: '32px',
+    padding: 0,
+    backgroundColor: 'transparent',
+    border: 'none',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    fontSize: '16px',
+    color: '#6B778C',
+    outline: 'none',
+  },
+  scoreHistoryBody: {
+    padding: '24px',
+  },
   heroMetaRow: {
     display: 'flex',
     alignItems: 'center',
     gap: '10px',
-    marginTop: '10px',
+    marginTop: '12px',
   },
-  heroMetaDot: {
-    color: '#C1C7D0',
-    fontSize: '16px',
+  heroStatusChip: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '6px 14px',
+    borderRadius: '20px',
+  },
+  heroStatusDot: {
+    width: '7px',
+    height: '7px',
+    borderRadius: '50%',
+    flexShrink: 0,
+  },
+  heroStatusTier: {
+    fontSize: '13px',
+    fontWeight: 700,
+  },
+  heroStatusDivider: {
+    width: '1px',
+    height: '14px',
+    backgroundColor: 'rgba(9, 30, 66, 0.15)',
+  },
+  heroStatusTrend: {
+    fontSize: '13px',
+    fontWeight: 600,
   },
   heroDescription: {
     margin: '16px 0 0',
