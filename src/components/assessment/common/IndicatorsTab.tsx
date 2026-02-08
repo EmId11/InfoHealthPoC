@@ -32,11 +32,11 @@ interface CategoryTierBadgesProps {
 const CategoryTierBadges: React.FC<CategoryTierBadgesProps> = ({ distribution }) => {
   // Build tier counts array to show all non-zero tiers (5-tier system)
   const tierData = [
-    { tier: INDICATOR_TIERS[0], count: distribution.needsAttention, label: 'needs attention' },
-    { tier: INDICATOR_TIERS[1], count: distribution.belowAverage, label: 'below avg' },
-    { tier: INDICATOR_TIERS[2], count: distribution.average, label: 'average' },
-    { tier: INDICATOR_TIERS[3], count: distribution.good, label: 'good' },
-    { tier: INDICATOR_TIERS[4], count: distribution.excellent, label: 'excellent' },
+    { tier: INDICATOR_TIERS[0], count: distribution.needsAttention, label: INDICATOR_TIERS[0].name },
+    { tier: INDICATOR_TIERS[1], count: distribution.belowAverage, label: INDICATOR_TIERS[1].name },
+    { tier: INDICATOR_TIERS[2], count: distribution.average, label: INDICATOR_TIERS[2].name },
+    { tier: INDICATOR_TIERS[3], count: distribution.good, label: INDICATOR_TIERS[3].name },
+    { tier: INDICATOR_TIERS[4], count: distribution.excellent, label: INDICATOR_TIERS[4].name },
   ];
 
   // Filter to only show tiers with non-zero counts
@@ -100,6 +100,7 @@ const badgeStyles: Record<string, React.CSSProperties> = {
 
 const IndicatorsTab: React.FC<IndicatorsTabProps> = ({ dimension, dimensionIndex, onIndicatorDrillDown }) => {
   const [selectedIndicator, setSelectedIndicator] = useState<IndicatorResult | null>(null);
+  const [activeTabIndex, setActiveTabIndex] = useState(0);
 
   // Handle drill-down navigation
   const handleDrillDown = (indicator: IndicatorResult, categoryIndex: number) => {
@@ -148,22 +149,73 @@ const IndicatorsTab: React.FC<IndicatorsTabProps> = ({ dimension, dimensionIndex
     return tier.name;
   };
 
+  const activeCategory = dimension.categories[activeTabIndex];
+
+  // Compute tier distribution for active category (used in unified header)
+  const activeTierDistribution = activeCategory ? getTierDistribution(activeCategory.indicators) : null;
+
   return (
     <div style={styles.container}>
-      {/* Category Sections */}
-      {dimension.categories.map((category, categoryIndex) => (
+      {/* Tab Selector */}
+      {dimension.categories.length > 1 && (
+        <div style={styles.tabHeader}>
+          <div style={styles.tabBar}>
+            {dimension.categories.map((category, idx) => {
+              const isActive = idx === activeTabIndex;
+              const catDist = getTierDistribution(category.indicators);
+              return (
+                <button
+                  key={category.id}
+                  onClick={() => setActiveTabIndex(idx)}
+                  style={{
+                    ...styles.tab,
+                    ...(isActive ? styles.tabActive : styles.tabInactive),
+                  }}
+                >
+                  <div style={styles.tabTop}>
+                    <span style={{
+                      ...styles.tabName,
+                      color: isActive ? '#172B4D' : '#6B778C',
+                    }}>{category.shortName}</span>
+                    <span style={{
+                      ...styles.tabCount,
+                      backgroundColor: isActive ? '#0052CC' : '#C1C7D0',
+                      color: '#FFFFFF',
+                    }}>
+                      {category.indicators.length}
+                    </span>
+                  </div>
+                  <p style={{
+                    ...styles.tabDescription,
+                    color: isActive ? '#5E6C84' : '#97A0AF',
+                  }}>{category.description}</p>
+                  {isActive && (
+                    <div style={styles.tabBadges}>
+                      <CategoryTierBadges distribution={catDist} />
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Active Category Table (no redundant header) */}
+      {activeCategory && (
         <CategorySection
-          key={category.id}
-          category={category}
-          categoryIndex={categoryIndex}
+          key={activeCategory.id}
+          category={activeCategory}
+          categoryIndex={activeTabIndex}
+          showHeader={dimension.categories.length <= 1}
           getTrendIcon={getTrendIcon}
           getTrendLabel={getTrendLabel}
           getTrendColors={getTrendColors}
           getPercentileText={getPercentileText}
           onIndicatorClick={setSelectedIndicator}
-          onIndicatorDrillDown={onIndicatorDrillDown ? (indicator) => handleDrillDown(indicator, categoryIndex) : undefined}
+          onIndicatorDrillDown={onIndicatorDrillDown ? (indicator) => handleDrillDown(indicator, activeTabIndex) : undefined}
         />
-      ))}
+      )}
 
       {/* Indicator Detail Modal */}
       {selectedIndicator && (
@@ -228,6 +280,7 @@ const IndicatorsTab: React.FC<IndicatorsTabProps> = ({ dimension, dimensionIndex
 interface CategorySectionProps {
   category: IndicatorCategory;
   categoryIndex: number;
+  showHeader?: boolean;
   getTrendIcon: (trend: IndicatorResult['trend']) => React.ReactNode;
   getTrendLabel: (trend: IndicatorResult['trend']) => string;
   getTrendColors: (trend: IndicatorResult['trend']) => { bg: string; text: string };
@@ -239,6 +292,7 @@ interface CategorySectionProps {
 const CategorySection: React.FC<CategorySectionProps> = ({
   category,
   categoryIndex,
+  showHeader = true,
   getTrendIcon,
   getTrendLabel,
   getTrendColors,
@@ -267,31 +321,33 @@ const CategorySection: React.FC<CategorySectionProps> = ({
 
   return (
     <div style={styles.categorySection}>
-      {/* Category Header - Clean white with left accent */}
-      <div style={{
-        ...styles.categoryHeader,
-        borderLeft: `4px solid ${accentColor}`,
-      }}>
-        <div style={styles.categoryHeaderContent}>
-          <div style={styles.categoryHeaderLeft}>
-            <div style={{
-              ...styles.categoryNumber,
-              backgroundColor: accentColor,
-            }}>
-              {categoryIndex + 1}
+      {/* Category Header - only shown when not using tabs */}
+      {showHeader && (
+        <div style={{
+          ...styles.categoryHeader,
+          borderLeft: `4px solid ${accentColor}`,
+        }}>
+          <div style={styles.categoryHeaderContent}>
+            <div style={styles.categoryHeaderLeft}>
+              <div style={{
+                ...styles.categoryNumber,
+                backgroundColor: accentColor,
+              }}>
+                {categoryIndex + 1}
+              </div>
+              <div style={styles.categoryInfo}>
+                <h4 style={styles.categoryName}>
+                  {category.shortName}
+                </h4>
+                <p style={styles.categoryDescription}>{category.description}</p>
+              </div>
             </div>
-            <div style={styles.categoryInfo}>
-              <h4 style={styles.categoryName}>
-                {category.shortName}
-              </h4>
-              <p style={styles.categoryDescription}>{category.description}</p>
+            <div style={styles.categoryHeaderRight}>
+              <CategoryTierBadges distribution={categoryTierDistribution} />
             </div>
-          </div>
-          <div style={styles.categoryHeaderRight}>
-            <CategoryTierBadges distribution={categoryTierDistribution} />
           </div>
         </div>
-      </div>
+      )}
 
       {/* Indicators Table */}
       <div style={styles.tableWrapper}>
@@ -301,12 +357,12 @@ const CategorySection: React.FC<CategorySectionProps> = ({
               <th style={{ ...styles.th, width: '18%' }}>Indicator</th>
               <th style={{ ...styles.th, width: '18%' }}>Why It Matters</th>
               <th style={{ ...styles.th, width: '28%' }}>
-                <span>Distribution</span>
+                <span>Peer Comparison</span>
                 <span style={styles.historyHint}>(your value vs others)</span>
               </th>
               <th style={{ ...styles.th, width: '12%' }}>
-                <span>Percentile</span>
-                <span style={styles.historyHint}>(vs other teams)</span>
+                <span>Health</span>
+                <span style={styles.historyHint}>(indicator tier)</span>
               </th>
               <th style={{ ...styles.th, width: '12%' }}>
                 <span>History</span>
@@ -357,28 +413,37 @@ const CategorySection: React.FC<CategorySectionProps> = ({
 
                   {/* Distribution Spectrum - Enhanced */}
                   <td style={styles.td}>
-                    {indicator.distribution ? (
-                      <DistributionSpectrum
-                        value={indicator.value}
-                        minValue={indicator.distribution.min}
-                        maxValue={indicator.distribution.max}
-                        otherTeamValues={indicator.distribution.otherTeamValues}
-                        higherIsBetter={indicator.higherIsBetter}
-                        unit={indicator.unit}
-                        displayValue={indicator.displayValue}
-                        width={280}
-                        showLabel={true}
-                      />
-                    ) : (
-                      <DistributionSpectrum
-                        percentile={indicator.benchmarkPercentile}
-                        width={240}
-                        showLabel={true}
-                      />
-                    )}
+                    {(() => {
+                      const rangeLabel = indicatorTier.level <= 2
+                        ? `Bottom ${indicatorTier.maxPercentile}%`
+                        : indicatorTier.level >= 5
+                          ? `Top ${100 - indicatorTier.minPercentile + 1}%`
+                          : `${indicatorTier.minPercentile}–${indicatorTier.maxPercentile}%`;
+                      return indicator.distribution ? (
+                        <DistributionSpectrum
+                          value={indicator.value}
+                          minValue={indicator.distribution.min}
+                          maxValue={indicator.distribution.max}
+                          otherTeamValues={indicator.distribution.otherTeamValues}
+                          higherIsBetter={indicator.higherIsBetter}
+                          unit={indicator.unit}
+                          displayValue={indicator.displayValue}
+                          width={280}
+                          showLabel={true}
+                          subLabel={rangeLabel}
+                        />
+                      ) : (
+                        <DistributionSpectrum
+                          percentile={indicator.benchmarkPercentile}
+                          width={240}
+                          showLabel={true}
+                          subLabel={rangeLabel}
+                        />
+                      );
+                    })()}
                   </td>
 
-                  {/* Percentile Badge with Range */}
+                  {/* Health Tier Badge */}
                   <td style={styles.td}>
                     <div style={styles.percentileBadgeContainer}>
                       <span style={{
@@ -387,14 +452,6 @@ const CategorySection: React.FC<CategorySectionProps> = ({
                         color: indicatorTier.color,
                       }}>
                         {indicatorTier.name}
-                      </span>
-                      <span style={styles.percentileRange}>
-                        {indicatorTier.level <= 2
-                          ? `Bottom ${indicatorTier.maxPercentile}%`
-                          : indicatorTier.level >= 5
-                            ? `Top ${100 - indicatorTier.minPercentile + 1}%`
-                            : `${indicatorTier.minPercentile}–${indicatorTier.maxPercentile}%`
-                        }
                       </span>
                     </div>
                   </td>
@@ -446,14 +503,82 @@ const styles: Record<string, React.CSSProperties> = {
   container: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '24px',
+    gap: '0',
+  },
+
+  // Tab Header
+  tabHeader: {
+    marginBottom: '0',
+  },
+  tabBar: {
+    display: 'flex',
+    gap: '0',
+    borderRadius: '12px 12px 0 0',
+    border: '1px solid #E4E6EB',
+    borderBottom: 'none',
+    overflow: 'hidden',
+  },
+  tab: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column' as const,
+    alignItems: 'flex-start',
+    padding: '18px 20px',
+    borderTop: '3px solid transparent',
+    borderRight: '0px solid transparent',
+    borderBottom: 'none',
+    borderLeft: 'none',
+    cursor: 'pointer',
+    transition: 'all 0.15s ease',
+    textAlign: 'left' as const,
+    outline: 'none',
+  },
+  tabActive: {
+    backgroundColor: '#FFFFFF',
+    borderTop: '3px solid #0052CC',
+    borderRight: '0px solid transparent',
+  },
+  tabInactive: {
+    backgroundColor: '#F4F5F7',
+    borderTop: '3px solid transparent',
+    borderRight: '1px solid #E4E6EB',
+  },
+  tabTop: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    marginBottom: '4px',
+  },
+  tabName: {
+    fontSize: '15px',
+    fontWeight: 600,
+  },
+  tabCount: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: '20px',
+    height: '20px',
+    padding: '0 6px',
+    borderRadius: '10px',
+    fontSize: '11px',
+    fontWeight: 600,
+  },
+  tabDescription: {
+    margin: 0,
+    fontSize: '12px',
+    lineHeight: 1.4,
+  },
+  tabBadges: {
+    marginTop: '10px',
   },
 
   // Category Section - matching "Indicators Overview" section style
   categorySection: {
     backgroundColor: '#FFFFFF',
-    borderRadius: '12px',
+    borderRadius: '0 0 12px 12px',
     border: '1px solid #E4E6EB',
+    borderTop: 'none',
     overflow: 'hidden',
   },
   categoryHeader: {

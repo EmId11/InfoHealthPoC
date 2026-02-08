@@ -506,7 +506,7 @@ const AssessmentResultsLayout: React.FC<AssessmentResultsLayoutProps> = ({
                       onViewTeams={() => openComparisonModal(INFORMATION_HEALTH_INDEX)}
                     />
 
-                    <div style={styles.dimensionBlueBanner}>
+                    <div style={{...styles.dimensionBlueBanner, background: tier.bgColor, borderColor: tier.borderColor}}>
                       {/* Centered single-column flow */}
                       <div style={styles.heroCenterFlow}>
                         {/* Title row with info button */}
@@ -605,67 +605,6 @@ const AssessmentResultsLayout: React.FC<AssessmentResultsLayoutProps> = ({
                           {dimDesc?.summary || `Analysis of ${dimension.dimensionName} across your team's Jira data.`}
                         </p>
 
-                        {/* Indicator stats panels */}
-                        <div style={styles.heroStatsRow}>
-                          <div style={{...styles.heroPanel, flex: 3}}>
-                            <div style={styles.heroPanelHeader}>
-                              <span style={styles.heroPanelLabel}>INDICATOR HEALTH</span>
-                              <span style={styles.heroPanelCount}>{allIndicators.length} indicators</span>
-                            </div>
-                            <div style={styles.heroStackedBar}>
-                              {tierSegments.map(({ tier: t, count }) => (
-                                <div
-                                  key={t.level}
-                                  style={{
-                                    flex: count,
-                                    backgroundColor: t.color,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    fontSize: '12px',
-                                    fontWeight: 700,
-                                    color: '#fff',
-                                    minWidth: count > 0 ? '28px' : 0,
-                                  }}
-                                  title={`${count} ${t.name}`}
-                                >
-                                  {count}
-                                </div>
-                              ))}
-                            </div>
-                            <div style={styles.heroLegendRow}>
-                              {tierSegments.map(({ tier: t }) => (
-                                <span key={t.level} style={styles.heroLegendItem}>
-                                  <span style={{...styles.heroLegendDot, backgroundColor: t.color}} />
-                                  {t.name}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-
-                          <div style={{...styles.heroPanel, flex: 2}}>
-                            <div style={styles.heroPanelHeader}>
-                              <span style={styles.heroPanelLabel}>TREND MOVEMENT</span>
-                            </div>
-                            <div style={styles.heroTrendStats}>
-                              <div style={styles.heroTrendItem}>
-                                <span style={{...styles.heroTrendArrow, color: '#4ADE80'}}>↑</span>
-                                <span style={styles.heroTrendCount}>{improved}</span>
-                                <span style={styles.heroTrendLabel}>improved</span>
-                              </div>
-                              <div style={styles.heroTrendItem}>
-                                <span style={{...styles.heroTrendArrow, color: '#FB7185'}}>↓</span>
-                                <span style={styles.heroTrendCount}>{declined}</span>
-                                <span style={styles.heroTrendLabel}>declined</span>
-                              </div>
-                              <div style={styles.heroTrendItem}>
-                                <span style={{...styles.heroTrendArrow, color: '#6B778C'}}>→</span>
-                                <span style={styles.heroTrendCount}>{stable}</span>
-                                <span style={styles.heroTrendLabel}>stable</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
                       </div>
                     </div>
 
@@ -1237,7 +1176,9 @@ const styles: Record<string, React.CSSProperties> = {
   heroStatsRow: {
     display: 'flex',
     gap: '12px',
-    marginTop: '28px',
+    marginTop: '24px',
+    paddingTop: '24px',
+    borderTop: '1px solid #EBECF0',
     width: '100%',
   },
   heroPanel: {
@@ -1797,7 +1738,7 @@ const styles: Record<string, React.CSSProperties> = {
     height: '8px',
     borderRadius: '4px',
     // CHS 5-zone gradient: Needs Attention (0-30), Below Average (30-45), Average (45-55), Good (55-70), Excellent (70-100)
-    background: 'linear-gradient(to right, #DE350B 0%, #DE350B 30%, #FF8B00 30%, #FF8B00 45%, #6B778C 45%, #6B778C 55%, #00875A 55%, #00875A 70%, #006644 70%, #006644 100%)',
+    background: 'linear-gradient(to right, #DE350B 0%, #DE350B 30%, #FF8B00 30%, #FF8B00 45%, #2684FF 45%, #2684FF 55%, #00875A 55%, #00875A 70%, #006644 70%, #006644 100%)',
     opacity: 0.5,
   },
   baselineContainer: {

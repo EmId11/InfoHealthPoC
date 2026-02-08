@@ -357,11 +357,7 @@ export type Dimension2IndicatorId =
   | 'firstTimePassRate'        // % completed without re-opening
   | 'creationCommitmentCorrelation' // Correlation: days to commit vs. carryover
   | 'changesCorrelation'       // Correlation: days to commit vs. changes
-  // 2.c Effectiveness of Prioritisation (4 indicators)
-  | 'timeToStability'          // Days for priority to stop changing
-  | 'priorityDeliveryCorrelation' // Correlation: rank vs. delivery order
-  | 'priorityProgressCorrelation' // Correlation: rank vs. moving to in-progress
-  | 'sameSprintCompletion';    // Correlation: rank vs. same-sprint completion
+  | 'timeToStability';         // Days for priority to stop changing
 
 // ============================================
 // Dimension 3 Specific Indicator IDs

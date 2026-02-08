@@ -29,6 +29,7 @@ interface DistributionSpectrumProps {
   width?: number;
   height?: number;
   showLabel?: boolean;
+  subLabel?: string;            // Text shown below the value label (e.g., "Bottom 50%")
 }
 
 /**
@@ -81,6 +82,7 @@ const DistributionSpectrum: React.FC<DistributionSpectrumProps> = ({
   displayValue,
   width = 280,
   showLabel = true,
+  subLabel,
 }) => {
   const [tooltip, setTooltip] = useState<TooltipState>({
     visible: false,
@@ -166,38 +168,38 @@ const DistributionSpectrum: React.FC<DistributionSpectrumProps> = ({
   const barHeight = 8;
   const markerSize = 14;
   const dotsAreaHeight = 20;
-  const labelWidth = 36;
-  const spectrumWidth = width - (labelWidth * 2) - 16;
+  const labelWidth = 28;
+  const spectrumWidth = width - (labelWidth * 2) - 8;
 
-  // Build 6-tier banded gradient (matching TableScoreSpectrum)
+  // Build 5-tier banded gradient using tier colors (matching How You Compare spectrum)
   const getGradient = () => {
     if (higherIsBetter) {
       // Left = bad (red), Right = good (green) - 5-tier system
       return `linear-gradient(to right,
-        ${INDICATOR_TIERS[0].bgColor} 0%,
-        ${INDICATOR_TIERS[0].bgColor} 25%,
-        ${INDICATOR_TIERS[1].bgColor} 25%,
-        ${INDICATOR_TIERS[1].bgColor} 50%,
-        ${INDICATOR_TIERS[2].bgColor} 50%,
-        ${INDICATOR_TIERS[2].bgColor} 75%,
-        ${INDICATOR_TIERS[3].bgColor} 75%,
-        ${INDICATOR_TIERS[3].bgColor} 90%,
-        ${INDICATOR_TIERS[4].bgColor} 90%,
-        ${INDICATOR_TIERS[4].bgColor} 100%
+        ${INDICATOR_TIERS[0].color} 0%,
+        ${INDICATOR_TIERS[0].color} 25%,
+        ${INDICATOR_TIERS[1].color} 25%,
+        ${INDICATOR_TIERS[1].color} 50%,
+        ${INDICATOR_TIERS[2].color} 50%,
+        ${INDICATOR_TIERS[2].color} 75%,
+        ${INDICATOR_TIERS[3].color} 75%,
+        ${INDICATOR_TIERS[3].color} 90%,
+        ${INDICATOR_TIERS[4].color} 90%,
+        ${INDICATOR_TIERS[4].color} 100%
       )`;
     } else {
       // Left = good (green), Right = bad (red) - 5-tier system
       return `linear-gradient(to right,
-        ${INDICATOR_TIERS[4].bgColor} 0%,
-        ${INDICATOR_TIERS[4].bgColor} 10%,
-        ${INDICATOR_TIERS[3].bgColor} 10%,
-        ${INDICATOR_TIERS[3].bgColor} 25%,
-        ${INDICATOR_TIERS[2].bgColor} 25%,
-        ${INDICATOR_TIERS[2].bgColor} 50%,
-        ${INDICATOR_TIERS[1].bgColor} 50%,
-        ${INDICATOR_TIERS[1].bgColor} 75%,
-        ${INDICATOR_TIERS[0].bgColor} 75%,
-        ${INDICATOR_TIERS[0].bgColor} 100%
+        ${INDICATOR_TIERS[4].color} 0%,
+        ${INDICATOR_TIERS[4].color} 10%,
+        ${INDICATOR_TIERS[3].color} 10%,
+        ${INDICATOR_TIERS[3].color} 25%,
+        ${INDICATOR_TIERS[2].color} 25%,
+        ${INDICATOR_TIERS[2].color} 50%,
+        ${INDICATOR_TIERS[1].color} 50%,
+        ${INDICATOR_TIERS[1].color} 75%,
+        ${INDICATOR_TIERS[0].color} 75%,
+        ${INDICATOR_TIERS[0].color} 100%
       )`;
     }
   };
@@ -240,7 +242,7 @@ const DistributionSpectrum: React.FC<DistributionSpectrumProps> = ({
   const rightEndpointTier = higherIsBetter ? INDICATOR_TIERS[4] : INDICATOR_TIERS[0];
 
   return (
-    <div style={{ width, display: 'flex', alignItems: 'center', gap: 8, position: 'relative' }}>
+    <div style={{ width, display: 'flex', alignItems: 'center', gap: 4, position: 'relative' }}>
       {/* Tooltip */}
       {tooltip.visible && (
         <div
@@ -280,26 +282,8 @@ const DistributionSpectrum: React.FC<DistributionSpectrumProps> = ({
         </div>
       )}
 
-      {/* Left label - min value */}
-      {isValueMode && (
-        <div style={{ width: labelWidth, flexShrink: 0 }}>
-          <span
-            style={{
-              fontSize: 10,
-              fontWeight: 600,
-              color: leftEndpointTier.color,
-              lineHeight: 1.3,
-              display: 'block',
-              textAlign: 'left',
-            }}
-          >
-            {formatValue(minValue!)}
-          </span>
-        </div>
-      )}
-
       {/* Spectrum */}
-      <div style={{ width: isValueMode ? spectrumWidth : width, flexShrink: 0 }}>
+      <div style={{ width, flexShrink: 0 }}>
         {/* Scattered dots area */}
         <div style={{ height: dotsAreaHeight, position: 'relative' }}>
           {allTeamPositions.map(dot => {
@@ -339,6 +323,7 @@ const DistributionSpectrum: React.FC<DistributionSpectrumProps> = ({
               height: barHeight,
               borderRadius: barHeight / 2,
               background: getGradient(),
+              opacity: 0.5,
             }}
           />
 
@@ -408,41 +393,44 @@ const DistributionSpectrum: React.FC<DistributionSpectrumProps> = ({
 
         {/* Value label below marker */}
         {showLabel && (
-          <div style={{ position: 'relative', height: 18, marginTop: 4 }}>
-            <span
+          <div style={{ position: 'relative', height: subLabel ? 32 : 18, marginTop: 4 }}>
+            <div
               style={{
                 position: 'absolute',
                 left: `${markerPosition}%`,
                 transform: 'translateX(-50%)',
-                fontSize: 11,
-                fontWeight: 600,
-                color: tier.color,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
                 whiteSpace: 'nowrap',
               }}
             >
-              {displayValue || (isValueMode && value !== undefined ? formatValue(value) : '')}
-            </span>
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 600,
+                  color: tier.color,
+                }}
+              >
+                {displayValue || (isValueMode && value !== undefined ? formatValue(value) : '')}
+              </span>
+              {subLabel && (
+                <span
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 500,
+                    color: '#6B778C',
+                    marginTop: 1,
+                  }}
+                >
+                  {subLabel}
+                </span>
+              )}
+            </div>
           </div>
         )}
       </div>
 
-      {/* Right label - max value */}
-      {isValueMode && (
-        <div style={{ width: labelWidth, flexShrink: 0 }}>
-          <span
-            style={{
-              fontSize: 10,
-              fontWeight: 600,
-              color: rightEndpointTier.color,
-              lineHeight: 1.3,
-              display: 'block',
-              textAlign: 'right',
-            }}
-          >
-            {formatValue(maxValue!)}
-          </span>
-        </div>
-      )}
     </div>
   );
 };

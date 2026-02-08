@@ -228,35 +228,11 @@ const dimension2Indicators: IndicatorMetadata[] = [
     yAxisLabel: 'Number of Changes',
     description: 'Relationship between time to commit and number of scope changes.',
   },
-
-  // Category 2.C: Effectiveness of Prioritisation
   {
     id: 'timeToStability',
     reportType: 'timeline',
     timelineTitle: 'Time to Priority Stability',
     description: 'Days until issue priority stops changing.',
-  },
-  {
-    id: 'priorityDeliveryCorrelation',
-    reportType: 'correlation',
-    correlationTitle: 'Priority Rank vs Delivery Order',
-    xAxisLabel: 'Priority Rank',
-    yAxisLabel: 'Delivery Order',
-    description: 'How well priority predicts actual delivery order.',
-  },
-  {
-    id: 'priorityProgressCorrelation',
-    reportType: 'correlation',
-    correlationTitle: 'Priority Rank vs Progress Order',
-    xAxisLabel: 'Priority Rank',
-    yAxisLabel: 'Order Started',
-    description: 'How well priority predicts when work starts.',
-  },
-  {
-    id: 'sameSprintCompletion',
-    reportType: 'issueList',
-    issueListTitle: 'High Priority Items Not Completed in Sprint',
-    description: 'High priority items that were not completed in the same sprint.',
   },
 ];
 
