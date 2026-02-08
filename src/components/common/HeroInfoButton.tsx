@@ -38,21 +38,21 @@ const HeroInfoButton: React.FC<HeroInfoButtonProps> = ({ title, children }) => {
         style={{
           ...styles.infoButton,
           backgroundColor: isHovered
-            ? 'rgba(255, 255, 255, 0.25)'
-            : 'rgba(255, 255, 255, 0.15)',
+            ? 'rgba(9, 30, 66, 0.12)'
+            : 'rgba(9, 30, 66, 0.06)',
         }}
         title={`Learn more about ${title}`}
         type="button"
       >
         <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-          <circle cx="9" cy="9" r="8" stroke="white" strokeWidth="1.5" />
+          <circle cx="9" cy="9" r="8" stroke="#6B778C" strokeWidth="1.5" />
           <path
             d="M7 7a2 2 0 1 1 2.5 1.94V10.5"
-            stroke="white"
+            stroke="#6B778C"
             strokeWidth="1.5"
             strokeLinecap="round"
           />
-          <circle cx="9" cy="13" r="0.75" fill="white" />
+          <circle cx="9" cy="13" r="0.75" fill="#6B778C" />
         </svg>
       </button>
 
@@ -98,10 +98,10 @@ const styles: Record<string, React.CSSProperties> = {
     width: '32px',
     height: '32px',
     padding: 0,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    border: '1px solid rgba(255, 255, 255, 0.3)',
+    backgroundColor: 'rgba(9, 30, 66, 0.06)',
+    border: '1px solid rgba(9, 30, 66, 0.15)',
     borderRadius: '50%',
-    color: 'white',
+    color: '#6B778C',
     cursor: 'pointer',
     transition: 'background-color 0.15s ease',
     flexShrink: 0,

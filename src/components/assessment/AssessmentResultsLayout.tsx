@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { AssessmentResult, IndicatorDrillDownState } from '../../types/assessment';
 import { WizardState } from '../../types/wizard';
 import { OutcomeAreaId } from '../../types/outcomeConfidence';
@@ -11,45 +11,30 @@ import {
   deleteTask,
 } from '../../utils/improvementPlanUtils';
 import { ImprovementPlanWizard } from './ExecutiveSummary/ImprovementPlanWizard';
-import Dimension1Results from './dimension1/Dimension1Results';
 import Dimension2Results from './dimension2/Dimension2Results';
-import Dimension3Results from './dimension3/Dimension3Results';
-import Dimension4Results from './dimension4/Dimension4Results';
-import Dimension5Results from './dimension5/Dimension5Results';
-import Dimension6Results from './dimension6/Dimension6Results';
-import Dimension7Results from './dimension7/Dimension7Results';
-import Dimension8Results from './dimension8/Dimension8Results';
-import Dimension9Results from './dimension9/Dimension9Results';
-import Dimension10Results from './dimension10/Dimension10Results';
-import Dimension11Results from './dimension11/Dimension11Results';
-import Dimension12Results from './dimension12/Dimension12Results';
-import Dimension13Results from './dimension13/Dimension13Results';
-import Dimension14Results from './dimension14/Dimension14Results';
-import Dimension15Results from './dimension15/Dimension15Results';
-import Dimension16Results from './dimension16/Dimension16Results';
-import Dimension17Results from './dimension17/Dimension17Results';
-import ThemeSection, { getDimensionQuestion } from './common/ThemeSection';
+import { getDimensionQuestion } from './common/ThemeSection';
 import ComparisonExplainer from './common/ComparisonExplainer';
 import ComparisonGroupModal from './common/ComparisonGroupModal';
-import { ExecutiveSummaryPage } from './ExecutiveSummary';
+import { ImprovementPlanTab } from './ExecutiveSummary/ImprovementPlanTab';
+import { AssessmentReportsTab } from './ExecutiveSummary/ReportsTab';
 import { ImprovementFocusFAB, ImprovementFocusPanel } from './ImprovementFocus';
 import { getIndicatorTier, INDICATOR_TIERS } from '../../types/indicatorTiers';
 import { CHS_CATEGORIES, getCHSCategoryConfig } from '../../constants/chsCategories';
-import { calculatePrecision } from '../../utils/precisionIndicator';
 import HeroInfoButton from '../common/HeroInfoButton';
 import CalculationButton from '../common/CalculationButton';
 import { DIMENSION_EXPLANATION } from '../../constants/pageExplanations';
-import { DIMENSION_CALCULATION } from '../../constants/calculationExplanations';
+import { calculateExecutiveSummary } from '../../utils/executiveSummaryUtils';
 import ArrowLeftIcon from '@atlaskit/icon/glyph/arrow-left';
 import RefreshIcon from '@atlaskit/icon/glyph/refresh';
 import SettingsIcon from '@atlaskit/icon/glyph/settings';
 import ShareIcon from '@atlaskit/icon/glyph/share';
 import { PersonaSwitcher } from '../persona';
-import { themeGroups, getDimensionsForTheme } from '../../constants/themeGroups';
 import { getDimensionDescription } from '../../constants/clusterDescriptions';
-import { getOutcomesForDimension, getOutcomeDefinition } from '../../constants/outcomeDefinitions';
+import { getOutcomesForDimension } from '../../constants/outcomeDefinitions';
 import { getDimensionIcon, getOutcomeIcon } from '../../constants/dimensionIcons';
-import NavigationBar from './common/NavigationBar';
+
+// Top-level tabs
+type TopLevelTab = 'assessment-results' | 'improvement-plan' | 'reports';
 
 interface AssessmentResultsLayoutProps {
   assessmentResult: AssessmentResult;
@@ -111,22 +96,11 @@ const AssessmentResultsLayout: React.FC<AssessmentResultsLayoutProps> = ({
     });
   };
 
-  // State for dashboard/detail view toggle
-  // null = dashboard view, 0 = dimension 1 detail, 1 = dimension 2 detail
-  const [expandedDimension, setExpandedDimension] = useState<number | null>(initialExpandedDimension);
+  // Top-level tab state
+  const [activeTab, setActiveTab] = useState<TopLevelTab>('assessment-results');
 
-  // Update expanded dimension when prop changes (returning from drill-down or outcome detail)
-  useEffect(() => {
-    setExpandedDimension(initialExpandedDimension);
-  }, [initialExpandedDimension]);
-
-  // State for selected theme in sidebar
-  // -1 = Executive Summary, 0+ = theme index
-  const [selectedThemeIndex, setSelectedThemeIndex] = useState(-1);
-
-  // Track navigation source for back navigation
-  // 'all' = All Dimensions tab, 'executive' = Executive Summary, number = theme index
-  const [navigationSource, setNavigationSource] = useState<'all' | 'executive' | number>('executive');
+  // Information Health is always dimension index 1
+  const INFORMATION_HEALTH_INDEX = 1;
 
   // State for comparison group modal
   const [isComparisonModalOpen, setIsComparisonModalOpen] = useState(false);
@@ -197,19 +171,13 @@ const AssessmentResultsLayout: React.FC<AssessmentResultsLayoutProps> = ({
   // Handler for navigating to a dimension from the panel
   const handleNavigateToDimension = useCallback((dimensionKey: string) => {
     setIsImprovementPanelOpen(false);
-    const dimIndex = assessmentResult.dimensions.findIndex(
-      d => d.dimensionKey === dimensionKey
-    );
-    if (dimIndex >= 0) {
-      handleViewDetails(dimIndex, 'executive');
-    }
-  }, [assessmentResult.dimensions]);
+    setActiveTab('assessment-results');
+  }, []);
 
   // Handler to navigate to the Improvement Plan tab
   const handleNavigateToFullPlan = useCallback(() => {
     setIsImprovementPanelOpen(false);
-    // The ExecutiveSummaryPage handles its own view mode state
-    // We just close the panel; user can click the Improvement Plan tab
+    setActiveTab('improvement-plan');
   }, []);
 
   // Handler to open the wizard
@@ -291,32 +259,18 @@ const AssessmentResultsLayout: React.FC<AssessmentResultsLayoutProps> = ({
   };
 
 
-  const handleViewDetails = (dimensionIndex: number, source?: 'all' | 'executive' | number) => {
-    setExpandedDimension(dimensionIndex);
-    // Track where the user came from
-    if (source !== undefined) {
-      setNavigationSource(source);
-    } else if (selectedThemeIndex >= 0) {
-      // If viewing from a theme section, track that theme
-      setNavigationSource(selectedThemeIndex);
-    } else {
-      // Default to executive summary
-      setNavigationSource('executive');
+  // Auto-switch to improvement-plan tab when a new plan is created
+  useEffect(() => {
+    if (newlyCreatedPlanIdFromApp || newlyCreatedPlanId) {
+      setActiveTab('improvement-plan');
     }
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  }, [newlyCreatedPlanIdFromApp, newlyCreatedPlanId]);
 
-  const handleBackToSummary = () => {
-    setExpandedDimension(null);
-    // Navigate to the appropriate section based on where the user came from
-    if (navigationSource === 'executive') {
-      setSelectedThemeIndex(-1);
-    } else if (typeof navigationSource === 'number') {
-      setSelectedThemeIndex(navigationSource);
-    }
-    // 'all' would be handled by a dedicated All Dimensions tab if present
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  // Calculate executive summary data for improvement plan tab
+  const summaryData = useMemo(
+    () => calculateExecutiveSummary(assessmentResult),
+    [assessmentResult]
+  );
 
   // Inject CSS keyframes for spin animation
   useEffect(() => {
@@ -447,107 +401,56 @@ const AssessmentResultsLayout: React.FC<AssessmentResultsLayoutProps> = ({
             dimensionName={comparisonModalContext.dimensionName}
           />
 
-          {expandedDimension === null ? (
-            /* Dashboard View - Explainer above, then Sidebar + Content layout */
-            <>
-              {/* Understanding Your Results - full width above sidebar */}
-              <ComparisonExplainer
-                teamCount={assessmentResult.comparisonTeamCount}
-                teams={assessmentResult.comparisonTeams}
-                criteria={assessmentResult.comparisonCriteria}
-                onViewTeams={() => openComparisonModal()}
-              />
+          {/* ═══════════════════════════════════════════════════════════════════
+              TOP-LEVEL TABS: Assessment Results | Improvement Plan | Reports
+          ═══════════════════════════════════════════════════════════════════ */}
+          <div style={styles.topTabsContainer}>
+            <div style={styles.topTabs}>
+              <button
+                style={{
+                  ...styles.topTabButton,
+                  ...(activeTab === 'assessment-results' ? styles.topTabButtonActive : {}),
+                }}
+                onClick={() => setActiveTab('assessment-results')}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z" />
+                </svg>
+                Assessment Results
+              </button>
+              <button
+                style={{
+                  ...styles.topTabButton,
+                  ...(activeTab === 'improvement-plan' ? styles.topTabButtonActive : {}),
+                }}
+                onClick={() => setActiveTab('improvement-plan')}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9H9V9h10v2zm-4 4H9v-2h6v2zm4-8H9V5h10v2z" />
+                </svg>
+                Improvements
+              </button>
+              <button
+                style={{
+                  ...styles.topTabButton,
+                  ...(activeTab === 'reports' ? styles.topTabButtonActive : {}),
+                }}
+                onClick={() => setActiveTab('reports')}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="11" cy="11" r="8" />
+                  <path d="M21 21l-4.35-4.35" strokeLinecap="round" />
+                </svg>
+                Reports
+              </button>
+            </div>
+          </div>
 
-              {/* Main content area - full width */}
-              <div style={styles.fullWidthContent}>
-                {selectedThemeIndex === -1 ? (
-                  <ExecutiveSummaryPage
-                    assessmentResult={assessmentResult}
-                    onThemeClick={(themeId) => {
-                      const themeIndex = themeGroups.findIndex(t => t.id === themeId);
-                      if (themeIndex >= 0) {
-                        setSelectedThemeIndex(themeIndex);
-                      }
-                    }}
-                    onDimensionClick={(dimensionKey) => {
-                      const dimIndex = assessmentResult.dimensions.findIndex(
-                        d => d.dimensionKey === dimensionKey
-                      );
-                      if (dimIndex >= 0) {
-                        handleViewDetails(dimIndex, 'executive');
-                      }
-                    }}
-                    onOutcomeClick={(outcomeId) => {
-                      if (onOutcomeClick) {
-                        onOutcomeClick(outcomeId);
-                      }
-                    }}
-                    plans={activePlans}
-                    selectedPlan={selectedPlan}
-                    onSelectPlan={selectPlan}
-                    onPlanUpdate={updatePlan}
-                    onArchivePlan={archivePlan}
-                    onDeletePlan={deletePlan}
-                    onOpenPlanWizard={handleOpenPlanWizard}
-                    onOpenPlanDetail={onOpenPlanDetail}
-                    newlyCreatedPlanId={newlyCreatedPlanIdFromApp || newlyCreatedPlanId}
-                    onClearNewlyCreatedPlan={() => {
-                      // Clear both sources
-                      if (onClearNewlyCreatedPlanFromApp) onClearNewlyCreatedPlanFromApp();
-                      clearNewlyCreatedPlan();
-                    }}
-                  />
-                ) : (
-                  <ThemeSection
-                    theme={themeGroups[selectedThemeIndex]}
-                    dimensions={getDimensionsForTheme(themeGroups[selectedThemeIndex], assessmentResult.dimensions)}
-                    allDimensions={assessmentResult.dimensions}
-                    sectionNumber={selectedThemeIndex + 1}
-                    onViewDetails={(dimIndex) => handleViewDetails(dimIndex, selectedThemeIndex)}
-                  />
-                )}
-              </div>
-            </>
-          ) : (
-            /* Detail View - Full results for selected dimension */
-            <>
-              {/* Navigation Bar with back button and breadcrumb */}
-              {expandedDimension !== null && assessmentResult.dimensions[expandedDimension] && (() => {
-                const dimension = assessmentResult.dimensions[expandedDimension];
-
-                // Determine back label and breadcrumb based on navigation source
-                let backLabel = 'Back to Executive Summary';
-                let breadcrumbItems = ['Executive Summary', dimension.dimensionName];
-                let handleBack = handleBackToSummary;
-
-                // Check if we came from an outcome page first (takes priority)
-                if (returnToOutcomeId && onBackToOutcome) {
-                  const outcomeDef = getOutcomeDefinition(returnToOutcomeId);
-                  const outcomeName = outcomeDef?.shortName || outcomeDef?.name || 'Outcome';
-                  backLabel = `Back to ${outcomeName}`;
-                  breadcrumbItems = [outcomeName, dimension.dimensionName];
-                  handleBack = () => onBackToOutcome(returnToOutcomeId);
-                } else if (navigationSource === 'all') {
-                  backLabel = 'Back to All Dimensions';
-                  breadcrumbItems = ['All Dimensions', dimension.dimensionName];
-                } else if (typeof navigationSource === 'number' && themeGroups[navigationSource]) {
-                  const theme = themeGroups[navigationSource];
-                  backLabel = `Back to ${theme.name}`;
-                  breadcrumbItems = [theme.name, dimension.dimensionName];
-                }
-
-                return (
-                  <NavigationBar
-                    backLabel={backLabel}
-                    onBack={handleBack}
-                    breadcrumbItems={breadcrumbItems}
-                  />
-                );
-              })()}
-
-              {/* Blue Gradient Hero Banner with Spectrum */}
-              {expandedDimension !== null && assessmentResult.dimensions[expandedDimension] && (() => {
-                const dimension = assessmentResult.dimensions[expandedDimension];
+          {/* ═══════════════════════════════════════════════════════════════════
+              ASSESSMENT RESULTS TAB - Information Health Dimension Detail
+          ═══════════════════════════════════════════════════════════════════ */}
+          {activeTab === 'assessment-results' && assessmentResult.dimensions[INFORMATION_HEALTH_INDEX] && (() => {
+                const dimension = assessmentResult.dimensions[INFORMATION_HEALTH_INDEX];
                 const dimDesc = getDimensionDescription(dimension.dimensionKey);
                 const tier = getIndicatorTier(dimension.healthScore ?? dimension.overallPercentile);
 
@@ -584,6 +487,15 @@ const AssessmentResultsLayout: React.FC<AssessmentResultsLayoutProps> = ({
                   ? Math.round((needingAttention / allIndicators.length) * 100)
                   : 0;
 
+                // Extract "Key info added after commitment" from current dimension's readiness category
+                const readinessCat = dimension.categories.find(c => c.id === 'readiness');
+                const infoAfterCommitment = readinessCat?.indicators.find(i => i.id === 'infoAddedAfterCommitment');
+
+                // Extract "Stale In-Progress Work Items" from Data Freshness dimension
+                const dataFreshnessDim = assessmentResult.dimensions.find(d => d.dimensionKey === 'dataFreshness');
+                const staleItemsCat = dataFreshnessDim?.categories.find(c => c.id === 'dataFreshness');
+                const staleWorkItems = staleItemsCat?.indicators.find(i => i.id === 'staleWorkItems');
+
                 return (
                   <>
                     {/* Comparison Explainer - consistent across pages */}
@@ -591,62 +503,68 @@ const AssessmentResultsLayout: React.FC<AssessmentResultsLayoutProps> = ({
                       teamCount={assessmentResult.comparisonTeamCount}
                       teams={assessmentResult.comparisonTeams}
                       criteria={assessmentResult.comparisonCriteria}
-                      onViewTeams={() => openComparisonModal(expandedDimension)}
+                      onViewTeams={() => openComparisonModal(INFORMATION_HEALTH_INDEX)}
                     />
 
                     <div style={styles.dimensionBlueBanner}>
-                      {/* Page Type Label */}
-                      <div style={styles.pageTypeLabel}>
-                        <span style={styles.pageTypeIcon}>
-                          {getDimensionIcon(dimension.dimensionKey, 'small', 'rgba(255, 255, 255, 0.85)')}
-                        </span>
-                        <span style={styles.pageTypeLabelText}>DIMENSION · {dimension.dimensionName}</span>
-                      </div>
+                      {/* Centered single-column flow */}
+                      <div style={styles.heroCenterFlow}>
+                        {/* Title row with info button */}
+                        <div style={styles.heroTitleRow}>
+                          <span style={styles.heroSubtitle}>{dimension.dimensionName} Score</span>
+                          <span style={styles.heroInfoInline}>
+                            <HeroInfoButton title={`About ${dimension.dimensionName}`}>
+                              <div style={styles.infoModalBody}>
+                                <div style={styles.infoSection}>
+                                  <h4 style={styles.infoSectionTitle}>What This Shows</h4>
+                                  <p style={styles.infoText}>
+                                    {dimDesc?.whatWeMeasure || DIMENSION_EXPLANATION.whatThisShows}
+                                  </p>
+                                </div>
+                                <div style={styles.infoSection}>
+                                  <h4 style={styles.infoSectionTitle}>Why It Matters</h4>
+                                  <p style={styles.infoText}>
+                                    {dimDesc?.whyItMatters || 'This dimension affects your overall Jira health and the reliability of your data for planning and decision-making.'}
+                                  </p>
+                                </div>
+                                <div style={styles.infoSection}>
+                                  <h4 style={styles.infoSectionTitle}>What You Can Do</h4>
+                                  <p style={styles.infoText}>
+                                    {dimDesc?.whatYouCanDo || 'Review the indicators below to identify specific areas for improvement.'}
+                                  </p>
+                                </div>
+                                <div style={styles.infoSection}>
+                                  <h4 style={styles.infoSectionTitle}>Key Metrics</h4>
+                                  <ul style={styles.infoList}>
+                                    <li><strong>Score:</strong> {DIMENSION_EXPLANATION.keyMetrics.score}</li>
+                                    <li><strong>Rating:</strong> {DIMENSION_EXPLANATION.keyMetrics.rating}</li>
+                                    <li><strong>Trend:</strong> {DIMENSION_EXPLANATION.keyMetrics.trend}</li>
+                                  </ul>
+                                </div>
+                                <div style={styles.infoSection}>
+                                  <h4 style={styles.infoSectionTitle}>Health Categories</h4>
+                                  <p style={styles.infoText}>
+                                    Your score maps to one of five health categories.
+                                  </p>
+                                  <div style={styles.healthCategoriesList}>
+                                    {[...INDICATOR_TIERS].reverse().map(t => (
+                                      <div key={t.level} style={styles.healthCategoryRow}>
+                                        <div style={styles.healthCategoryHeader}>
+                                          <span style={{...styles.healthCategoryName, color: t.color}}>{t.name}</span>
+                                          <span style={styles.healthCategoryRange}>{t.minPercentile}–{t.maxPercentile}</span>
+                                        </div>
+                                        <p style={styles.healthCategoryDesc}>{t.detailedDescription}</p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                            </HeroInfoButton>
+                          </span>
+                        </div>
 
-                      {/* Info Button - Top Right of Hero */}
-                      <div style={styles.heroInfoButtonContainer}>
-                        <HeroInfoButton title={`About ${dimension.dimensionName}`}>
-                          <div style={styles.infoModalBody}>
-                            <div style={styles.infoSection}>
-                              <h4 style={styles.infoSectionTitle}>What This Shows</h4>
-                              <p style={styles.infoText}>
-                                {dimDesc?.whatWeMeasure || DIMENSION_EXPLANATION.whatThisShows}
-                              </p>
-                            </div>
-                            <div style={styles.infoSection}>
-                              <h4 style={styles.infoSectionTitle}>Why It Matters</h4>
-                              <p style={styles.infoText}>
-                                {dimDesc?.whyItMatters || 'This dimension affects your overall Jira health and the reliability of your data for planning and decision-making.'}
-                              </p>
-                            </div>
-                            <div style={styles.infoSection}>
-                              <h4 style={styles.infoSectionTitle}>What You Can Do</h4>
-                              <p style={styles.infoText}>
-                                {dimDesc?.whatYouCanDo || 'Review the indicators below to identify specific areas for improvement.'}
-                              </p>
-                            </div>
-                            <div style={styles.infoSection}>
-                              <h4 style={styles.infoSectionTitle}>Key Metrics</h4>
-                              <ul style={styles.infoList}>
-                                <li><strong>Score:</strong> {DIMENSION_EXPLANATION.keyMetrics.score}</li>
-                                <li><strong>Rating:</strong> {DIMENSION_EXPLANATION.keyMetrics.rating}</li>
-                                <li><strong>Trend:</strong> {DIMENSION_EXPLANATION.keyMetrics.trend}</li>
-                              </ul>
-                            </div>
-                          </div>
-                        </HeroInfoButton>
-                      </div>
-                      <div style={styles.blueBannerContent}>
-                        <h1 style={styles.blueBannerQuestion}>
-                          {dimDesc?.headline || getDimensionQuestion(dimension.dimensionKey)}
-                        </h1>
-                        <p style={styles.blueBannerDescription}>
-                          {dimDesc?.summary || `Analysis of ${dimension.dimensionName} across your team's Jira data.`}
-                        </p>
-
-                        {/* Unified Metrics Card */}
+                        {/* Giant score */}
                         {(() => {
-                          // Calculate overall trend from trend data
                           let overallTrend: 'up' | 'down' | 'stable' = 'stable';
                           if (dimension.trendData && dimension.trendData.length >= 2) {
                             const firstHealthScore = dimension.trendData[0].healthScore ?? dimension.trendData[0].value;
@@ -656,289 +574,100 @@ const AssessmentResultsLayout: React.FC<AssessmentResultsLayoutProps> = ({
                             if (lastTier > firstTier) overallTrend = 'up';
                             else if (lastTier < firstTier) overallTrend = 'down';
                           }
-
                           const healthScore = dimension.healthScore ?? Math.round(dimension.overallPercentile);
-                          const cssScore = dimension.cssScore !== undefined ? Math.round(dimension.cssScore) : healthScore;
-                          const trsScoreRaw = dimension.trsScore;
-                          const pgsScoreRaw = dimension.pgsScore;
-                          const trsScore = trsScoreRaw !== null && trsScoreRaw !== undefined ? Math.round(trsScoreRaw) : null;
-                          const pgsScore = pgsScoreRaw !== null && pgsScoreRaw !== undefined ? Math.round(pgsScoreRaw) : null;
-
-                          // Determine component availability
-                          const componentsAvailable = dimension.componentsAvailable ?? {
-                            css: true,
-                            trs: trsScore !== null,
-                            pgs: pgsScore !== null,
-                          };
-
-                          const isFullScore = componentsAvailable.css && componentsAvailable.trs && componentsAvailable.pgs;
-                          const isLimitedScore = componentsAvailable.css && !componentsAvailable.trs && !componentsAvailable.pgs;
-
-                          const ciLower = dimension.confidenceInterval?.lower ?? healthScore - 8;
-                          const ciUpper = dimension.confidenceInterval?.upper ?? healthScore + 8;
-                          const precision = calculatePrecision(ciLower, ciUpper);
-
-                          // Ring gauge component with unavailable state
-                          const RingGauge: React.FC<{ score: number | null; color: string; size?: number; available?: boolean }> = ({
-                            score, color, size = 52, available = true
-                          }) => {
-                            const strokeWidth = 5;
-                            const radius = (size - strokeWidth) / 2;
-                            const circumference = 2 * Math.PI * radius;
-                            const progress = available && score !== null ? Math.max(0, Math.min(100, score)) / 100 : 0;
-                            const dashOffset = circumference * (1 - progress);
-
-                            return (
-                              <svg width={size} height={size} style={{ transform: 'rotate(-90deg)', opacity: available ? 1 : 0.4 }}>
-                                <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="#E4E6EB" strokeWidth={strokeWidth} />
-                                <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke={available ? color : '#C1C7D0'} strokeWidth={strokeWidth}
-                                  strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={dashOffset}
-                                  style={{ transition: 'stroke-dashoffset 0.5s ease' }} />
-                              </svg>
-                            );
-                          };
-
-                          // Calculate weighted contributions for hover
-                          const cssContribution = Math.round(cssScore * 0.50);
-                          const trsContribution = componentsAvailable.trs && trsScore !== null ? Math.round(trsScore * 0.35) : 0;
-                          const pgsContribution = componentsAvailable.pgs && pgsScore !== null ? Math.round(pgsScore * 0.15) : 0;
+                          const trendIcon = overallTrend === 'up' ? '↗' : overallTrend === 'down' ? '↘' : '→';
+                          const trendLabel = overallTrend === 'up' ? 'Improving' : overallTrend === 'down' ? 'Declining' : 'Stable';
+                          const trendColor = overallTrend === 'up' ? '#36B37E' : overallTrend === 'down' ? '#DE350B' : '#6B778C';
 
                           return (
-                            <div style={styles.heroCard}>
-                              {/* Methodology icon button - top right */}
-                              <CalculationButton title="How is this calculated?" variant="icon">
-                                <div style={styles.calculationModalBody}>
-                                  <p style={styles.calculationIntro}>
-                                    This score uses the <strong>Composite Health Score (CHS)</strong> methodology,
-                                    combining current state, trajectory, and peer comparison.
-                                  </p>
-                                  <div style={styles.formulaSection}>
-                                    <h4 style={styles.formulaSectionTitle}>The Formula</h4>
-                                    <div style={styles.formulaBox}>
-                                      <div style={styles.formulaItem}>
-                                        <span style={styles.formulaNumber}>{cssScore}</span>
-                                        <span style={styles.formulaLabel}>Current State</span>
-                                        <span style={styles.formulaWeight}>× 50%</span>
-                                      </div>
-                                      <span style={styles.formulaOperator}>+</span>
-                                      <div style={styles.formulaItem}>
-                                        <span style={styles.formulaNumber}>{trsScore ?? '—'}</span>
-                                        <span style={styles.formulaLabel}>Trajectory</span>
-                                        <span style={styles.formulaWeight}>× 35%</span>
-                                      </div>
-                                      <span style={styles.formulaOperator}>+</span>
-                                      <div style={styles.formulaItem}>
-                                        <span style={styles.formulaNumber}>{pgsScore ?? '—'}</span>
-                                        <span style={styles.formulaLabel}>Peer Growth</span>
-                                        <span style={styles.formulaWeight}>× 15%</span>
-                                      </div>
-                                      <span style={styles.formulaOperator}>=</span>
-                                      <div style={styles.formulaItem}>
-                                        <span style={{...styles.formulaNumber, color: tier.color}}>{healthScore}</span>
-                                      </div>
-                                    </div>
-                                  </div>
-                                  <div style={styles.componentExplainer}>
-                                    <h4 style={styles.componentExplainerTitle}>What Each Component Measures</h4>
-                                    <div style={styles.componentExplainerList}>
-                                      <div style={styles.componentExplainerItem}>
-                                        <div style={{...styles.componentDot, backgroundColor: '#0052CC'}} />
-                                        <div><strong>Current State</strong>: How your indicators compare to peers right now</div>
-                                      </div>
-                                      <div style={styles.componentExplainerItem}>
-                                        <div style={{...styles.componentDot, backgroundColor: '#36B37E'}} />
-                                        <div><strong>Trajectory</strong>: Whether you're improving, stable, or declining over time</div>
-                                      </div>
-                                      <div style={styles.componentExplainerItem}>
-                                        <div style={{...styles.componentDot, backgroundColor: '#6554C0'}} />
-                                        <div><strong>Peer Growth</strong>: How your improvement rate compares to similar teams</div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                  <div style={styles.categoriesSection}>
-                                    <h4 style={styles.categoriesSectionTitle}>Indicators in This Dimension</h4>
-                                    <div style={styles.categoriesList}>
-                                      {dimension.categories.map((cat, idx) => (
-                                        <div key={idx} style={styles.categoryItem}>
-                                          <span style={styles.categoryName}>{cat.name}</span>
-                                          <span style={styles.categoryCount}>{cat.indicators.length} indicators</span>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                  <div style={styles.scaleReference}>
-                                    <h4 style={styles.scaleReferenceTitle}>Health Score Categories</h4>
-                                    <div style={styles.scaleReferenceBar}>
-                                      {[...CHS_CATEGORIES].reverse().map(cat => (
-                                        <div key={cat.category} style={{...styles.scaleRefSegment, backgroundColor: cat.color}}>
-                                          <span>{cat.min}-{cat.max === 101 ? 100 : cat.max}</span>
-                                          <span>{cat.shortLabel}</span>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                </div>
-                              </CalculationButton>
-
-                              {/* LEFT: Score with hover breakdown */}
-                              <div style={styles.scoreSection}>
-                                <div
-                                  style={styles.scoreRingWrapper}
-                                  onMouseEnter={() => setShowBreakdown(true)}
-                                  onMouseLeave={() => setShowBreakdown(false)}
-                                >
-                                  <svg width="180" height="180" viewBox="0 0 180 180">
-                                    <circle cx="90" cy="90" r="75" fill="none" stroke="#E4E6EB" strokeWidth="16" />
-                                    <circle
-                                      cx="90" cy="90" r="75" fill="none"
-                                      stroke={tier.color} strokeWidth="16" strokeLinecap="round"
-                                      strokeDasharray={2 * Math.PI * 75}
-                                      strokeDashoffset={2 * Math.PI * 75 * (1 - healthScore / 100)}
-                                      transform="rotate(-90 90 90)"
-                                      style={{ transition: 'stroke-dashoffset 0.5s ease' }}
-                                    />
-                                  </svg>
-                                  <div style={styles.scoreCenter}>
-                                    <span style={styles.scoreBig}>{healthScore}</span>
-                                    <span style={styles.scoreOf100}>/100</span>
-                                  </div>
-
-                                  {/* Hover breakdown tooltip */}
-                                  {showBreakdown && (
-                                    <div style={styles.breakdownTooltip}>
-                                      <div style={styles.breakdownTitle}>Score Breakdown</div>
-                                      <div style={styles.breakdownRow}>
-                                        <span style={{...styles.breakdownDot, backgroundColor: '#0052CC'}} />
-                                        <span style={styles.breakdownLabel}>Current State</span>
-                                        <span style={styles.breakdownCalc}>{cssScore} × 50%</span>
-                                        <span style={styles.breakdownValue}>= {cssContribution}</span>
-                                      </div>
-                                      <div style={{...styles.breakdownRow, opacity: componentsAvailable.trs ? 1 : 0.5}}>
-                                        <span style={{...styles.breakdownDot, backgroundColor: '#36B37E'}} />
-                                        <span style={styles.breakdownLabel}>Trajectory</span>
-                                        <span style={styles.breakdownCalc}>{trsScore ?? '—'} × 35%</span>
-                                        <span style={styles.breakdownValue}>= {componentsAvailable.trs ? trsContribution : '—'}</span>
-                                      </div>
-                                      <div style={{...styles.breakdownRow, opacity: componentsAvailable.pgs ? 1 : 0.5}}>
-                                        <span style={{...styles.breakdownDot, backgroundColor: '#6554C0'}} />
-                                        <span style={styles.breakdownLabel}>Peer Growth</span>
-                                        <span style={styles.breakdownCalc}>{pgsScore ?? '—'} × 15%</span>
-                                        <span style={styles.breakdownValue}>= {componentsAvailable.pgs ? pgsContribution : '—'}</span>
-                                      </div>
-                                      <div style={styles.breakdownTotal}>
-                                        <span>Total</span>
-                                        <span style={{color: tier.color, fontWeight: 700}}>{healthScore}</span>
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-
-                                <div style={{
-                                  ...styles.ratingPill,
-                                  backgroundColor: tier.bgColor,
-                                  color: tier.color,
-                                  borderColor: tier.borderColor || tier.color,
-                                }}>
-                                  {tier.name} Health
-                                </div>
-                                <span style={styles.hoverHint}>Hover for breakdown</span>
+                            <>
+                              <div style={styles.heroScoreBlock}>
+                                <span style={{...styles.heroBigNumber, color: tier.color}}>{healthScore}</span>
+                                <span style={styles.heroBigDenom}>/100</span>
                               </div>
 
-                              {/* Vertical Divider */}
-                              <div style={styles.verticalDivider} />
-
-                              {/* RIGHT: Precision with CI visualization */}
-                              <div style={styles.precisionSection}>
-                                <span style={styles.sectionTitleSmall}>PRECISION</span>
-
-                                <div style={{
-                                  ...styles.precisionBadgeLarge,
-                                  backgroundColor: precision.bgColor,
-                                  borderColor: precision.color,
-                                }}>
-                                  <span style={{...styles.precisionDotLarge, backgroundColor: precision.color}} />
-                                  <span style={{...styles.precisionLabelLarge, color: precision.color}}>{precision.label}</span>
-                                </div>
-
-                                {/* CI Visualization */}
-                                <div style={styles.ciContainer}>
-                                  <div style={styles.ciBar}>
-                                    <div style={styles.ciScaleMarkers}>
-                                      <span>0</span>
-                                      <span>50</span>
-                                      <span>100</span>
-                                    </div>
-                                    <div style={styles.ciTrackBar}>
-                                      <div style={{
-                                        ...styles.ciRangeBar,
-                                        left: `${ciLower}%`,
-                                        width: `${ciUpper - ciLower}%`,
-                                        backgroundColor: `${precision.color}25`,
-                                        borderColor: precision.color,
-                                      }} />
-                                      <div style={{
-                                        ...styles.ciScoreMarker,
-                                        left: `${healthScore}%`,
-                                        backgroundColor: tier.color,
-                                      }} />
-                                    </div>
-                                  </div>
-                                  {/* CI range display - centered, non-overlapping */}
-                                  <div style={styles.ciRangeDisplay}>
-                                    <span style={styles.ciRangeValue}>{ciLower}</span>
-                                    <span style={styles.ciRangeSeparator}>—</span>
-                                    <span style={{...styles.ciRangeValue, fontWeight: 700, color: tier.color}}>{healthScore}</span>
-                                    <span style={styles.ciRangeSeparator}>—</span>
-                                    <span style={styles.ciRangeValue}>{ciUpper}</span>
-                                  </div>
-                                  <div style={styles.ciCaption}>90% confidence interval</div>
-                                </div>
-
-                                <p style={styles.precisionText}>
-                                  {precision.explanation}
-                                </p>
+                              {/* Category + trend */}
+                              <div style={styles.heroMetaRow}>
+                                <span style={{...styles.heroCategoryPill, backgroundColor: `${tier.color}30`, color: tier.color, border: `1.5px solid ${tier.color}60`}}>
+                                  {tier.name}
+                                </span>
+                                <span style={styles.heroMetaDot}>·</span>
+                                <span style={{...styles.heroTrend, color: trendColor}}>
+                                  <span style={styles.heroTrendIcon}>{trendIcon}</span> {trendLabel}
+                                </span>
                               </div>
-                            </div>
+                            </>
                           );
                         })()}
-                      </div>
-                    </div>
 
-                    {/* Influences: Outcomes this dimension affects - placed below hero for consistent hero height */}
-                    {(() => {
-                      const influencedOutcomes = getOutcomesForDimension(dimension.dimensionKey);
-                      if (influencedOutcomes.length === 0) return null;
-                      return (
-                        <div style={styles.influencesSectionOutside}>
-                          <span style={styles.influencesLabelOutside}>This dimension influences:</span>
-                          <div style={styles.influencesChipsOutside}>
-                            {influencedOutcomes.map(({ outcome }) => (
-                              <button
-                                key={outcome.id}
-                                style={styles.influenceChipOutside}
-                                title={outcome.question}
-                                onClick={() => {
-                                  if (onOutcomeClick) {
-                                    onOutcomeClick(outcome.id as OutcomeAreaId);
-                                  }
-                                }}
-                                onMouseEnter={(e) => {
-                                  e.currentTarget.style.backgroundColor = '#DEEBFF';
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.backgroundColor = '#F4F5F7';
-                                }}
-                              >
-                                <span style={styles.influenceChipIconOutside}>
-                                  {getOutcomeIcon(outcome.id, 'small', '#0052CC')}
+                        {/* Description */}
+                        <p style={styles.heroDescription}>
+                          {dimDesc?.summary || `Analysis of ${dimension.dimensionName} across your team's Jira data.`}
+                        </p>
+
+                        {/* Indicator stats panels */}
+                        <div style={styles.heroStatsRow}>
+                          <div style={{...styles.heroPanel, flex: 3}}>
+                            <div style={styles.heroPanelHeader}>
+                              <span style={styles.heroPanelLabel}>INDICATOR HEALTH</span>
+                              <span style={styles.heroPanelCount}>{allIndicators.length} indicators</span>
+                            </div>
+                            <div style={styles.heroStackedBar}>
+                              {tierSegments.map(({ tier: t, count }) => (
+                                <div
+                                  key={t.level}
+                                  style={{
+                                    flex: count,
+                                    backgroundColor: t.color,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontSize: '12px',
+                                    fontWeight: 700,
+                                    color: '#fff',
+                                    minWidth: count > 0 ? '28px' : 0,
+                                  }}
+                                  title={`${count} ${t.name}`}
+                                >
+                                  {count}
+                                </div>
+                              ))}
+                            </div>
+                            <div style={styles.heroLegendRow}>
+                              {tierSegments.map(({ tier: t }) => (
+                                <span key={t.level} style={styles.heroLegendItem}>
+                                  <span style={{...styles.heroLegendDot, backgroundColor: t.color}} />
+                                  {t.name}
                                 </span>
-                                <span style={styles.influenceChipTextOutside}>{outcome.shortName}</span>
-                              </button>
-                            ))}
+                              ))}
+                            </div>
+                          </div>
+
+                          <div style={{...styles.heroPanel, flex: 2}}>
+                            <div style={styles.heroPanelHeader}>
+                              <span style={styles.heroPanelLabel}>TREND MOVEMENT</span>
+                            </div>
+                            <div style={styles.heroTrendStats}>
+                              <div style={styles.heroTrendItem}>
+                                <span style={{...styles.heroTrendArrow, color: '#4ADE80'}}>↑</span>
+                                <span style={styles.heroTrendCount}>{improved}</span>
+                                <span style={styles.heroTrendLabel}>improved</span>
+                              </div>
+                              <div style={styles.heroTrendItem}>
+                                <span style={{...styles.heroTrendArrow, color: '#FB7185'}}>↓</span>
+                                <span style={styles.heroTrendCount}>{declined}</span>
+                                <span style={styles.heroTrendLabel}>declined</span>
+                              </div>
+                              <div style={styles.heroTrendItem}>
+                                <span style={{...styles.heroTrendArrow, color: '#6B778C'}}>→</span>
+                                <span style={styles.heroTrendCount}>{stable}</span>
+                                <span style={styles.heroTrendLabel}>stable</span>
+                              </div>
+                            </div>
                           </div>
                         </div>
-                      );
-                    })()}
+                      </div>
+                    </div>
 
                     {/* How You Compare Section */}
                     <section style={styles.spectrumSection}>
@@ -1061,353 +790,59 @@ const AssessmentResultsLayout: React.FC<AssessmentResultsLayoutProps> = ({
                       </div>
                     </section>
 
-                    {/* Indicator Stats Summary Section */}
-                    <section style={styles.statsSection}>
-                      <h2 style={styles.statsSectionTitle}>Indicators Overview</h2>
-
-                      <div style={styles.statsSummaryBar}>
-                        {/* Indicator Health */}
-                        <div style={styles.statsPanel}>
-                          <div style={styles.statsPanelHeader}>
-                            <span style={styles.statsPanelLabel}>Indicator Health</span>
-                            <span style={styles.statsPanelValue}>{allIndicators.length} indicators</span>
-                          </div>
-                          <div style={styles.stackedBar}>
-                            {tierSegments.map(({ tier: t, count }) => (
-                              <div
-                                key={t.level}
-                                style={{
-                                  ...styles.barSegment,
-                                  flex: count,
-                                  backgroundColor: t.color,
-                                }}
-                                title={`${count} ${t.name}`}
-                              >
-                                <span style={styles.segmentCount}>{count}</span>
-                              </div>
-                            ))}
-                          </div>
-                          <div style={styles.legendRow}>
-                            {tierSegments.map(({ tier: t }) => (
-                              <span key={t.level} style={styles.legendItem}>
-                                <span style={{ ...styles.legendDot, backgroundColor: t.color }} />
-                                <span style={styles.legendText}>{t.name}</span>
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-
-                        <div style={styles.statsDivider} />
-
-                        {/* Trend Movement */}
-                        <div style={styles.statsPanel}>
-                          <div style={styles.statsPanelHeader}>
-                            <span style={styles.statsPanelLabel}>Trend Movement</span>
-                          </div>
-                          <div style={styles.trendStats}>
-                            <div style={styles.trendItem}>
-                              <span style={{ ...styles.trendIcon, color: '#36B37E' }}>↑</span>
-                              <span style={styles.trendCount}>{improved}</span>
-                              <span style={styles.trendLabel}>improved</span>
-                            </div>
-                            <div style={styles.trendItem}>
-                              <span style={{ ...styles.trendIcon, color: '#DE350B' }}>↓</span>
-                              <span style={styles.trendCount}>{declined}</span>
-                              <span style={styles.trendLabel}>declined</span>
-                            </div>
-                            <div style={styles.trendItem}>
-                              <span style={{ ...styles.trendIcon, color: '#6B778C' }}>→</span>
-                              <span style={styles.trendCount}>{stable}</span>
-                              <span style={styles.trendLabel}>stable</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div style={styles.statsDivider} />
-
-                        {/* Attention Needed */}
-                        <div style={styles.statsPanel}>
-                          <div style={styles.statsPanelHeader}>
-                            <span style={styles.statsPanelLabel}>Categories</span>
-                            <span style={styles.statsPanelValue}>{dimension.categories.length} total</span>
-                          </div>
-                          <div style={styles.indicatorStatsRow}>
-                            <span style={{
-                              ...styles.attentionCount,
-                              color: needingAttention > 0 ? '#DE350B' : '#36B37E',
-                            }}>
-                              {needingAttention}
-                            </span>
-                            <span style={styles.attentionLabel}>need attention ({attentionPct}%)</span>
-                          </div>
-                          <div style={styles.indicatorTrends}>
-                            <span style={{ ...styles.miniTrend, color: '#36B37E' }}>↑{improved}</span>
-                            <span style={{ ...styles.miniTrend, color: '#DE350B' }}>↓{declined}</span>
-                            <span style={{ ...styles.miniTrend, color: '#6B778C' }}>→{stable}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </section>
-
+                    {/* Information Health Dimension Detail (Dimension2Results) */}
+                    <div style={styles.dimensionContentSection}>
+                      <Dimension2Results
+                        dimension={assessmentResult.dimensions[INFORMATION_HEALTH_INDEX]}
+                        reportOptions={wizardState.step6}
+                        teamId={assessmentResult.teamId}
+                        dateRange={assessmentResult.dateRange}
+                        similarTeamsCount={assessmentResult.comparisonTeamCount}
+                        onViewSimilarTeams={() => openComparisonModal(INFORMATION_HEALTH_INDEX)}
+                        dimensionIndex={INFORMATION_HEALTH_INDEX}
+                        onIndicatorDrillDown={onIndicatorDrillDown}
+                      />
+                    </div>
                   </>
                 );
               })()}
 
-              {expandedDimension === 0 && assessmentResult.dimensions[0] && (
-                <div style={styles.dimensionContentSection}>
-                  <Dimension1Results
-                    dimension={assessmentResult.dimensions[0]}
-                    reportOptions={wizardState.step6}
-                    teamId={assessmentResult.teamId}
-                    dateRange={assessmentResult.dateRange}
-                    similarTeamsCount={assessmentResult.comparisonTeamCount}
-                    onViewSimilarTeams={() => openComparisonModal(0)}
-                    dimensionIndex={0}
-                    onIndicatorDrillDown={onIndicatorDrillDown}
-                  />
-                </div>
-              )}
+          {/* ═══════════════════════════════════════════════════════════════════
+              IMPROVEMENT PLAN TAB
+          ═══════════════════════════════════════════════════════════════════ */}
+          {activeTab === 'improvement-plan' && (
+            <ImprovementPlanTab
+              assessmentResult={assessmentResult}
+              outcomeConfidence={summaryData.outcomeConfidence}
+              plans={activePlans}
+              selectedPlan={selectedPlan}
+              onSelectPlan={selectPlan}
+              onPlanUpdate={updatePlan}
+              onArchivePlan={archivePlan}
+              onDeletePlan={deletePlan}
+              onCreatePlan={handleOpenPlanWizard}
+              onNavigateToDimension={() => {
+                setActiveTab('assessment-results');
+              }}
+              onOpenPlanDetail={onOpenPlanDetail}
+              newlyCreatedPlanId={newlyCreatedPlanIdFromApp || newlyCreatedPlanId}
+              onClearNewlyCreatedPlan={() => {
+                if (onClearNewlyCreatedPlanFromApp) onClearNewlyCreatedPlanFromApp();
+                clearNewlyCreatedPlan();
+              }}
+            />
+          )}
 
-              {expandedDimension === 1 && assessmentResult.dimensions[1] && (
-                <div style={styles.dimensionContentSection}>
-                  <Dimension2Results
-                    dimension={assessmentResult.dimensions[1]}
-                    reportOptions={wizardState.step6}
-                    teamId={assessmentResult.teamId}
-                    dateRange={assessmentResult.dateRange}
-                    similarTeamsCount={assessmentResult.comparisonTeamCount}
-                    onViewSimilarTeams={() => openComparisonModal(1)}
-                    dimensionIndex={1}
-                    onIndicatorDrillDown={onIndicatorDrillDown}
-                  />
-                </div>
-              )}
-
-              {expandedDimension === 2 && assessmentResult.dimensions[2] && (
-                <div style={styles.dimensionContentSection}>
-                  <Dimension3Results
-                    dimension={assessmentResult.dimensions[2]}
-                    reportOptions={wizardState.step6}
-                    teamId={assessmentResult.teamId}
-                    dateRange={assessmentResult.dateRange}
-                    similarTeamsCount={assessmentResult.comparisonTeamCount}
-                    onViewSimilarTeams={() => openComparisonModal(2)}
-                    dimensionIndex={2}
-                    onIndicatorDrillDown={onIndicatorDrillDown}
-                  />
-                </div>
-              )}
-
-              {expandedDimension === 3 && assessmentResult.dimensions[3] && (
-                <div style={styles.dimensionContentSection}>
-                  <Dimension4Results
-                    dimension={assessmentResult.dimensions[3]}
-                    reportOptions={wizardState.step6}
-                    teamId={assessmentResult.teamId}
-                    dateRange={assessmentResult.dateRange}
-                    similarTeamsCount={assessmentResult.comparisonTeamCount}
-                    onViewSimilarTeams={() => openComparisonModal(3)}
-                    dimensionIndex={3}
-                    onIndicatorDrillDown={onIndicatorDrillDown}
-                  />
-                </div>
-              )}
-
-              {expandedDimension === 4 && assessmentResult.dimensions[4] && (
-                <div style={styles.dimensionContentSection}>
-                  <Dimension5Results
-                    dimension={assessmentResult.dimensions[4]}
-                    reportOptions={wizardState.step6}
-                    teamId={assessmentResult.teamId}
-                    dateRange={assessmentResult.dateRange}
-                    similarTeamsCount={assessmentResult.comparisonTeamCount}
-                    onViewSimilarTeams={() => openComparisonModal(4)}
-                    dimensionIndex={4}
-                    onIndicatorDrillDown={onIndicatorDrillDown}
-                  />
-                </div>
-              )}
-
-              {expandedDimension === 5 && assessmentResult.dimensions[5] && (
-                <div style={styles.dimensionContentSection}>
-                  <Dimension6Results
-                    dimension={assessmentResult.dimensions[5]}
-                    reportOptions={wizardState.step6}
-                    teamId={assessmentResult.teamId}
-                    dateRange={assessmentResult.dateRange}
-                    similarTeamsCount={assessmentResult.comparisonTeamCount}
-                    onViewSimilarTeams={() => openComparisonModal(5)}
-                    dimensionIndex={5}
-                    onIndicatorDrillDown={onIndicatorDrillDown}
-                  />
-                </div>
-              )}
-
-              {expandedDimension === 6 && assessmentResult.dimensions[6] && (
-                <div style={styles.dimensionContentSection}>
-                  <Dimension7Results
-                    dimension={assessmentResult.dimensions[6]}
-                    reportOptions={wizardState.step6}
-                    teamId={assessmentResult.teamId}
-                    dateRange={assessmentResult.dateRange}
-                    similarTeamsCount={assessmentResult.comparisonTeamCount}
-                    onViewSimilarTeams={() => openComparisonModal(6)}
-                    dimensionIndex={6}
-                    onIndicatorDrillDown={onIndicatorDrillDown}
-                  />
-                </div>
-              )}
-
-              {expandedDimension === 7 && assessmentResult.dimensions[7] && (
-                <div style={styles.dimensionContentSection}>
-                  <Dimension8Results
-                    dimension={assessmentResult.dimensions[7]}
-                    reportOptions={wizardState.step6}
-                    teamId={assessmentResult.teamId}
-                    dateRange={assessmentResult.dateRange}
-                    similarTeamsCount={assessmentResult.comparisonTeamCount}
-                    onViewSimilarTeams={() => openComparisonModal(7)}
-                    dimensionIndex={7}
-                    onIndicatorDrillDown={onIndicatorDrillDown}
-                  />
-                </div>
-              )}
-
-              {expandedDimension === 8 && assessmentResult.dimensions[8] && (
-                <div style={styles.dimensionContentSection}>
-                  <Dimension9Results
-                    dimension={assessmentResult.dimensions[8]}
-                    reportOptions={wizardState.step6}
-                    teamId={assessmentResult.teamId}
-                    dateRange={assessmentResult.dateRange}
-                    similarTeamsCount={assessmentResult.comparisonTeamCount}
-                    onViewSimilarTeams={() => openComparisonModal(8)}
-                    dimensionIndex={8}
-                    onIndicatorDrillDown={onIndicatorDrillDown}
-                  />
-                </div>
-              )}
-
-              {expandedDimension === 9 && assessmentResult.dimensions[9] && (
-                <div style={styles.dimensionContentSection}>
-                  <Dimension10Results
-                    dimension={assessmentResult.dimensions[9]}
-                    reportOptions={wizardState.step6}
-                    teamId={assessmentResult.teamId}
-                    dateRange={assessmentResult.dateRange}
-                    similarTeamsCount={assessmentResult.comparisonTeamCount}
-                    onViewSimilarTeams={() => openComparisonModal(9)}
-                    dimensionIndex={9}
-                    onIndicatorDrillDown={onIndicatorDrillDown}
-                  />
-                </div>
-              )}
-
-              {expandedDimension === 10 && assessmentResult.dimensions[10] && (
-                <div style={styles.dimensionContentSection}>
-                  <Dimension11Results
-                    dimension={assessmentResult.dimensions[10]}
-                    reportOptions={wizardState.step6}
-                    teamId={assessmentResult.teamId}
-                    dateRange={assessmentResult.dateRange}
-                    similarTeamsCount={assessmentResult.comparisonTeamCount}
-                    onViewSimilarTeams={() => openComparisonModal(10)}
-                    dimensionIndex={10}
-                    onIndicatorDrillDown={onIndicatorDrillDown}
-                  />
-                </div>
-              )}
-
-              {expandedDimension === 11 && assessmentResult.dimensions[11] && (
-                <div style={styles.dimensionContentSection}>
-                  <Dimension12Results
-                    dimension={assessmentResult.dimensions[11]}
-                    reportOptions={wizardState.step6}
-                    teamId={assessmentResult.teamId}
-                    dateRange={assessmentResult.dateRange}
-                    similarTeamsCount={assessmentResult.comparisonTeamCount}
-                    onViewSimilarTeams={() => openComparisonModal(11)}
-                    dimensionIndex={11}
-                    onIndicatorDrillDown={onIndicatorDrillDown}
-                  />
-                </div>
-              )}
-
-              {expandedDimension === 12 && assessmentResult.dimensions[12] && (
-                <div style={styles.dimensionContentSection}>
-                  <Dimension13Results
-                    dimension={assessmentResult.dimensions[12]}
-                    reportOptions={wizardState.step6}
-                    teamId={assessmentResult.teamId}
-                    dateRange={assessmentResult.dateRange}
-                    similarTeamsCount={assessmentResult.comparisonTeamCount}
-                    onViewSimilarTeams={() => openComparisonModal(12)}
-                    dimensionIndex={12}
-                    onIndicatorDrillDown={onIndicatorDrillDown}
-                  />
-                </div>
-              )}
-
-              {expandedDimension === 13 && assessmentResult.dimensions[13] && (
-                <div style={styles.dimensionContentSection}>
-                  <Dimension14Results
-                    dimension={assessmentResult.dimensions[13]}
-                    reportOptions={wizardState.step6}
-                    teamId={assessmentResult.teamId}
-                    dateRange={assessmentResult.dateRange}
-                    similarTeamsCount={assessmentResult.comparisonTeamCount}
-                    onViewSimilarTeams={() => openComparisonModal(13)}
-                    dimensionIndex={13}
-                    onIndicatorDrillDown={onIndicatorDrillDown}
-                  />
-                </div>
-              )}
-
-              {expandedDimension === 14 && assessmentResult.dimensions[14] && (
-                <div style={styles.dimensionContentSection}>
-                  <Dimension15Results
-                    dimension={assessmentResult.dimensions[14]}
-                    reportOptions={wizardState.step6}
-                    teamId={assessmentResult.teamId}
-                    dateRange={assessmentResult.dateRange}
-                    similarTeamsCount={assessmentResult.comparisonTeamCount}
-                    onViewSimilarTeams={() => openComparisonModal(14)}
-                    dimensionIndex={14}
-                    onIndicatorDrillDown={onIndicatorDrillDown}
-                  />
-                </div>
-              )}
-
-              {expandedDimension === 15 && assessmentResult.dimensions[15] && (
-                <div style={styles.dimensionContentSection}>
-                  <Dimension16Results
-                    dimension={assessmentResult.dimensions[15]}
-                    reportOptions={wizardState.step6}
-                    teamId={assessmentResult.teamId}
-                    dateRange={assessmentResult.dateRange}
-                    similarTeamsCount={assessmentResult.comparisonTeamCount}
-                    onViewSimilarTeams={() => openComparisonModal(15)}
-                    dimensionIndex={15}
-                    onIndicatorDrillDown={onIndicatorDrillDown}
-                  />
-                </div>
-              )}
-
-              {expandedDimension === 16 && assessmentResult.dimensions[16] && (
-                <div style={styles.dimensionContentSection}>
-                  <Dimension17Results
-                    dimension={assessmentResult.dimensions[16]}
-                    reportOptions={wizardState.step6}
-                    teamId={assessmentResult.teamId}
-                    dateRange={assessmentResult.dateRange}
-                    similarTeamsCount={assessmentResult.comparisonTeamCount}
-                    onViewSimilarTeams={() => openComparisonModal(16)}
-                    dimensionIndex={16}
-                    onIndicatorDrillDown={onIndicatorDrillDown}
-                  />
-                </div>
-              )}
-            </>
+          {/* ═══════════════════════════════════════════════════════════════════
+              REPORTS TAB
+          ═══════════════════════════════════════════════════════════════════ */}
+          {activeTab === 'reports' && (
+            <AssessmentReportsTab
+              assessmentResult={assessmentResult}
+              onNavigateToDimension={() => {
+                setActiveTab('assessment-results');
+              }}
+            />
           )}
 
           {/* Footer Note */}
@@ -1601,6 +1036,38 @@ const styles: Record<string, React.CSSProperties> = {
     maxWidth: '1200px',
     margin: '0 auto',
   },
+  // Top-level tabs
+  topTabsContainer: {
+    display: 'flex',
+    justifyContent: 'center',
+    marginBottom: '24px',
+  },
+  topTabs: {
+    display: 'flex',
+    gap: '4px',
+    backgroundColor: '#F4F5F7',
+    borderRadius: '8px',
+    padding: '4px',
+  },
+  topTabButton: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '10px 16px',
+    border: 'none',
+    backgroundColor: 'transparent',
+    borderRadius: '6px',
+    fontSize: '14px',
+    fontWeight: 500,
+    color: '#6B778C',
+    cursor: 'pointer',
+    transition: 'all 0.15s ease',
+  } as React.CSSProperties,
+  topTabButtonActive: {
+    backgroundColor: '#FFFFFF',
+    color: '#172B4D',
+    boxShadow: '0 1px 3px rgba(9, 30, 66, 0.12)',
+  },
   fullWidthContent: {
     width: '100%',
   },
@@ -1696,37 +1163,191 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '14px',
     color: '#5E6C84',
   },
-  // Blue Gradient Banner Styles (matching HealthScoreHero)
+  // Hero Banner — dark premium design
   dimensionBlueBanner: {
-    background: 'linear-gradient(135deg, #0052CC 0%, #0065FF 100%)',
-    padding: '32px 24px 48px',
-    borderRadius: '12px',
+    background: '#FFFFFF',
+    padding: '36px 48px 40px',
+    borderRadius: '16px',
     marginBottom: '24px',
     position: 'relative' as const,
+    overflow: 'hidden' as const,
+    border: '1px solid #E2E8F0',
   },
-  // Page Type Label
-  pageTypeLabel: {
+  heroBgPattern: {
+    position: 'absolute' as const,
+    inset: 0,
+    opacity: 0.03,
+    backgroundImage: 'radial-gradient(rgba(255,255,255,0.8) 1px, transparent 1px)',
+    backgroundSize: '24px 24px',
+    pointerEvents: 'none' as const,
+  },
+  heroAmbientGlow: {
+    position: 'absolute' as const,
+    top: '-30%',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    width: '80%',
+    height: '160%',
+    pointerEvents: 'none' as const,
+    opacity: 0.5,
+  },
+  heroCenterFlow: {
+    position: 'relative' as const,
+    zIndex: 1,
+    display: 'flex',
+    flexDirection: 'column' as const,
+    alignItems: 'center',
+    textAlign: 'center' as const,
+  },
+  heroTitleRow: {
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
-    marginBottom: '16px',
+    marginBottom: '8px',
+  },
+  heroSubtitle: {
+    fontSize: '14px',
+    fontWeight: 600,
+    color: '#6B778C',
+    letterSpacing: '0.5px',
+    textTransform: 'uppercase' as const,
+  },
+  heroScoreBlock: {
+    display: 'flex',
+    alignItems: 'baseline',
+  },
+  heroMetaRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    marginTop: '10px',
+  },
+  heroMetaDot: {
+    color: '#C1C7D0',
+    fontSize: '16px',
+  },
+  heroDescription: {
+    margin: '16px 0 0',
+    fontSize: '14px',
+    color: '#6B778C',
+    lineHeight: 1.5,
+    maxWidth: '440px',
+  },
+  // Hero stats panels — indicator health + trends
+  heroStatsRow: {
+    display: 'flex',
+    gap: '12px',
+    marginTop: '28px',
+    width: '100%',
+  },
+  heroPanel: {
+    padding: '14px 16px',
+    backgroundColor: '#F4F5F7',
+    borderRadius: '10px',
+    border: '1px solid #EBECF0',
+  },
+  heroPanelHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '10px',
+  },
+  heroPanelLabel: {
+    fontSize: '10px',
+    fontWeight: 600,
+    color: '#6B778C',
+    letterSpacing: '0.8px',
+  },
+  heroPanelCount: {
+    fontSize: '11px',
+    color: '#97A0AF',
+  },
+  heroStackedBar: {
+    display: 'flex',
+    height: '26px',
+    borderRadius: '6px',
+    overflow: 'hidden' as const,
+    gap: '2px',
+  },
+  heroLegendRow: {
+    display: 'flex',
+    gap: '10px',
+    marginTop: '8px',
+    flexWrap: 'wrap' as const,
+  },
+  heroLegendItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    fontSize: '10px',
+    color: '#6B778C',
+  },
+  heroLegendDot: {
+    width: '6px',
+    height: '6px',
+    borderRadius: '50%',
+    flexShrink: 0,
+  },
+  heroTrendStats: {
+    display: 'flex',
+    gap: '16px',
+    alignItems: 'center',
+  },
+  heroTrendItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+  },
+  heroTrendArrow: {
+    fontSize: '14px',
+    fontWeight: 700,
+    width: '16px',
+    textAlign: 'center' as const,
+  },
+  heroTrendCount: {
+    fontSize: '18px',
+    fontWeight: 700,
+    color: '#172B4D',
+    minWidth: '20px',
+  },
+  heroTrendLabel: {
+    fontSize: '12px',
+    color: '#6B778C',
+  },
+  // Page Type Label — breadcrumb style
+  pageTypeLabel: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    marginBottom: '20px',
   },
   pageTypeIcon: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+    opacity: 0.5,
   },
   pageTypeLabelText: {
     fontSize: '11px',
-    fontWeight: 600,
-    color: 'rgba(255, 255, 255, 0.85)',
+    fontWeight: 500,
+    color: 'rgba(255, 255, 255, 0.4)',
     textTransform: 'uppercase' as const,
-    letterSpacing: '1px',
+    letterSpacing: '1.5px',
   },
-  heroInfoButtonContainer: {
-    position: 'absolute' as const,
-    top: '16px',
-    right: '16px',
+  pageTypeSep: {
+    fontSize: '11px',
+    color: 'rgba(255, 255, 255, 0.2)',
+    margin: '0 2px',
+  },
+  pageTypeDimName: {
+    fontSize: '11px',
+    fontWeight: 600,
+    color: 'rgba(255, 255, 255, 0.65)',
+    textTransform: 'uppercase' as const,
+    letterSpacing: '1.5px',
+  },
+  heroInfoInline: {
+    display: 'inline',
   },
   blueBannerContent: {
     maxWidth: '800px',
@@ -1734,20 +1355,19 @@ const styles: Record<string, React.CSSProperties> = {
     textAlign: 'center' as const,
   },
   blueBannerQuestion: {
-    margin: '0 0 12px 0',
-    fontSize: '28px',
-    fontWeight: 600,
-    color: 'white',
-    lineHeight: 1.3,
+    margin: '0 0 14px 0',
+    fontSize: '34px',
+    fontWeight: 700,
+    color: '#F1F5F9',
+    lineHeight: 1.25,
+    letterSpacing: '-0.5px',
   },
   blueBannerDescription: {
-    margin: '0 0 24px 0',
+    margin: 0,
     fontSize: '15px',
-    color: 'rgba(255, 255, 255, 0.85)',
-    lineHeight: 1.5,
-    maxWidth: '600px',
-    marginLeft: 'auto',
-    marginRight: 'auto',
+    color: 'rgba(255, 255, 255, 0.58)',
+    lineHeight: 1.6,
+    maxWidth: '480px',
   },
   // Unified Metrics Card
   unifiedMetricsCard: {
@@ -2474,242 +2094,199 @@ const styles: Record<string, React.CSSProperties> = {
     gridTemplateColumns: 'repeat(3, 1fr)',
     gap: '16px',
   },
-  // Redesigned Hero Card - 2 columns with score and precision
-  heroCard: {
-    position: 'relative',
-    display: 'flex',
-    alignItems: 'stretch',
-    backgroundColor: 'white',
-    borderRadius: '16px',
-    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
-    width: '100%',
-    maxWidth: '700px',
-    margin: '0 auto',
-    overflow: 'visible',
+  // Hero big score — giant centered number
+  heroBigNumber: {
+    fontSize: '96px',
+    fontWeight: 800,
+    lineHeight: 1,
+    letterSpacing: '-4px',
   },
-
-  // LEFT SECTION: Score with hover breakdown
-  scoreSection: {
-    flex: 1,
+  heroBigDenom: {
+    fontSize: '28px',
+    fontWeight: 500,
+    color: '#97A0AF',
+    marginLeft: '4px',
+    alignSelf: 'baseline',
+  },
+  heroScore: {
     display: 'flex',
-    flexDirection: 'column',
+    flexDirection: 'column' as const,
+    alignItems: 'center',
+    gap: '12px',
+  } as React.CSSProperties,
+
+  // Score ring — large with glow
+  scoreRing: {
+    position: 'relative' as const,
+    width: '168px',
+    height: '168px',
+    display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: '32px 40px',
-  },
-  scoreRingWrapper: {
-    position: 'relative',
     cursor: 'pointer',
-    marginBottom: '16px',
   },
-  scoreCenter: {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    transform: 'translate(-50%, -50%)',
-    textAlign: 'center',
-  },
-  scoreBig: {
+  scoreArc: {
+    position: 'absolute' as const,
+    inset: 0,
+    width: '100%',
+    height: '100%',
+  } as React.CSSProperties,
+  scoreNumber: {
+    position: 'relative' as const,
     fontSize: '48px',
-    fontWeight: 700,
-    color: '#172B4D',
+    fontWeight: 800,
     lineHeight: 1,
-    display: 'block',
-  },
-  scoreOf100: {
-    fontSize: '16px',
-    fontWeight: 500,
-    color: '#6B778C',
-  },
-  ratingPill: {
-    fontSize: '13px',
-    fontWeight: 600,
-    padding: '6px 16px',
-    borderRadius: '20px',
-    border: '1px solid',
-    letterSpacing: '0.3px',
-    marginBottom: '8px',
-  },
-  hoverHint: {
-    fontSize: '11px',
-    color: '#97A0AF',
-    fontStyle: 'italic',
+    letterSpacing: '-2px',
+    color: '#F8FAFC',
+    fontFeatureSettings: "'tnum'" as any,
+    zIndex: 1,
   },
 
+  // Category pill — ghost style with stronger fill
+  heroCategoryPill: {
+    display: 'inline-block',
+    padding: '5px 14px',
+    borderRadius: '8px',
+    fontSize: '12px',
+    fontWeight: 700,
+    letterSpacing: '0.4px',
+    textTransform: 'uppercase' as const,
+  } as React.CSSProperties,
+  // Trend — colored and readable
+  heroTrend: {
+    fontSize: '13px',
+    fontWeight: 600,
+    letterSpacing: '0.2px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+  } as React.CSSProperties,
+  heroTrendIcon: {
+    fontSize: '15px',
+  },
+
+  // Key Signals section (relocated from hero)
+  keySignalsSection: {
+    marginBottom: '24px',
+  },
+  keySignalsSectionTitle: {
+    margin: '0 0 12px 0',
+    fontSize: '16px',
+    fontWeight: 600,
+    color: '#172B4D',
+  },
+  keySignalsRow: {
+    display: 'flex',
+    gap: '16px',
+  },
+  keySignalCard: {
+    flex: 1,
+    padding: '16px 20px',
+    borderRadius: '12px',
+    border: '1px solid #E4E6EB',
+    backgroundColor: '#FFFFFF',
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: '8px',
+  },
+  keySignalName: {
+    fontSize: '13px',
+    fontWeight: 500,
+    color: '#6B778C',
+    lineHeight: 1.3,
+  },
+  keySignalValueRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+  },
+  keySignalValue: {
+    fontSize: '24px',
+    fontWeight: 700,
+    color: '#172B4D',
+    lineHeight: 1.2,
+  },
+  keySignalBenchmark: {
+    fontSize: '12px',
+    fontWeight: 500,
+    color: '#8993A4',
+  },
   // Breakdown tooltip on hover
   breakdownTooltip: {
     position: 'absolute',
     top: '100%',
     left: '50%',
     transform: 'translateX(-50%)',
-    marginTop: '12px',
-    backgroundColor: 'white',
+    marginTop: '16px',
+    backgroundColor: '#1E293B',
     borderRadius: '12px',
-    boxShadow: '0 8px 24px rgba(9, 30, 66, 0.25)',
-    border: '1px solid #E4E6EB',
-    padding: '16px',
-    minWidth: '280px',
+    boxShadow: '0 12px 40px rgba(0, 0, 0, 0.5)',
+    border: '1px solid rgba(255, 255, 255, 0.08)',
+    padding: '18px',
+    minWidth: '290px',
     zIndex: 100,
+    backdropFilter: 'blur(12px)',
   },
   breakdownTitle: {
-    fontSize: '12px',
+    fontSize: '11px',
     fontWeight: 600,
-    color: '#172B4D',
-    marginBottom: '12px',
+    color: 'rgba(255, 255, 255, 0.5)',
+    marginBottom: '14px',
     textTransform: 'uppercase',
-    letterSpacing: '0.5px',
+    letterSpacing: '1px',
   },
   breakdownRow: {
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
-    marginBottom: '8px',
+    marginBottom: '10px',
     fontSize: '13px',
   },
   breakdownDot: {
     width: '8px',
     height: '8px',
-    borderRadius: '50%',
+    borderRadius: '3px',
     flexShrink: 0,
   },
   breakdownLabel: {
     flex: 1,
-    color: '#42526E',
+    color: '#CBD5E1',
   },
   breakdownCalc: {
-    color: '#97A0AF',
+    color: '#64748B',
     fontSize: '12px',
   },
   breakdownValue: {
     fontWeight: 600,
-    color: '#172B4D',
+    color: '#F1F5F9',
     minWidth: '36px',
     textAlign: 'right' as const,
   },
   breakdownTotal: {
     display: 'flex',
     justifyContent: 'space-between',
-    paddingTop: '10px',
+    paddingTop: '12px',
     marginTop: '4px',
-    borderTop: '1px solid #E4E6EB',
+    borderTop: '1px solid rgba(255, 255, 255, 0.08)',
     fontSize: '14px',
     fontWeight: 600,
+    color: '#F1F5F9',
   },
 
-  // VERTICAL DIVIDER
+  // Legacy stubs (no longer used in hero)
   verticalDivider: {
-    width: '1px',
-    backgroundColor: '#EBECF0',
-    margin: '20px 0',
+    display: 'none',
   },
-
-  // RIGHT SECTION: Precision with CI visualization
-  precisionSection: {
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    padding: '28px 32px',
-    backgroundColor: '#FAFBFC',
-    borderTopRightRadius: '16px',
-    borderBottomRightRadius: '16px',
-  },
-  sectionTitleSmall: {
-    fontSize: '10px',
-    fontWeight: 600,
-    color: '#6B778C',
-    letterSpacing: '0.8px',
-    textTransform: 'uppercase',
-    marginBottom: '16px',
-  },
-  precisionBadgeLarge: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '8px 16px',
-    borderRadius: '8px',
-    border: '1px solid',
-    marginBottom: '20px',
-  },
-  precisionDotLarge: {
-    width: '10px',
-    height: '10px',
-    borderRadius: '50%',
-  },
-  precisionLabelLarge: {
-    fontSize: '16px',
-    fontWeight: 600,
-  },
-  precisionText: {
-    fontSize: '12px',
-    color: '#6B778C',
-    textAlign: 'center',
-    lineHeight: 1.5,
-    margin: '16px 0 0 0',
-    maxWidth: '240px',
-  },
-
-  // CI Visualization
-  ciContainer: {
-    width: '100%',
-    maxWidth: '240px',
-  },
-  ciBar: {
-    position: 'relative',
-    paddingTop: '16px',
-    paddingBottom: '24px',
-  },
-  ciScaleMarkers: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    fontSize: '9px',
-    color: '#97A0AF',
-    marginBottom: '4px',
-  },
-  ciTrackBar: {
-    position: 'relative',
-    height: '12px',
-    backgroundColor: '#E4E6EB',
-    borderRadius: '6px',
-  },
-  ciRangeBar: {
-    position: 'absolute',
-    top: '0',
-    bottom: '0',
-    borderRadius: '6px',
-    border: '2px solid',
-  },
-  ciScoreMarker: {
-    position: 'absolute',
-    top: '-4px',
-    width: '6px',
-    height: '20px',
-    borderRadius: '3px',
-    transform: 'translateX(-50%)',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-  },
-  ciRangeDisplay: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '8px',
-    marginTop: '8px',
-  },
-  ciRangeValue: {
-    fontSize: '13px',
-    color: '#6B778C',
-    fontWeight: 500,
-  },
-  ciRangeSeparator: {
-    fontSize: '12px',
-    color: '#C1C7D0',
-  },
-  ciCaption: {
-    fontSize: '10px',
-    color: '#97A0AF',
-    textAlign: 'center',
-    marginTop: '4px',
-  },
+  heroStatsSection: {
+    display: 'none',
+  } as React.CSSProperties,
+  // Legacy signal styles (kept for backward compat)
+  signalName: { fontSize: '13px', fontWeight: 500, color: '#6B778C' },
+  signalValueRow: { display: 'flex', alignItems: 'center', gap: '10px' },
+  signalValue: { fontSize: '24px', fontWeight: 700, color: '#172B4D' },
+  signalTrend: { fontSize: '12px', fontWeight: 600 },
+  signalBenchmark: { fontSize: '12px', fontWeight: 600 },
+  signalNoData: { fontSize: '13px', color: '#B3BAC5', fontStyle: 'italic' },
 
   // Formula styles for modal
   formulaSection: {
@@ -3168,6 +2745,39 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '11px',
     fontWeight: 600,
   },
+
+  // Health Categories list (inside info modal)
+  healthCategoriesList: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: '0',
+    marginTop: '12px',
+  } as React.CSSProperties,
+  healthCategoryRow: {
+    padding: '10px 0',
+    borderBottom: '1px solid #F4F5F7',
+  } as React.CSSProperties,
+  healthCategoryHeader: {
+    display: 'flex',
+    alignItems: 'baseline',
+    gap: '8px',
+    marginBottom: '4px',
+  } as React.CSSProperties,
+  healthCategoryName: {
+    fontSize: '14px',
+    fontWeight: 700,
+  } as React.CSSProperties,
+  healthCategoryRange: {
+    fontSize: '12px',
+    fontWeight: 500,
+    color: '#8993A4',
+  } as React.CSSProperties,
+  healthCategoryDesc: {
+    margin: 0,
+    fontSize: '13px',
+    lineHeight: 1.55,
+    color: '#42526E',
+  } as React.CSSProperties,
 
   // CHS Formula Styles
   chsFormulaSection: {

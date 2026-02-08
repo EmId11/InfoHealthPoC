@@ -23,11 +23,11 @@
  * ============================================================================
  *
  * Indicator Tiers (percentile-based for peer comparison):
- * 1. Needs Attention (0-25%) - Bottom quartile, requires focus
- * 2. Below Average (26-50%) - Below median, room for improvement
- * 3. Average (51-75%) - Above median, meeting expectations
- * 4. Good (76-90%) - Top quartile, above average
- * 5. Excellent (91-100%) - Top 10%, exceptional performer
+ * 1. Critical (0-25%) - Bottom quartile, immediate action needed
+ * 2. At Risk (26-50%) - Below median, gaps causing problems
+ * 3. Fair (51-75%) - Above median, basics covered
+ * 4. Healthy (76-90%) - Top quartile, strong practices
+ * 5. Optimal (91-100%) - Top 10%, exemplary hygiene
  */
 
 import type { IndicatorResult } from './assessment';
@@ -35,13 +35,13 @@ import type { IndicatorResult } from './assessment';
 /** Indicator tier level as a numeric value (1-5) */
 export type IndicatorTierLevel = 1 | 2 | 3 | 4 | 5;
 
-/** Human-readable tier names - matches dimension health score labels */
+/** Human-readable tier names - health category labels */
 export type IndicatorTierName =
-  | 'Needs Attention'
-  | 'Below Average'
-  | 'Average'
-  | 'Good'
-  | 'Excellent';
+  | 'Critical'
+  | 'At Risk'
+  | 'Fair'
+  | 'Healthy'
+  | 'Optimal';
 
 /** Configuration for a single indicator tier */
 export interface IndicatorTier {
@@ -63,6 +63,8 @@ export interface IndicatorTier {
   isRisk: boolean;
   /** Short description of what this tier means */
   description: string;
+  /** Full paragraph description of what this tier means */
+  detailedDescription: string;
 }
 
 /**
@@ -73,58 +75,63 @@ export interface IndicatorTier {
 export const INDICATOR_TIERS: readonly IndicatorTier[] = [
   {
     level: 1,
-    name: 'Needs Attention',
+    name: 'Critical',
     minPercentile: 0,
     maxPercentile: 25,
     color: '#DE350B',
     bgColor: '#FFEBE6',
     borderColor: '#FFBDAD',
     isRisk: true,
-    description: 'Below benchmark, requires focus',
+    description: 'Immediate action needed',
+    detailedDescription: 'Most tickets are missing required fields, descriptions, or acceptance criteria. The backlog can\u2019t be relied on for planning or handoffs, and work regularly stalls while people chase down missing context. Immediate action needed.',
   },
   {
     level: 2,
-    name: 'Below Average',
+    name: 'At Risk',
     minPercentile: 26,
     maxPercentile: 50,
     color: '#FF8B00',
     bgColor: '#FFF7ED',
     borderColor: '#FFE380',
     isRisk: false,
-    description: 'Room for improvement',
+    description: 'Gaps causing problems',
+    detailedDescription: 'Key information is present on some tickets but gaps are common enough to cause problems. Stale items are accumulating and field completion is inconsistent. Without intervention, things tend to drift further.',
   },
   {
     level: 3,
-    name: 'Average',
+    name: 'Fair',
     minPercentile: 51,
     maxPercentile: 75,
-    color: '#6B778C',
-    bgColor: '#F4F5F7',
-    borderColor: '#DFE1E6',
+    color: '#2684FF',
+    bgColor: '#DEEBFF',
+    borderColor: '#B3D4FF',
     isRisk: false,
-    description: 'Meeting expectations',
+    description: 'Basics covered, room to improve',
+    detailedDescription: 'Most tickets have the basics covered and work can generally proceed without blockers. There\u2019s room to improve \u2014 descriptions could be richer, stale items cleaned up more regularly, and optional fields used more consistently.',
   },
   {
     level: 4,
-    name: 'Good',
+    name: 'Healthy',
     minPercentile: 76,
     maxPercentile: 90,
     color: '#00875A',
     bgColor: '#E3FCEF',
     borderColor: '#79F2C0',
     isRisk: false,
-    description: 'Above average',
+    description: 'Strong and reliable practices',
+    detailedDescription: 'Tickets are consistently well-populated before work starts, the backlog is actively groomed, and stale items are addressed regularly. Information practices are strong and reliable.',
   },
   {
     level: 5,
-    name: 'Excellent',
+    name: 'Optimal',
     minPercentile: 91,
     maxPercentile: 100,
     color: '#006644',
     bgColor: '#E3FCEF',
     borderColor: '#ABF5D1',
     isRisk: false,
-    description: 'Top performer',
+    description: 'Exemplary hygiene practices',
+    detailedDescription: 'All tracked fields are complete and current. The backlog accurately reflects the state of work, tickets provide clear context for anyone picking them up, and hygiene is maintained as an ongoing practice.',
   },
 ] as const;
 
