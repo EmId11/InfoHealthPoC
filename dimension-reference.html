@@ -1,0 +1,2446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team Health Assessment - Dimension Reference Guide</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            line-height: 1.5;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            color: #172B4D;
+            background: #fff;
+        }
+
+        h1 {
+            color: #0052CC;
+            font-size: 28px;
+            border-bottom: 3px solid #0052CC;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #5E6C84;
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+
+        .toc {
+            background: #F4F5F7;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 40px;
+        }
+
+        .toc h2 {
+            margin-top: 0;
+            color: #172B4D;
+            font-size: 18px;
+        }
+
+        .toc-list {
+            column-count: 2;
+            column-gap: 30px;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .toc-list li {
+            margin-bottom: 8px;
+            break-inside: avoid;
+        }
+
+        .toc-list a {
+            color: #0052CC;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .toc-list a:hover {
+            text-decoration: underline;
+        }
+
+        .dimension {
+            page-break-inside: avoid;
+            margin-bottom: 40px;
+            border: 1px solid #DFE1E6;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .dimension-header {
+            background: linear-gradient(135deg, #0052CC 0%, #0065FF 100%);
+            color: white;
+            padding: 20px;
+        }
+
+        .dimension-number {
+            font-size: 12px;
+            opacity: 0.8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+
+        .dimension-name {
+            font-size: 22px;
+            font-weight: 600;
+            margin: 0 0 8px 0;
+        }
+
+        .dimension-question {
+            font-size: 14px;
+            font-style: italic;
+            opacity: 0.9;
+            margin: 0;
+        }
+
+        .dimension-body {
+            padding: 20px;
+        }
+
+        .dimension-key {
+            display: inline-block;
+            background: #DEEBFF;
+            color: #0747A6;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-family: monospace;
+            margin-bottom: 15px;
+        }
+
+        .indicators-section {
+            margin-top: 20px;
+        }
+
+        .indicators-header {
+            font-size: 14px;
+            font-weight: 600;
+            color: #5E6C84;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #DFE1E6;
+        }
+
+        .indicator {
+            background: #FAFBFC;
+            border: 1px solid #DFE1E6;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 12px;
+        }
+
+        .indicator-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .indicator-name {
+            font-weight: 600;
+            font-size: 14px;
+            color: #172B4D;
+            flex: 1;
+        }
+
+        .indicator-id {
+            font-family: monospace;
+            font-size: 11px;
+            color: #5E6C84;
+            background: #EBECF0;
+            padding: 2px 6px;
+            border-radius: 3px;
+            margin-left: 10px;
+        }
+
+        .indicator-description {
+            font-size: 13px;
+            color: #42526E;
+            margin-bottom: 10px;
+        }
+
+        .indicator-why {
+            font-size: 12px;
+            color: #0747A6;
+            background: #DEEBFF;
+            padding: 8px 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            border-left: 3px solid #0052CC;
+        }
+
+        .indicator-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            font-size: 12px;
+        }
+
+        .metric {
+            background: white;
+            border: 1px solid #DFE1E6;
+            border-radius: 4px;
+            padding: 8px;
+        }
+
+        .metric-label {
+            color: #5E6C84;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            margin-bottom: 3px;
+        }
+
+        .metric-value {
+            font-weight: 600;
+            color: #172B4D;
+        }
+
+        .higher-better {
+            color: #00875A;
+        }
+
+        .lower-better {
+            color: #DE350B;
+        }
+
+        .trend-improving {
+            color: #00875A;
+        }
+
+        .trend-declining {
+            color: #DE350B;
+        }
+
+        .trend-stable {
+            color: #5E6C84;
+        }
+
+        .cluster-divider {
+            background: #253858;
+            color: white;
+            padding: 15px 20px;
+            margin: 40px 0 20px 0;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .decision-box {
+            background: #FFFAE6;
+            border: 1px solid #FFAB00;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 15px;
+            font-size: 13px;
+        }
+
+        .decision-box-title {
+            font-weight: 600;
+            color: #172B4D;
+            margin-bottom: 8px;
+        }
+
+        @media print {
+            body {
+                padding: 20px;
+            }
+
+            .dimension {
+                page-break-inside: avoid;
+            }
+
+            .toc {
+                page-break-after: always;
+            }
+        }
+
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stat-box {
+            background: #F4F5F7;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #0052CC;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #5E6C84;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+    <h1>Team Health Assessment - Dimension Reference Guide</h1>
+    <p class="subtitle">Complete reference for all dimensions and indicators. Use this document to review what is being measured and decide on inclusion/exclusion.</p>
+
+    <div class="summary-stats">
+        <div class="stat-box">
+            <div class="stat-value">16</div>
+            <div class="stat-label">Total Dimensions</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-value">87</div>
+            <div class="stat-label">Total Indicators</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-value">5</div>
+            <div class="stat-label">Theme Clusters</div>
+        </div>
+    </div>
+
+    <div class="toc">
+        <h2>Table of Contents</h2>
+        <ul class="toc-list">
+            <li><a href="#dim1">1. Invisible Work</a></li>
+            <li><a href="#dim2">2. Information Health</a></li>
+            <li><a href="#dim3">3. Estimation Coverage</a></li>
+            <li><a href="#dim4">4. Sizing Consistency</a></li>
+            <li><a href="#dim5">5. Issue Type Consistency</a></li>
+            <li><a href="#dim6">6. Data Freshness</a></li>
+            <li><a href="#dim7">7. Blocker Management</a></li>
+            <li><a href="#dim8">8. Work Hierarchy Linkage</a></li>
+            <li><a href="#dim9">9. Sprint Hygiene</a></li>
+            <li><a href="#dim10">10. Team Collaboration</a></li>
+            <li><a href="#dim11">11. Automation Opportunities</a></li>
+            <li><a href="#dim12">12. Collaboration Feature Usage</a></li>
+            <li><a href="#dim14">14. Configuration Efficiency</a></li>
+            <li><a href="#dim15">15. Commitment Discipline</a></li>
+            <li><a href="#dim16">16. Backlog Discipline</a></li>
+            <li><a href="#dim17">17. Kanban Discipline</a></li>
+        </ul>
+    </div>
+
+    <!-- Cluster 1: Data Quality & Completeness -->
+    <div class="cluster-divider">Cluster 1: Data Quality & Completeness</div>
+
+    <!-- Dimension 1 -->
+    <div class="dimension" id="dim1">
+        <div class="dimension-header">
+            <div class="dimension-number">Dimension 1</div>
+            <h2 class="dimension-name">Invisible Work</h2>
+            <p class="dimension-question">"How does your team compare on invisible work indicators?"</p>
+        </div>
+        <div class="dimension-body">
+            <span class="dimension-key">workCaptured</span>
+            <p>Detects signs that work is happening outside of Jira - variability in throughput, inconsistent individual output, and unexplained stage time differences.</p>
+
+            <div class="decision-box">
+                <div class="decision-box-title">Decision Considerations</div>
+                <ul style="margin: 0; padding-left: 20px;">
+                    <li>This dimension relies on statistical signals rather than direct measurement</li>
+                    <li>May generate false positives if team has variable workloads by design</li>
+                    <li>Most valuable for teams concerned about work visibility</li>
+                </ul>
+            </div>
+
+            <div class="indicators-section">
+                <div class="indicators-header">Indicators (3)</div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Variability in throughput without corresponding variability in demand</span>
+                        <span class="indicator-id">throughputVariability</span>
+                    </div>
+                    <div class="indicator-description">Measures how much completed work varies compared to incoming demand. High variability without corresponding demand changes indicates potential hidden work.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> If output swings wildly while incoming work stays steady, hidden work is likely absorbing team capacity unpredictably.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">0.45</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">0.25</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value lower-better">Lower is better</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Trend</div>
+                            <div class="metric-value trend-declining">Declining</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Workflow stage time variability</span>
+                        <span class="indicator-id">workflowStageTimeVariability</span>
+                    </div>
+                    <div class="indicator-description">For work of the same size estimate there's a wide range of how long stage 'n' takes. This could indicate hidden work or inconsistent processes.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> Same-sized work taking wildly different times suggests untracked blockers, interruptions, or parallel invisible work.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">0.62</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">0.30</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value lower-better">Lower is better</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Trend</div>
+                            <div class="metric-value trend-stable">Stable</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Variability in team member throughput without corresponding variability in demand</span>
+                        <span class="indicator-id">memberThroughputVariability</span>
+                    </div>
+                    <div class="indicator-description">Individual team members show high variation in output without matching changes in their assigned work.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> Inconsistent individual output often means people are pulled into untracked meetings, support, or side projects.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">0.52</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">0.28</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value lower-better">Lower is better</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Trend</div>
+                            <div class="metric-value trend-declining">Declining</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dimension 6 -->
+    <div class="dimension" id="dim6">
+        <div class="dimension-header">
+            <div class="dimension-number">Dimension 6</div>
+            <h2 class="dimension-name">Data Freshness</h2>
+            <p class="dimension-question">"Does the data that we see represent an up-to-date view of the work?"</p>
+        </div>
+        <div class="dimension-body">
+            <span class="dimension-key">dataFreshness</span>
+            <p>Measures whether Jira data is current and reflects reality - stale items, bulk changes, and update frequency.</p>
+
+            <div class="decision-box">
+                <div class="decision-box-title">Decision Considerations</div>
+                <ul style="margin: 0; padding-left: 20px;">
+                    <li>Critical for teams relying on Jira for reporting and forecasting</li>
+                    <li>8 indicators - consider which are most relevant to your context</li>
+                    <li>Some overlap with other dimensions (stale work items)</li>
+                </ul>
+            </div>
+
+            <div class="indicators-section">
+                <div class="indicators-header">Indicators (8)</div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Stale In-Progress Work Items</span>
+                        <span class="indicator-id">staleWorkItems</span>
+                    </div>
+                    <div class="indicator-description">Percentage of current in-progress work items that haven't seen any change in over n weeks.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">58%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">25%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value lower-better">Lower is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Stale In-Progress Epics</span>
+                        <span class="indicator-id">staleEpics</span>
+                    </div>
+                    <div class="indicator-description">Percentage of current in-progress Epics that haven't seen any change in over n months.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">15%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">20%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value lower-better">Lower is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Done Epics with Unresolved Children</span>
+                        <span class="indicator-id">epicsWithUnresolvedChildren</span>
+                    </div>
+                    <div class="indicator-description">Percentage of Epics moved to Done that still had child work items not specified or resolved.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">80%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">15%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value lower-better">Lower is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Bulk Changes</span>
+                        <span class="indicator-id">bulkChanges</span>
+                    </div>
+                    <div class="indicator-description">Percentage of changes that happened to work items that were done in bulk.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">20%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">5%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value lower-better">Lower is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Stories Not Done After Sub-tasks Complete</span>
+                        <span class="indicator-id">parentNotDoneAfterChildren</span>
+                    </div>
+                    <div class="indicator-description">Percentage of issues with sub-tasks that were still not marked done for at least a week after all sub-tasks completed.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">65%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">20%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value lower-better">Lower is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Epics Not Done After Children Complete</span>
+                        <span class="indicator-id">epicsNotDoneAfterChildren</span>
+                    </div>
+                    <div class="indicator-description">Percentage of Epics still marked not done for at least a week after all their child issues were completed.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">30%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">10%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value lower-better">Lower is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Jira Update Frequency</span>
+                        <span class="indicator-id">jiraUpdateFrequency</span>
+                    </div>
+                    <div class="indicator-description">How frequently are Jira issues updated on average?</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">0.5 updates/day</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">3 updates/day</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value higher-better">Higher is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Invisible Work Risk Score</span>
+                        <span class="indicator-id">invisibleWorkRiskScore</span>
+                    </div>
+                    <div class="indicator-description">Risk score indicating likelihood that work is happening outside of Jira.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">0.6 (High)</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">0.25</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value lower-better">Lower is better</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cluster 2: Estimation Quality -->
+    <div class="cluster-divider">Cluster 2: Estimation Quality</div>
+
+    <!-- Dimension 3 -->
+    <div class="dimension" id="dim3">
+        <div class="dimension-header">
+            <div class="dimension-number">Dimension 3</div>
+            <h2 class="dimension-name">Estimation Coverage</h2>
+            <p class="dimension-question">"How much of your work is estimated?"</p>
+        </div>
+        <div class="dimension-body">
+            <span class="dimension-key">estimationCoverage</span>
+            <p>Measures the percentage of work items that have size estimates at various hierarchy levels.</p>
+
+            <div class="decision-box">
+                <div class="decision-box-title">Decision Considerations</div>
+                <ul style="margin: 0; padding-left: 20px;">
+                    <li>Essential for teams doing capacity planning or forecasting</li>
+                    <li>May be less relevant for pure Kanban teams not using estimates</li>
+                    <li>Consider which levels (story, epic, subtask) are relevant to your process</li>
+                </ul>
+            </div>
+
+            <div class="indicators-section">
+                <div class="indicators-header">Indicators (5)</div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Work not estimated by policy</span>
+                        <span class="indicator-id">policyExclusions</span>
+                    </div>
+                    <div class="indicator-description">Percentage of completed work that is not estimated by policy.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">45%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">30%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value lower-better">Lower is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Stories with estimates</span>
+                        <span class="indicator-id">storyEstimationRate</span>
+                    </div>
+                    <div class="indicator-description">Percentage of estimable stories that have size estimates.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">85%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">92%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value higher-better">Higher is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Epics with estimates</span>
+                        <span class="indicator-id">epicEstimationRate</span>
+                    </div>
+                    <div class="indicator-description">Percentage of epics that have size estimates at the epic level.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">60%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">75%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value higher-better">Higher is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Epics with full child coverage</span>
+                        <span class="indicator-id">epicRollupCoverage</span>
+                    </div>
+                    <div class="indicator-description">Percentage of epics where more than 50% of child issues have estimates.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">35%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">65%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value higher-better">Higher is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Sub-tasks with estimates</span>
+                        <span class="indicator-id">subTaskEstimation</span>
+                    </div>
+                    <div class="indicator-description">Percentage of sub-tasks that have estimates.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">20%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">40%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value higher-better">Higher is better</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dimension 4 -->
+    <div class="dimension" id="dim4">
+        <div class="dimension-header">
+            <div class="dimension-number">Dimension 4</div>
+            <h2 class="dimension-name">Sizing Consistency</h2>
+            <p class="dimension-question">"Are your estimates and work sizes reliable for forecasting?"</p>
+        </div>
+        <div class="dimension-body">
+            <span class="dimension-key">sizingConsistency</span>
+            <p>Measures how consistently the team estimates similar work - both within the team over time and compared to other teams.</p>
+
+            <div class="decision-box">
+                <div class="decision-box-title">Decision Considerations</div>
+                <ul style="margin: 0; padding-left: 20px;">
+                    <li>Important for teams wanting to improve estimation accuracy</li>
+                    <li>Cross-team comparisons require organizational context</li>
+                    <li>May surface calibration issues that need team discussion</li>
+                </ul>
+            </div>
+
+            <div class="indicators-section">
+                <div class="indicators-header">Indicators (5)</div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Story estimation consistency (within team)</span>
+                        <span class="indicator-id">storyConsistencyWithin</span>
+                    </div>
+                    <div class="indicator-description">How consistently does your team estimate similar-sized work?</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">High variance</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">0.30</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value lower-better">Lower is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Story estimation consistency (vs. other teams)</span>
+                        <span class="indicator-id">storyConsistencyAcross</span>
+                    </div>
+                    <div class="indicator-description">How do your story estimates compare to other teams for similar work?</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">High variance</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">0.35</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value lower-better">Lower is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Epic estimation consistency (within team)</span>
+                        <span class="indicator-id">epicConsistencyWithin</span>
+                    </div>
+                    <div class="indicator-description">How consistently does your team estimate epics?</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">Very high variance</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">0.45</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value lower-better">Lower is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Epic estimation consistency (vs. other teams)</span>
+                        <span class="indicator-id">epicConsistencyAcross</span>
+                    </div>
+                    <div class="indicator-description">How do your epic estimates compare to other teams?</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">High variance</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">0.40</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value lower-better">Lower is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Work distribution across epics</span>
+                        <span class="indicator-id">epicDistribution</span>
+                    </div>
+                    <div class="indicator-description">How evenly is estimated work distributed across epics?</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">80% in top 3</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">50%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value lower-better">Lower is better</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cluster 3: Effective Collaboration -->
+    <div class="cluster-divider">Cluster 3: Effective Collaboration</div>
+
+    <!-- Dimension 10 -->
+    <div class="dimension" id="dim10">
+        <div class="dimension-header">
+            <div class="dimension-number">Dimension 10</div>
+            <h2 class="dimension-name">Team Collaboration</h2>
+            <p class="dimension-question">"Are we using Jira to collaborate effectively (within our team and with other teams)?"</p>
+        </div>
+        <div class="dimension-body">
+            <span class="dimension-key">teamCollaboration</span>
+            <p>Measures whether work involves genuine collaboration - communication quality, involvement breadth, and knowledge sharing. This dimension now includes indicators formerly in "Collaboration Breadth" (Dimension 13).</p>
+
+            <div class="decision-box">
+                <div class="decision-box-title">Decision Considerations</div>
+                <ul style="margin: 0; padding-left: 20px;">
+                    <li><strong>14 indicators</strong> - largest dimension, consider which are most actionable</li>
+                    <li>Covers both communication quality AND collaboration breadth</li>
+                    <li>Some teams may find comment metrics less relevant if they collaborate outside Jira</li>
+                    <li>Single-contributor metrics may flag legitimate solo work items</li>
+                </ul>
+            </div>
+
+            <div class="indicators-section">
+                <div class="indicators-header">Indicators (14)</div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Average comments per in-progress issue</span>
+                        <span class="indicator-id">avgCommentsPerIssue</span>
+                    </div>
+                    <div class="indicator-description">Our average # of comments per in-progress issue.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">0.30</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">0.25</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value higher-better">Higher is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Issues closed without comments on status change</span>
+                        <span class="indicator-id">closedWithoutComments</span>
+                    </div>
+                    <div class="indicator-description">Issues moved to 'closed' with no comments accompanying the status change.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">90%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">70%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value lower-better">Lower is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Comment concentration among team members</span>
+                        <span class="indicator-id">commentConcentration</span>
+                    </div>
+                    <div class="indicator-description">Percentage of comments generated by 10% of team members.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">85%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">60%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value lower-better">Lower is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Team interaction through Jira score (network density)</span>
+                        <span class="indicator-id">teamInteractionScore</span>
+                    </div>
+                    <div class="indicator-description">Team interaction score based on network density.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">0.21 (poor)</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">0.55</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value higher-better">Higher is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Work sent backward without explanation</span>
+                        <span class="indicator-id">sentBackWithoutComments</span>
+                    </div>
+                    <div class="indicator-description">Cases where work is sent backward with no comments or explanations.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">55%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">35%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value lower-better">Lower is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Stale issues carried over 3+ sprints without comments</span>
+                        <span class="indicator-id">staleCarryoverIssues</span>
+                    </div>
+                    <div class="indicator-description">Issues carried over 3+ sprints with no comments explaining why.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">90%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">40%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value lower-better">Lower is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Blockers raised without description</span>
+                        <span class="indicator-id">blockersWithoutDescription</span>
+                    </div>
+                    <div class="indicator-description">Blockers added with no description.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">80%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">50%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value lower-better">Lower is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator" style="border-left: 3px solid #00875A;">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Single-Contributor Issue Rate</span>
+                        <span class="indicator-id">singleContributorIssueRate</span>
+                    </div>
+                    <div class="indicator-description">Percentage of issues where only one person made any updates.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> When work flows through individuals without collaboration, Jira is just a task list.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">48%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">35%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value lower-better">Lower is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator" style="border-left: 3px solid #00875A;">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Epics with Single Contributor</span>
+                        <span class="indicator-id">epicSingleContributorRate</span>
+                    </div>
+                    <div class="indicator-description">Percentage of epics where only one person contributed.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> Epics represent larger efforts. Single-contributor epics lack diverse perspectives and create knowledge silos.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">65%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">25%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value lower-better">Lower is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator" style="border-left: 3px solid #00875A;">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Average Contributors per Epic</span>
+                        <span class="indicator-id">avgContributorsPerEpic</span>
+                    </div>
+                    <div class="indicator-description">Average number of different contributors per epic.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> Epics with few contributors create knowledge silos and single points of failure.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">2.1</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">3.5</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value higher-better">Higher is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator" style="border-left: 3px solid #00875A;">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Handoff Documentation Rate</span>
+                        <span class="indicator-id">handoffDocumentationRate</span>
+                    </div>
+                    <div class="indicator-description">Percentage of assignee changes with a comment added within 24 hours.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> Silent handoffs lose context. Comments within 24 hours of a handoff preserve knowledge and provide the new assignee with necessary context.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">32%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">60%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value higher-better">Higher is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator" style="border-left: 3px solid #0052CC;">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Comment Engagement Rate</span>
+                        <span class="indicator-id">commentEngagementRate</span>
+                    </div>
+                    <div class="indicator-description">Percentage of issues with at least one comment before completion.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> Comments create a record of collaboration. Issues without comments suggest discussion happened elsewhere.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">55%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">70%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value higher-better">Higher is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator" style="border-left: 3px solid #0052CC;">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Multi-Commenter Rate</span>
+                        <span class="indicator-id">multiCommenterRate</span>
+                    </div>
+                    <div class="indicator-description">Percentage of issues with comments from multiple people.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> When only one person comments, there is no discussion-just monologue.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">28%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">45%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value higher-better">Higher is better</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dimension 12 -->
+    <div class="dimension" id="dim12">
+        <div class="dimension-header">
+            <div class="dimension-number">Dimension 12</div>
+            <h2 class="dimension-name">Collaboration Feature Usage</h2>
+            <p class="dimension-question">"Are we leveraging Jira's collaboration features?"</p>
+        </div>
+        <div class="dimension-body">
+            <span class="dimension-key">collaborationFeatureUsage</span>
+            <p>Measures adoption of Jira's collaboration tools - links, mentions, and watchers. Focuses on feature adoption rather than communication quality.</p>
+
+            <div class="decision-box">
+                <div class="decision-box-title">Decision Considerations</div>
+                <ul style="margin: 0; padding-left: 20px;">
+                    <li>5 indicators focused on tool usage patterns</li>
+                    <li>Distinct from Team Collaboration - this measures feature adoption, not collaboration quality</li>
+                    <li>Cross-team metrics may be less relevant for isolated teams</li>
+                </ul>
+            </div>
+
+            <div class="indicators-section">
+                <div class="indicators-header">Indicators (5)</div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Issue Link Adoption Rate</span>
+                        <span class="indicator-id">issueLinkAdoptionRate</span>
+                    </div>
+                    <div class="indicator-description">Percentage of issues with at least one link to another issue.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> Links make relationships visible. Without links, dependencies and context exist only in people's heads.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">42%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">60%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value higher-better">Higher is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Cross-Team Link Rate</span>
+                        <span class="indicator-id">crossTeamLinkRate</span>
+                    </div>
+                    <div class="indicator-description">Percentage of links that connect to issues owned by other teams.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> Cross-team links reveal dependencies between teams that need coordination.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">18%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">25%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value higher-better">Higher is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">@Mention Usage Rate</span>
+                        <span class="indicator-id">atMentionUsageRate</span>
+                    </div>
+                    <div class="indicator-description">Percentage of comments that include @mentions to draw people in.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> @mentions route attention efficiently. Without them, people miss relevant discussions.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">22%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">35%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value higher-better">Higher is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Cross-Team @Mention Rate</span>
+                        <span class="indicator-id">crossTeamAtMentionRate</span>
+                    </div>
+                    <div class="indicator-description">Percentage of @mentions that tag people from other teams.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> Cross-team mentions indicate active coordination beyond team boundaries.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">8%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">15%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value higher-better">Higher is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Watcher Engagement</span>
+                        <span class="indicator-id">watcherEngagement</span>
+                    </div>
+                    <div class="indicator-description">Average number of watchers per issue.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> Watchers indicate stakeholder interest. No watchers means no one is paying attention.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">1.2</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">2.5</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value higher-better">Higher is better</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Continue with remaining dimensions in similar format... -->
+    <!-- For brevity, I'll include the key remaining dimensions -->
+
+    <!-- Cluster 4: Jira Efficiency -->
+    <div class="cluster-divider">Cluster 4: Jira Efficiency</div>
+
+    <!-- Dimension 14 -->
+    <div class="dimension" id="dim14">
+        <div class="dimension-header">
+            <div class="dimension-number">Dimension 14</div>
+            <h2 class="dimension-name">Configuration Efficiency</h2>
+            <p class="dimension-question">"Is our Jira setup lean or bloated?"</p>
+        </div>
+        <div class="dimension-body">
+            <span class="dimension-key">configurationEfficiency</span>
+            <p>Measures workflow complexity, unused configuration, and process overhead. Identifies opportunities to simplify Jira setup.</p>
+
+            <div class="decision-box">
+                <div class="decision-box-title">Decision Considerations</div>
+                <ul style="margin: 0; padding-left: 20px;">
+                    <li>7 indicators - comprehensive view of configuration health</li>
+                    <li>Most relevant for teams with admin access to make changes</li>
+                    <li>Some metrics (workflow bypass) may indicate legitimate variations</li>
+                </ul>
+            </div>
+
+            <div class="indicators-section">
+                <div class="indicators-header">Indicators (7)</div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Workflow Status Count</span>
+                        <span class="indicator-id">workflowStatusCount</span>
+                    </div>
+                    <div class="indicator-description">Number of statuses in the team's workflow.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> Too many statuses creates confusion and overhead. 6-8 is optimal.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">14</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">7</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value lower-better">Lower is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Unused Status Rate</span>
+                        <span class="indicator-id">unusedStatusRate</span>
+                    </div>
+                    <div class="indicator-description">Percentage of workflow statuses that issues rarely enter.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> Unused statuses are pure overhead - they exist but add no value.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">35%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">10%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value lower-better">Lower is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Workflow Bypass Rate</span>
+                        <span class="indicator-id">workflowBypassRate</span>
+                    </div>
+                    <div class="indicator-description">Percentage of issues that skipped expected intermediate workflow states.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> Bypasses suggest the workflow doesn't match how work actually flows.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">22%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">8%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value lower-better">Lower is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Required Field Load</span>
+                        <span class="indicator-id">requiredFieldLoad</span>
+                    </div>
+                    <div class="indicator-description">Count of required fields on creation and transition screens.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> Too many required fields slow down work entry and encourage workarounds.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">12</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">5</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value lower-better">Lower is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Empty Optional Field Rate</span>
+                        <span class="indicator-id">emptyOptionalFieldRate</span>
+                    </div>
+                    <div class="indicator-description">Percentage of optional fields that are typically left empty.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> Consistently empty optional fields are clutter that should be removed.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">68%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">40%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value lower-better">Lower is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Duplicate Ticket Pattern Rate</span>
+                        <span class="indicator-id">duplicateTicketPatternRate</span>
+                    </div>
+                    <div class="indicator-description">Percentage of tickets with highly similar titles/descriptions.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">15%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">5%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value lower-better">Lower is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Custom Field Count</span>
+                        <span class="indicator-id">customFieldCount</span>
+                    </div>
+                    <div class="indicator-description">Number of custom fields configured in the project.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> Excessive custom fields make Jira projects non-standard and harder to maintain, report on, and onboard new team members.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">47</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">15</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value lower-better">Lower is better</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cluster 5: Methodology Support -->
+    <div class="cluster-divider">Cluster 5: Methodology Support</div>
+
+    <!-- Dimension 9: Sprint Hygiene -->
+    <div class="dimension" id="dim9">
+        <div class="dimension-header">
+            <div class="dimension-number">Dimension 9</div>
+            <h2 class="dimension-name">Sprint Hygiene</h2>
+            <p class="dimension-question">"How good is our sprint hygiene?"</p>
+        </div>
+        <div class="dimension-body">
+            <span class="dimension-key">sprintHygiene</span>
+            <p>Measures sprint practices including duration consistency, goal setting, carryover patterns, and timing of work completion.</p>
+            <div class="indicators-section">
+                <div class="indicators-header">Indicators (7)</div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Sprint Duration Variance</span>
+                        <span class="indicator-id">sprintDurationVariance</span>
+                    </div>
+                    <div class="indicator-description">Percentage of sprints that take significantly longer or shorter than planned.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">15%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">5%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value lower-better">Lower is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Sprints Without Goals</span>
+                        <span class="indicator-id">sprintsWithoutGoals</span>
+                    </div>
+                    <div class="indicator-description">Percentage of sprints that have no sprint goal defined.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">80%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">10%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value lower-better">Lower is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Incomplete Work Carried Over</span>
+                        <span class="indicator-id">workCarriedOver</span>
+                    </div>
+                    <div class="indicator-description">Percentage of unfinished work at sprint end that is moved directly to the next sprint.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">95%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">50%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value lower-better">Lower is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Work Completed on Last Day</span>
+                        <span class="indicator-id">lastDayCompletions</span>
+                    </div>
+                    <div class="indicator-description">Percentage of sprint work that is moved to Done on the last day of the sprint.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">35%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">15%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value lower-better">Lower is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Sprint Cadence Alignment</span>
+                        <span class="indicator-id">sprintCadenceAlignment</span>
+                    </div>
+                    <div class="indicator-description">Percentage of teams in your organization with matching sprint cadence.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">60%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">80%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value higher-better">Higher is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Work Assigned to Other Projects' Sprints</span>
+                        <span class="indicator-id">crossProjectSprintItems</span>
+                    </div>
+                    <div class="indicator-description">Percentage of active work items assigned to sprints belonging to other Jira projects.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">15%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">2%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value lower-better">Lower is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">In-Progress Issues Without Assignee</span>
+                        <span class="indicator-id">inProgressWithoutAssignee</span>
+                    </div>
+                    <div class="indicator-description">Percentage of in-progress issues that have no assignee.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">15%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">5%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value lower-better">Lower is better</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dimension 15: Commitment Discipline -->
+    <div class="dimension" id="dim15">
+        <div class="dimension-header">
+            <div class="dimension-number">Dimension 15</div>
+            <h2 class="dimension-name">Commitment Discipline</h2>
+            <p class="dimension-question">"How reliable are sprint commitments?"</p>
+        </div>
+        <div class="dimension-body">
+            <span class="dimension-key">commitmentDiscipline</span>
+            <p>Measures Say-Do ratio, scope stability, and commitment reliability. Core dimension for Scrum teams.</p>
+            <div class="indicators-section">
+                <div class="indicators-header">Indicators (9)</div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Say-Do Ratio</span>
+                        <span class="indicator-id">sayDoRatio</span>
+                    </div>
+                    <div class="indicator-description">Completed story points divided by committed story points at sprint start.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> This is THE measure of sprint commitment reliability. 80-110% is healthy.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">72%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">90%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value higher-better">Higher is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Say-Do Consistency</span>
+                        <span class="indicator-id">sayDoConsistency</span>
+                    </div>
+                    <div class="indicator-description">Variation in Say-Do ratio over recent sprints (coefficient of variation).</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> Consistent Say-Do is as important as the ratio itself - variability undermines trust.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">0.28</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">0.15</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value lower-better">Lower is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Say-Do Trend</span>
+                        <span class="indicator-id">sayDoTrend</span>
+                    </div>
+                    <div class="indicator-description">Direction of Say-Do ratio over time.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> An improving trend signals the team is getting better at commitment accuracy.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">Improving</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">Stable</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value higher-better">Higher is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Scope Creep Rate</span>
+                        <span class="indicator-id">scopeCreepRate</span>
+                    </div>
+                    <div class="indicator-description">Percentage of sprints where significant work was added after sprint start.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> Scope creep undermines sprint predictability and team focus.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">45%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">20%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value lower-better">Lower is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Scope Reduction Rate</span>
+                        <span class="indicator-id">scopeReductionRate</span>
+                    </div>
+                    <div class="indicator-description">Percentage of sprints where committed work was removed mid-sprint.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> Removing work mid-sprint suggests over-commitment or poor prioritization.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">30%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">15%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value lower-better">Lower is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Net Scope Volatility</span>
+                        <span class="indicator-id">netScopeVolatility</span>
+                    </div>
+                    <div class="indicator-description">Total scope churn (additions + removals) as percentage of original commitment.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> High volatility means the sprint plan is fiction, not a real commitment.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">38%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">15%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value lower-better">Lower is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Large Late Addition Count</span>
+                        <span class="indicator-id">lateAdditionSize</span>
+                    </div>
+                    <div class="indicator-description">Count of large items (>5 points) added mid-sprint.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> Large late additions cause major disruption to sprint plans.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">3 items/sprint</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">1 item/sprint</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value lower-better">Lower is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Pre-Sprint Commitment Rate</span>
+                        <span class="indicator-id">preSprintCommitmentRate</span>
+                    </div>
+                    <div class="indicator-description">Percentage of sprint items committed before vs. after sprint start.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> Items committed before sprint start have been properly planned and refined.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">68%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">90%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value higher-better">Higher is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Unplanned Work Ratio</span>
+                        <span class="indicator-id">unplannedWorkRatio</span>
+                    </div>
+                    <div class="indicator-description">Percentage of completed work that was added after sprint start.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> High unplanned work ratio means original commitment was not realistic.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">32%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">10%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value lower-better">Lower is better</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dimension 16: Backlog Discipline -->
+    <div class="dimension" id="dim16">
+        <div class="dimension-header">
+            <div class="dimension-number">Dimension 16</div>
+            <h2 class="dimension-name">Backlog Discipline</h2>
+            <p class="dimension-question">"Is the backlog well-maintained and ready for planning?"</p>
+        </div>
+        <div class="dimension-body">
+            <span class="dimension-key">backlogDiscipline</span>
+            <p>Measures backlog health including staleness, depth, zombie items, and refinement practices.</p>
+            <div class="indicators-section">
+                <div class="indicators-header">Indicators (8)</div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Backlog Age Distribution</span>
+                        <span class="indicator-id">backlogStalenessDistribution</span>
+                    </div>
+                    <div class="indicator-description">Distribution of backlog items by age: percentage over 6 months old.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> Old backlog items are often obsolete. Fresh backlogs enable responsive planning.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">35%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">20%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value lower-better">Lower is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Backlog Depth Ratio</span>
+                        <span class="indicator-id">backlogDepthRatio</span>
+                    </div>
+                    <div class="indicator-description">Backlog size relative to average sprint throughput (in sprints worth).</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> Too deep a backlog is overwhelming; too shallow means poor planning ahead.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">8.5 sprints</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">4 sprints</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value lower-better">Lower is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Zombie Item Count</span>
+                        <span class="indicator-id">zombieItemCount</span>
+                    </div>
+                    <div class="indicator-description">Items in backlog with no updates in 6+ months but still open.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> Zombie items are obsolete clutter. They should be refreshed or closed.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">8 items</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">5 items</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value lower-better">Lower is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Backlog Pruning Rate</span>
+                        <span class="indicator-id">backlogPruningRate</span>
+                    </div>
+                    <div class="indicator-description">Items closed as Won't Do, Obsolete, or Duplicate per quarter.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> Regular pruning keeps the backlog relevant and manageable.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">12 items/quarter</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">8 items/quarter</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value higher-better">Higher is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Sprint-Ready Coverage</span>
+                        <span class="indicator-id">sprintReadyCoverage</span>
+                    </div>
+                    <div class="indicator-description">Percentage of top backlog items that have estimates and acceptance criteria.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> Sprint-ready items enable smooth sprint planning without delays.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">72%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">80%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value higher-better">Higher is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Refinement Lag</span>
+                        <span class="indicator-id">refinementLag</span>
+                    </div>
+                    <div class="indicator-description">Average days from item creation to receiving first estimate.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> Long refinement lag means items sit unreviewed, blocking planning.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">8 days</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">5 days</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value lower-better">Lower is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Priority Stability Index</span>
+                        <span class="indicator-id">priorityStabilityIndex</span>
+                    </div>
+                    <div class="indicator-description">Average number of priority changes before an item is committed to a sprint.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> Frequent priority changes signal unclear strategy or reactive leadership.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">2.1 changes</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">1.5 changes</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value lower-better">Lower is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Refinement to Intake Ratio</span>
+                        <span class="indicator-id">refinementToIntakeRatio</span>
+                    </div>
+                    <div class="indicator-description">Ratio of items refined to items created per period.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> If intake exceeds refinement, backlog will grow stale over time.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">0.85</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">1.0</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value higher-better">Higher is better</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dimension 17: Kanban Discipline -->
+    <div class="dimension" id="dim17">
+        <div class="dimension-header">
+            <div class="dimension-number">Dimension 17</div>
+            <h2 class="dimension-name">Kanban Discipline</h2>
+            <p class="dimension-question">"Does Jira usage reflect Kanban methodology standards?"</p>
+        </div>
+        <div class="dimension-body">
+            <span class="dimension-key">kanbanDiscipline</span>
+            <p>Measures Kanban practices including WIP limits, pull system evidence, and flow management.</p>
+
+            <div class="decision-box">
+                <div class="decision-box-title">Decision Considerations</div>
+                <ul style="margin: 0; padding-left: 20px;">
+                    <li>Only relevant for teams using Kanban methodology</li>
+                    <li>WIP limit indicators will show N/A if limits aren't configured</li>
+                    <li>Can help identify whether team is doing "Kanban" or just using a board</li>
+                </ul>
+            </div>
+
+            <div class="indicators-section">
+                <div class="indicators-header">Indicators (7)</div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">WIP Limits Configured</span>
+                        <span class="indicator-id">wipLimitsConfigured</span>
+                    </div>
+                    <div class="indicator-description">Whether WIP limits are set on board columns.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> A Kanban board without WIP limits is just a task board, not Kanban.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">No</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">Yes</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value higher-better">Higher is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">WIP Limit Compliance Rate</span>
+                        <span class="indicator-id">wipLimitComplianceRate</span>
+                    </div>
+                    <div class="indicator-description">Percentage of days where WIP stayed within configured limits.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> WIP limits only work if they're respected. Low compliance means limits are ignored.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">N/A</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">85%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value higher-better">Higher is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">WIP Limit Violation Severity</span>
+                        <span class="indicator-id">wipLimitViolationSeverity</span>
+                    </div>
+                    <div class="indicator-description">When limits are exceeded, how far over the limit (average % over).</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> Small violations are less harmful than being 200% over the limit.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">N/A</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">15%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value lower-better">Lower is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Pull System Evidence</span>
+                        <span class="indicator-id">pullSystemEvidence</span>
+                    </div>
+                    <div class="indicator-description">Percentage of items started in priority order (pulled from top of queue).</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> Kanban is a pull system. Cherry-picking undermines prioritization.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">55%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">80%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value higher-better">Higher is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Explicit Policies Visible</span>
+                        <span class="indicator-id">explicitPoliciesVisible</span>
+                    </div>
+                    <div class="indicator-description">Percentage of workflow states that have descriptions or policies defined.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> Explicit policies reduce confusion about what each state means and when to move items.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">20%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">60%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value higher-better">Higher is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Start-Finish Balance</span>
+                        <span class="indicator-id">startFinishBalance</span>
+                    </div>
+                    <div class="indicator-description">Weekly ratio of items started vs. items finished.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> Starting more than finishing causes WIP to grow. Healthy flow has balanced start/finish.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">1.35</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">1.0</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value lower-better">Lower is better</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Blocked Item Visibility</span>
+                        <span class="indicator-id">blockedItemVisibility</span>
+                    </div>
+                    <div class="indicator-description">Percentage of stuck items (no progress 3+ days) that are flagged as blocked.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> Making blockers visible enables the team to swarm and resolve them.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Current Value</div>
+                            <div class="metric-value">35%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Benchmark</div>
+                            <div class="metric-value">75%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Direction</div>
+                            <div class="metric-value higher-better">Higher is better</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Also include Dimensions 2, 5, 7, 8, 11 in full for completeness -->
+
+    <div class="dimension" id="dim2">
+        <div class="dimension-header">
+            <div class="dimension-number">Dimension 2</div>
+            <h2 class="dimension-name">Information Health</h2>
+            <p class="dimension-question">"Do your tickets capture what needs to be delivered, in what order, and why?"</p>
+        </div>
+        <div class="dimension-body">
+            <span class="dimension-key">informationHealth</span>
+            <p>Measures the completeness and quality of information captured in Jira tickets.</p>
+        </div>
+    </div>
+
+    <div class="dimension" id="dim5">
+        <div class="dimension-header">
+            <div class="dimension-number">Dimension 5</div>
+            <h2 class="dimension-name">Issue Type Consistency</h2>
+            <p class="dimension-question">"Do we use issue types consistently?"</p>
+        </div>
+        <div class="dimension-body">
+            <span class="dimension-key">issueTypeConsistency</span>
+            <p>Measures how consistently issue types are used within the team and compared to other teams.</p>
+            <div class="indicators-section">
+                <div class="indicators-header">Indicators (4): withinTeamIssueTypeConsistency, acrossTeamIssueTypeConsistency, issueTypeVolumeVariability, issueTypeSizeVariability</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dimension" id="dim7">
+        <div class="dimension-header">
+            <div class="dimension-number">Dimension 7</div>
+            <h2 class="dimension-name">Blocker Management</h2>
+            <p class="dimension-question">"Do we promptly capture blockers & impediments in Jira so that they could be effectively managed?"</p>
+        </div>
+        <div class="dimension-body">
+            <span class="dimension-key">blockerManagement</span>
+            <p>Measures blocker tracking, resolution time, and documentation quality.</p>
+            <div class="indicators-section">
+                <div class="indicators-header">Indicators (4): blockerToWorkItemRatio, blockerResolutionTime, blockersWithoutDescription, blockerVisibilityAcrossProjects</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dimension" id="dim8">
+        <div class="dimension-header">
+            <div class="dimension-number">Dimension 8</div>
+            <h2 class="dimension-name">Work Hierarchy Linkage</h2>
+            <p class="dimension-question">"Is the work connected in such a way that I can see how progress on stories & tasks adds up to higher level Epics & Initiatives?"</p>
+        </div>
+        <div class="dimension-body">
+            <span class="dimension-key">workHierarchy</span>
+            <p>Measures whether work items are properly linked to their parent epics and initiatives.</p>
+            <div class="indicators-section">
+                <div class="indicators-header">Indicators (1): issuesNotLinkedToEpics</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dimension" id="dim11">
+        <div class="dimension-header">
+            <div class="dimension-number">Dimension 11</div>
+            <h2 class="dimension-name">Automation Opportunities</h2>
+            <p class="dimension-question">"Is there manual/repetitive work that could be optimised via Jira Automation?"</p>
+        </div>
+        <div class="dimension-body">
+            <span class="dimension-key">automationOpportunities</span>
+            <p>Identifies repetitive manual work and status update patterns that could be automated.</p>
+            <div class="indicators-section">
+                <div class="indicators-header">Indicators (6): recreatingTickets, staleInProgressWork, staleInProgressEpics, epicsClosedWithOpenChildren, delayedSubtaskCompletion, delayedEpicCompletion</div>
+            </div>
+        </div>
+    </div>
+
+    <hr style="margin: 40px 0; border: none; border-top: 2px solid #DFE1E6;">
+
+    <p style="font-size: 12px; color: #5E6C84; text-align: center;">
+        Generated from Team Health Assessment codebase. Total: 16 dimensions, ~87 indicators.<br>
+        To export as PDF: Open this file in a browser and use Print > Save as PDF.
+    </p>
+
+</body>
+</html>

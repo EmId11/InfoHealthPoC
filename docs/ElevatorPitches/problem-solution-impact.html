@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estimation Visibility - Problem / Solution / Impact</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 60px;
+            color: #1a1a1a;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        .card.problem {
+            border-top: 5px solid #e74c3c;
+        }
+
+        .card.solution {
+            border-top: 5px solid #3498db;
+        }
+
+        .card.impact {
+            border-top: 5px solid #27ae60;
+        }
+
+        .card h2 {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+            color: #888;
+        }
+
+        .card.problem h2 { color: #e74c3c; }
+        .card.solution h2 { color: #3498db; }
+        .card.impact h2 { color: #27ae60; }
+
+        .card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: #1a1a1a;
+        }
+
+        .card p {
+            color: #555;
+            margin-bottom: 15px;
+        }
+
+        .card ul {
+            list-style: none;
+            margin-top: 25px;
+        }
+
+        .card li {
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+            color: #555;
+        }
+
+        .card li:last-child {
+            border-bottom: none;
+        }
+
+        .card li strong {
+            color: #333;
+        }
+
+        .summary {
+            margin-top: 60px;
+            background: white;
+            border-radius: 12px;
+            padding: 50px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            text-align: center;
+        }
+
+        .summary h2 {
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #888;
+            margin-bottom: 20px;
+        }
+
+        .summary p {
+            font-size: 1.4rem;
+            color: #1a1a1a;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        @media (max-width: 900px) {
+            .cards {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Delivery Predictability</h1>
+
+        <div class="cards">
+            <div class="card problem">
+                <h2>Problem</h2>
+                <h3>You're accountable for commitments you can't validate</h3>
+                <p>Engineering leaders commit to delivery dates based on estimates from their teams. But they have no visibility into whether those estimates are reliable.</p>
+                <ul>
+                    <li><strong>Blind trust:</strong> Plans are built on estimates taken at face value</li>
+                    <li><strong>No early warning:</strong> Problems surface when deadlines are missed, not before</li>
+                    <li><strong>Inconsistent inputs:</strong> Teams estimate differently, but it all gets rolled up the same way</li>
+                    <li><strong>Accountability gap:</strong> Leaders own the outcome but can't assess the inputs</li>
+                </ul>
+            </div>
+
+            <div class="card solution">
+                <h2>Solution</h2>
+                <h3>Visibility into the reliability of your planning data</h3>
+                <p>We analyze your Jira data to show you which estimates you can trust—before you commit to a plan built on them.</p>
+                <ul>
+                    <li><strong>Estimation coverage:</strong> See what's being estimated vs. what's flying blind</li>
+                    <li><strong>Team reliability:</strong> Know which teams hit their estimates and which don't</li>
+                    <li><strong>Cross-team alignment:</strong> See where collaborating teams are out of sync</li>
+                    <li><strong>Risk indicators:</strong> Spot patterns that precede missed commitments</li>
+                </ul>
+            </div>
+
+            <div class="card impact">
+                <h2>Impact</h2>
+                <h3>Commitments grounded in data you can see</h3>
+                <p>When you commit to a date, you know what that commitment is built on. No more promises based on faith.</p>
+                <ul>
+                    <li><strong>Fewer surprises:</strong> See risk before it becomes a missed deadline</li>
+                    <li><strong>Credible forecasts:</strong> Give dates you can actually defend</li>
+                    <li><strong>Targeted intervention:</strong> Know where to focus before it's too late</li>
+                    <li><strong>Stakeholder trust:</strong> Build a track record of keeping commitments</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="summary">
+            <h2>The One-Liner</h2>
+            <p>We help engineering leaders see the reliability of their planning data—so they stop committing to plans that were never going to work.</p>
+        </div>
+    </div>
+</body>
+</html>

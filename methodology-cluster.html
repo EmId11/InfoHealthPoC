@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Methodology Support Cluster - Indicators Reference</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.5;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            color: #172B4D;
+            background: #fff;
+        }
+        h1 {
+            color: #6554C0;
+            font-size: 28px;
+            border-bottom: 3px solid #6554C0;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #5E6C84;
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+        .dimension {
+            page-break-inside: avoid;
+            margin-bottom: 40px;
+            border: 1px solid #DFE1E6;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .dimension-header {
+            background: linear-gradient(135deg, #6554C0 0%, #8777D9 100%);
+            color: white;
+            padding: 20px;
+        }
+        .dimension-number {
+            font-size: 12px;
+            opacity: 0.8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+        .dimension-name {
+            font-size: 22px;
+            font-weight: 600;
+            margin: 0 0 8px 0;
+        }
+        .dimension-question {
+            font-size: 14px;
+            opacity: 0.9;
+            margin: 0;
+            font-style: italic;
+        }
+        .dimension-body {
+            padding: 20px;
+            background: #FAFBFC;
+        }
+        .dimension-key {
+            display: inline-block;
+            background: #EAE6FF;
+            color: #403294;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-family: monospace;
+            margin-bottom: 10px;
+        }
+        .indicators-section {
+            margin-top: 20px;
+        }
+        .indicators-header {
+            font-weight: 600;
+            color: #172B4D;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #6554C0;
+        }
+        .indicator {
+            background: white;
+            border: 1px solid #DFE1E6;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 12px;
+        }
+        .indicator-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+        .indicator-name {
+            font-weight: 600;
+            color: #172B4D;
+            font-size: 15px;
+        }
+        .indicator-id {
+            font-family: monospace;
+            font-size: 11px;
+            color: #6B778C;
+            background: #F4F5F7;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+        .indicator-description {
+            color: #5E6C84;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+        .indicator-why {
+            font-size: 12px;
+            color: #403294;
+            background: #EAE6FF;
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        .indicator-metrics {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .metric {
+            min-width: 120px;
+        }
+        .metric-label {
+            font-size: 11px;
+            color: #6B778C;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .metric-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #172B4D;
+        }
+        .higher-better { color: #006644; }
+        .lower-better { color: #DE350B; }
+        @media print {
+            body { padding: 20px; }
+            .dimension { break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+    <h1>Methodology Support Cluster</h1>
+    <p class="subtitle">4 dimensions, 31 indicators</p>
+
+    <!-- Dimension 9: Sprint Hygiene -->
+    <div class="dimension">
+        <div class="dimension-header">
+            <div class="dimension-number">Dimension 9</div>
+            <h2 class="dimension-name">Sprint Hygiene</h2>
+            <p class="dimension-question">"How good is our sprint hygiene?"</p>
+        </div>
+        <div class="dimension-body">
+            <span class="dimension-key">sprintHygiene</span>
+            <p>Measures sprint practices including duration consistency, goal setting, carryover patterns, and timing of work completion.</p>
+            <div class="indicators-section">
+                <div class="indicators-header">Indicators (7)</div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Sprint Duration Variance</span>
+                        <span class="indicator-id">sprintDurationVariance</span>
+                    </div>
+                    <div class="indicator-description">Percentage of sprints that take significantly longer or shorter than planned.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric"><div class="metric-label">Current</div><div class="metric-value">15%</div></div>
+                        <div class="metric"><div class="metric-label">Benchmark</div><div class="metric-value">5%</div></div>
+                        <div class="metric"><div class="metric-label">Direction</div><div class="metric-value lower-better">Lower is better</div></div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Sprints Without Goals</span>
+                        <span class="indicator-id">sprintsWithoutGoals</span>
+                    </div>
+                    <div class="indicator-description">Percentage of sprints that have no sprint goal defined.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric"><div class="metric-label">Current</div><div class="metric-value">80%</div></div>
+                        <div class="metric"><div class="metric-label">Benchmark</div><div class="metric-value">10%</div></div>
+                        <div class="metric"><div class="metric-label">Direction</div><div class="metric-value lower-better">Lower is better</div></div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Incomplete Work Carried Over</span>
+                        <span class="indicator-id">workCarriedOver</span>
+                    </div>
+                    <div class="indicator-description">Percentage of unfinished work at sprint end that is moved directly to the next sprint.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric"><div class="metric-label">Current</div><div class="metric-value">95%</div></div>
+                        <div class="metric"><div class="metric-label">Benchmark</div><div class="metric-value">50%</div></div>
+                        <div class="metric"><div class="metric-label">Direction</div><div class="metric-value lower-better">Lower is better</div></div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Work Completed on Last Day</span>
+                        <span class="indicator-id">lastDayCompletions</span>
+                    </div>
+                    <div class="indicator-description">Percentage of sprint work that is moved to Done on the last day of the sprint.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric"><div class="metric-label">Current</div><div class="metric-value">35%</div></div>
+                        <div class="metric"><div class="metric-label">Benchmark</div><div class="metric-value">15%</div></div>
+                        <div class="metric"><div class="metric-label">Direction</div><div class="metric-value lower-better">Lower is better</div></div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Sprint Cadence Alignment</span>
+                        <span class="indicator-id">sprintCadenceAlignment</span>
+                    </div>
+                    <div class="indicator-description">Percentage of teams in your organization with matching sprint cadence.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric"><div class="metric-label">Current</div><div class="metric-value">60%</div></div>
+                        <div class="metric"><div class="metric-label">Benchmark</div><div class="metric-value">80%</div></div>
+                        <div class="metric"><div class="metric-label">Direction</div><div class="metric-value higher-better">Higher is better</div></div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Work Assigned to Other Projects' Sprints</span>
+                        <span class="indicator-id">crossProjectSprintItems</span>
+                    </div>
+                    <div class="indicator-description">Percentage of active work items assigned to sprints belonging to other Jira projects.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric"><div class="metric-label">Current</div><div class="metric-value">15%</div></div>
+                        <div class="metric"><div class="metric-label">Benchmark</div><div class="metric-value">2%</div></div>
+                        <div class="metric"><div class="metric-label">Direction</div><div class="metric-value lower-better">Lower is better</div></div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">In-Progress Issues Without Assignee</span>
+                        <span class="indicator-id">inProgressWithoutAssignee</span>
+                    </div>
+                    <div class="indicator-description">Percentage of in-progress issues that have no assignee.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric"><div class="metric-label">Current</div><div class="metric-value">15%</div></div>
+                        <div class="metric"><div class="metric-label">Benchmark</div><div class="metric-value">5%</div></div>
+                        <div class="metric"><div class="metric-label">Direction</div><div class="metric-value lower-better">Lower is better</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dimension 15: Commitment Discipline -->
+    <div class="dimension">
+        <div class="dimension-header">
+            <div class="dimension-number">Dimension 15</div>
+            <h2 class="dimension-name">Commitment Discipline</h2>
+            <p class="dimension-question">"How reliable are sprint commitments?"</p>
+        </div>
+        <div class="dimension-body">
+            <span class="dimension-key">commitmentDiscipline</span>
+            <p>Measures Say-Do ratio, scope stability, and commitment reliability. Core dimension for Scrum teams.</p>
+            <div class="indicators-section">
+                <div class="indicators-header">Indicators (9)</div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Say-Do Ratio</span>
+                        <span class="indicator-id">sayDoRatio</span>
+                    </div>
+                    <div class="indicator-description">Completed story points divided by committed story points at sprint start.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> This is THE measure of sprint commitment reliability. 80-110% is healthy.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric"><div class="metric-label">Current</div><div class="metric-value">72%</div></div>
+                        <div class="metric"><div class="metric-label">Benchmark</div><div class="metric-value">90%</div></div>
+                        <div class="metric"><div class="metric-label">Direction</div><div class="metric-value higher-better">Higher is better</div></div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Say-Do Consistency</span>
+                        <span class="indicator-id">sayDoConsistency</span>
+                    </div>
+                    <div class="indicator-description">Variation in Say-Do ratio over recent sprints (coefficient of variation).</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> Consistent Say-Do is as important as the ratio itself - variability undermines trust.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric"><div class="metric-label">Current</div><div class="metric-value">0.28</div></div>
+                        <div class="metric"><div class="metric-label">Benchmark</div><div class="metric-value">0.15</div></div>
+                        <div class="metric"><div class="metric-label">Direction</div><div class="metric-value lower-better">Lower is better</div></div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Say-Do Trend</span>
+                        <span class="indicator-id">sayDoTrend</span>
+                    </div>
+                    <div class="indicator-description">Direction of Say-Do ratio over time.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> An improving trend signals the team is getting better at commitment accuracy.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric"><div class="metric-label">Current</div><div class="metric-value">Improving</div></div>
+                        <div class="metric"><div class="metric-label">Benchmark</div><div class="metric-value">Stable</div></div>
+                        <div class="metric"><div class="metric-label">Direction</div><div class="metric-value higher-better">Higher is better</div></div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Scope Creep Rate</span>
+                        <span class="indicator-id">scopeCreepRate</span>
+                    </div>
+                    <div class="indicator-description">Percentage of sprints where significant work was added after sprint start.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> Scope creep undermines sprint predictability and team focus.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric"><div class="metric-label">Current</div><div class="metric-value">45%</div></div>
+                        <div class="metric"><div class="metric-label">Benchmark</div><div class="metric-value">20%</div></div>
+                        <div class="metric"><div class="metric-label">Direction</div><div class="metric-value lower-better">Lower is better</div></div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Scope Reduction Rate</span>
+                        <span class="indicator-id">scopeReductionRate</span>
+                    </div>
+                    <div class="indicator-description">Percentage of sprints where committed work was removed mid-sprint.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> Removing work mid-sprint suggests over-commitment or poor prioritization.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric"><div class="metric-label">Current</div><div class="metric-value">30%</div></div>
+                        <div class="metric"><div class="metric-label">Benchmark</div><div class="metric-value">15%</div></div>
+                        <div class="metric"><div class="metric-label">Direction</div><div class="metric-value lower-better">Lower is better</div></div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Net Scope Volatility</span>
+                        <span class="indicator-id">netScopeVolatility</span>
+                    </div>
+                    <div class="indicator-description">Total scope churn (additions + removals) as percentage of original commitment.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> High volatility means the sprint plan is fiction, not a real commitment.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric"><div class="metric-label">Current</div><div class="metric-value">38%</div></div>
+                        <div class="metric"><div class="metric-label">Benchmark</div><div class="metric-value">15%</div></div>
+                        <div class="metric"><div class="metric-label">Direction</div><div class="metric-value lower-better">Lower is better</div></div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Large Late Addition Count</span>
+                        <span class="indicator-id">lateAdditionSize</span>
+                    </div>
+                    <div class="indicator-description">Count of large items (>5 points) added mid-sprint.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> Large late additions cause major disruption to sprint plans.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric"><div class="metric-label">Current</div><div class="metric-value">3/sprint</div></div>
+                        <div class="metric"><div class="metric-label">Benchmark</div><div class="metric-value">1/sprint</div></div>
+                        <div class="metric"><div class="metric-label">Direction</div><div class="metric-value lower-better">Lower is better</div></div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Pre-Sprint Commitment Rate</span>
+                        <span class="indicator-id">preSprintCommitmentRate</span>
+                    </div>
+                    <div class="indicator-description">Percentage of sprint items committed before vs. after sprint start.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> Items committed before sprint start have been properly planned and refined.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric"><div class="metric-label">Current</div><div class="metric-value">68%</div></div>
+                        <div class="metric"><div class="metric-label">Benchmark</div><div class="metric-value">90%</div></div>
+                        <div class="metric"><div class="metric-label">Direction</div><div class="metric-value higher-better">Higher is better</div></div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Unplanned Work Ratio</span>
+                        <span class="indicator-id">unplannedWorkRatio</span>
+                    </div>
+                    <div class="indicator-description">Percentage of completed work that was added after sprint start.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> High unplanned work ratio means original commitment was not realistic.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric"><div class="metric-label">Current</div><div class="metric-value">32%</div></div>
+                        <div class="metric"><div class="metric-label">Benchmark</div><div class="metric-value">10%</div></div>
+                        <div class="metric"><div class="metric-label">Direction</div><div class="metric-value lower-better">Lower is better</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dimension 16: Backlog Discipline -->
+    <div class="dimension">
+        <div class="dimension-header">
+            <div class="dimension-number">Dimension 16</div>
+            <h2 class="dimension-name">Backlog Discipline</h2>
+            <p class="dimension-question">"Is the backlog well-maintained and ready for planning?"</p>
+        </div>
+        <div class="dimension-body">
+            <span class="dimension-key">backlogDiscipline</span>
+            <p>Measures backlog health including staleness, depth, zombie items, and refinement practices.</p>
+            <div class="indicators-section">
+                <div class="indicators-header">Indicators (8)</div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Backlog Age Distribution</span>
+                        <span class="indicator-id">backlogStalenessDistribution</span>
+                    </div>
+                    <div class="indicator-description">Percentage of backlog items over 6 months old.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> Old backlog items are often obsolete. Fresh backlogs enable responsive planning.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric"><div class="metric-label">Current</div><div class="metric-value">35%</div></div>
+                        <div class="metric"><div class="metric-label">Benchmark</div><div class="metric-value">20%</div></div>
+                        <div class="metric"><div class="metric-label">Direction</div><div class="metric-value lower-better">Lower is better</div></div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Backlog Depth Ratio</span>
+                        <span class="indicator-id">backlogDepthRatio</span>
+                    </div>
+                    <div class="indicator-description">Backlog size relative to average sprint throughput (in sprints worth).</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> Too deep a backlog is overwhelming; too shallow means poor planning ahead.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric"><div class="metric-label">Current</div><div class="metric-value">8.5 sprints</div></div>
+                        <div class="metric"><div class="metric-label">Benchmark</div><div class="metric-value">4 sprints</div></div>
+                        <div class="metric"><div class="metric-label">Direction</div><div class="metric-value lower-better">Lower is better</div></div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Zombie Item Count</span>
+                        <span class="indicator-id">zombieItemCount</span>
+                    </div>
+                    <div class="indicator-description">Items in backlog with no updates in 6+ months but still open.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> Zombie items are obsolete clutter. They should be refreshed or closed.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric"><div class="metric-label">Current</div><div class="metric-value">8 items</div></div>
+                        <div class="metric"><div class="metric-label">Benchmark</div><div class="metric-value">5 items</div></div>
+                        <div class="metric"><div class="metric-label">Direction</div><div class="metric-value lower-better">Lower is better</div></div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Backlog Pruning Rate</span>
+                        <span class="indicator-id">backlogPruningRate</span>
+                    </div>
+                    <div class="indicator-description">Items closed as Won't Do, Obsolete, or Duplicate per quarter.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> Regular pruning keeps the backlog relevant and manageable.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric"><div class="metric-label">Current</div><div class="metric-value">12/quarter</div></div>
+                        <div class="metric"><div class="metric-label">Benchmark</div><div class="metric-value">8/quarter</div></div>
+                        <div class="metric"><div class="metric-label">Direction</div><div class="metric-value higher-better">Higher is better</div></div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Sprint-Ready Coverage</span>
+                        <span class="indicator-id">sprintReadyCoverage</span>
+                    </div>
+                    <div class="indicator-description">Percentage of top backlog items that have estimates and acceptance criteria.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> Sprint-ready items enable smooth sprint planning without delays.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric"><div class="metric-label">Current</div><div class="metric-value">72%</div></div>
+                        <div class="metric"><div class="metric-label">Benchmark</div><div class="metric-value">80%</div></div>
+                        <div class="metric"><div class="metric-label">Direction</div><div class="metric-value higher-better">Higher is better</div></div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Refinement Lag</span>
+                        <span class="indicator-id">refinementLag</span>
+                    </div>
+                    <div class="indicator-description">Average days from item creation to receiving first estimate.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> Long refinement lag means items sit unreviewed, blocking planning.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric"><div class="metric-label">Current</div><div class="metric-value">8 days</div></div>
+                        <div class="metric"><div class="metric-label">Benchmark</div><div class="metric-value">5 days</div></div>
+                        <div class="metric"><div class="metric-label">Direction</div><div class="metric-value lower-better">Lower is better</div></div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Priority Stability Index</span>
+                        <span class="indicator-id">priorityStabilityIndex</span>
+                    </div>
+                    <div class="indicator-description">Average number of priority changes before an item is committed to a sprint.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> Frequent priority changes signal unclear strategy or reactive leadership.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric"><div class="metric-label">Current</div><div class="metric-value">2.1</div></div>
+                        <div class="metric"><div class="metric-label">Benchmark</div><div class="metric-value">1.5</div></div>
+                        <div class="metric"><div class="metric-label">Direction</div><div class="metric-value lower-better">Lower is better</div></div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Refinement to Intake Ratio</span>
+                        <span class="indicator-id">refinementToIntakeRatio</span>
+                    </div>
+                    <div class="indicator-description">Ratio of items refined to items created per period.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> If intake exceeds refinement, backlog will grow stale over time.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric"><div class="metric-label">Current</div><div class="metric-value">0.85</div></div>
+                        <div class="metric"><div class="metric-label">Benchmark</div><div class="metric-value">1.0</div></div>
+                        <div class="metric"><div class="metric-label">Direction</div><div class="metric-value higher-better">Higher is better</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dimension 17: Kanban Discipline -->
+    <div class="dimension">
+        <div class="dimension-header">
+            <div class="dimension-number">Dimension 17</div>
+            <h2 class="dimension-name">Kanban Discipline</h2>
+            <p class="dimension-question">"Does Jira usage reflect Kanban methodology standards?"</p>
+        </div>
+        <div class="dimension-body">
+            <span class="dimension-key">kanbanDiscipline</span>
+            <p>Measures Kanban practices including WIP limits, pull system evidence, and flow management. <em>Only relevant for teams using Kanban.</em></p>
+            <div class="indicators-section">
+                <div class="indicators-header">Indicators (7)</div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">WIP Limits Configured</span>
+                        <span class="indicator-id">wipLimitsConfigured</span>
+                    </div>
+                    <div class="indicator-description">Whether WIP limits are set on board columns.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> A Kanban board without WIP limits is just a task board, not Kanban.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric"><div class="metric-label">Current</div><div class="metric-value">No</div></div>
+                        <div class="metric"><div class="metric-label">Benchmark</div><div class="metric-value">Yes</div></div>
+                        <div class="metric"><div class="metric-label">Direction</div><div class="metric-value higher-better">Higher is better</div></div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">WIP Limit Compliance Rate</span>
+                        <span class="indicator-id">wipLimitComplianceRate</span>
+                    </div>
+                    <div class="indicator-description">Percentage of days where WIP stayed within configured limits.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> WIP limits only work if they're respected. Low compliance means limits are ignored.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric"><div class="metric-label">Current</div><div class="metric-value">N/A</div></div>
+                        <div class="metric"><div class="metric-label">Benchmark</div><div class="metric-value">85%</div></div>
+                        <div class="metric"><div class="metric-label">Direction</div><div class="metric-value higher-better">Higher is better</div></div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">WIP Limit Violation Severity</span>
+                        <span class="indicator-id">wipLimitViolationSeverity</span>
+                    </div>
+                    <div class="indicator-description">When limits are exceeded, how far over the limit (average % over).</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> Small violations are less harmful than being 200% over the limit.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric"><div class="metric-label">Current</div><div class="metric-value">N/A</div></div>
+                        <div class="metric"><div class="metric-label">Benchmark</div><div class="metric-value">15%</div></div>
+                        <div class="metric"><div class="metric-label">Direction</div><div class="metric-value lower-better">Lower is better</div></div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Pull System Evidence</span>
+                        <span class="indicator-id">pullSystemEvidence</span>
+                    </div>
+                    <div class="indicator-description">Percentage of items started in priority order (pulled from top of queue).</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> Kanban is a pull system. Cherry-picking undermines prioritization.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric"><div class="metric-label">Current</div><div class="metric-value">55%</div></div>
+                        <div class="metric"><div class="metric-label">Benchmark</div><div class="metric-value">80%</div></div>
+                        <div class="metric"><div class="metric-label">Direction</div><div class="metric-value higher-better">Higher is better</div></div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Explicit Policies Visible</span>
+                        <span class="indicator-id">explicitPoliciesVisible</span>
+                    </div>
+                    <div class="indicator-description">Percentage of workflow states that have descriptions or policies defined.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> Explicit policies reduce confusion about what each state means and when to move items.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric"><div class="metric-label">Current</div><div class="metric-value">20%</div></div>
+                        <div class="metric"><div class="metric-label">Benchmark</div><div class="metric-value">60%</div></div>
+                        <div class="metric"><div class="metric-label">Direction</div><div class="metric-value higher-better">Higher is better</div></div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Start-Finish Balance</span>
+                        <span class="indicator-id">startFinishBalance</span>
+                    </div>
+                    <div class="indicator-description">Weekly ratio of items started vs. items finished.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> Starting more than finishing causes WIP to grow. Healthy flow has balanced start/finish.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric"><div class="metric-label">Current</div><div class="metric-value">1.35</div></div>
+                        <div class="metric"><div class="metric-label">Benchmark</div><div class="metric-value">1.0</div></div>
+                        <div class="metric"><div class="metric-label">Direction</div><div class="metric-value lower-better">Lower is better</div></div>
+                    </div>
+                </div>
+
+                <div class="indicator">
+                    <div class="indicator-header">
+                        <span class="indicator-name">Blocked Item Visibility</span>
+                        <span class="indicator-id">blockedItemVisibility</span>
+                    </div>
+                    <div class="indicator-description">Percentage of stuck items (no progress 3+ days) that are flagged as blocked.</div>
+                    <div class="indicator-why"><strong>Why it matters:</strong> Making blockers visible enables the team to swarm and resolve them.</div>
+                    <div class="indicator-metrics">
+                        <div class="metric"><div class="metric-label">Current</div><div class="metric-value">35%</div></div>
+                        <div class="metric"><div class="metric-label">Benchmark</div><div class="metric-value">75%</div></div>
+                        <div class="metric"><div class="metric-label">Direction</div><div class="metric-value higher-better">Higher is better</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

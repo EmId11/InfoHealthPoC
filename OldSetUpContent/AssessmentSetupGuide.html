@@ -1,0 +1,740 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/><title>Assessment Setup</title><style>
+/* cspell:disable-file */
+/* webkit printing magic: print all background colors */
+html {
+	-webkit-print-color-adjust: exact;
+}
+* {
+	box-sizing: border-box;
+	-webkit-print-color-adjust: exact;
+}
+
+html,
+body {
+	margin: 0;
+	padding: 0;
+}
+@media only screen {
+	body {
+		margin: 2em auto;
+		max-width: 900px;
+		color: rgb(55, 53, 47);
+	}
+}
+
+body {
+	line-height: 1.5;
+	white-space: pre-wrap;
+}
+
+a,
+a.visited {
+	color: inherit;
+	text-decoration: underline;
+}
+
+.pdf-relative-link-path {
+	font-size: 80%;
+	color: #444;
+}
+
+h1,
+h2,
+h3 {
+	letter-spacing: -0.01em;
+	line-height: 1.2;
+	font-weight: 600;
+	margin-bottom: 0;
+}
+
+/* Override strong tags inside headings to maintain consistent weight */
+h1 strong,
+h2 strong,
+h3 strong {
+	font-weight: 600;
+}
+
+.page-title {
+	font-size: 2.5rem;
+	font-weight: 700;
+	margin-top: 0;
+	margin-bottom: 0.75em;
+}
+
+h1 {
+	font-size: 1.875rem;
+	margin-top: 1.875rem;
+}
+
+h2 {
+	font-size: 1.5rem;
+	margin-top: 1.5rem;
+}
+
+h3 {
+	font-size: 1.25rem;
+	margin-top: 1.25rem;
+}
+
+.source {
+	border: 1px solid #ddd;
+	border-radius: 3px;
+	padding: 1.5em;
+	word-break: break-all;
+}
+
+.callout {
+	border-radius: 10px;
+	padding: 1rem;
+}
+
+figure {
+	margin: 1.25em 0;
+	page-break-inside: avoid;
+}
+
+figcaption {
+	opacity: 0.5;
+	font-size: 85%;
+	margin-top: 0.5em;
+}
+
+mark {
+	background-color: transparent;
+}
+
+.indented {
+	padding-left: 1.5em;
+}
+
+hr {
+	background: transparent;
+	display: block;
+	width: 100%;
+	height: 1px;
+	visibility: visible;
+	border: none;
+	border-bottom: 1px solid rgba(55, 53, 47, 0.09);
+}
+
+img {
+	max-width: 100%;
+}
+
+@media only print {
+	img {
+		max-height: 100vh;
+		object-fit: contain;
+	}
+}
+
+@page {
+	margin: 1in;
+}
+
+.collection-content {
+	font-size: 0.875rem;
+}
+
+.collection-content td {
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+
+.column-list {
+	display: flex;
+	justify-content: space-between;
+}
+
+.column {
+	padding: 0 1em;
+}
+
+.column:first-child {
+	padding-left: 0;
+}
+
+.column:last-child {
+	padding-right: 0;
+}
+
+.table_of_contents-item {
+	display: block;
+	font-size: 0.875rem;
+	line-height: 1.3;
+	padding: 0.125rem;
+}
+
+.table_of_contents-indent-1 {
+	margin-left: 1.5rem;
+}
+
+.table_of_contents-indent-2 {
+	margin-left: 3rem;
+}
+
+.table_of_contents-indent-3 {
+	margin-left: 4.5rem;
+}
+
+.table_of_contents-link {
+	text-decoration: none;
+	opacity: 0.7;
+	border-bottom: 1px solid rgba(55, 53, 47, 0.18);
+}
+
+table,
+th,
+td {
+	border: 1px solid rgba(55, 53, 47, 0.09);
+	border-collapse: collapse;
+}
+
+table {
+	border-left: none;
+	border-right: none;
+}
+
+th,
+td {
+	font-weight: normal;
+	padding: 0.25em 0.5em;
+	line-height: 1.5;
+	min-height: 1.5em;
+	text-align: left;
+}
+
+th {
+	color: rgba(55, 53, 47, 0.6);
+}
+
+ol,
+ul {
+	margin: 0;
+	margin-block-start: 0.6em;
+	margin-block-end: 0.6em;
+}
+
+li > ol:first-child,
+li > ul:first-child {
+	margin-block-start: 0.6em;
+}
+
+ul > li {
+	list-style: disc;
+}
+
+ul.to-do-list {
+	padding-inline-start: 0;
+}
+
+ul.to-do-list > li {
+	list-style: none;
+}
+
+.to-do-children-checked {
+	text-decoration: line-through;
+	opacity: 0.375;
+}
+
+ul.toggle > li {
+	list-style: none;
+}
+
+ul {
+	padding-inline-start: 1.7em;
+}
+
+ul > li {
+	padding-left: 0.1em;
+}
+
+ol {
+	padding-inline-start: 1.6em;
+}
+
+ol > li {
+	padding-left: 0.2em;
+}
+
+.mono ol {
+	padding-inline-start: 2em;
+}
+
+.mono ol > li {
+	text-indent: -0.4em;
+}
+
+.toggle {
+	padding-inline-start: 0em;
+	list-style-type: none;
+}
+
+/* Indent toggle children */
+.toggle > li > details {
+	padding-left: 1.7em;
+}
+
+.toggle > li > details > summary {
+	margin-left: -1.1em;
+}
+
+.selected-value {
+	display: inline-block;
+	padding: 0 0.5em;
+	background: rgba(206, 205, 202, 0.5);
+	border-radius: 3px;
+	margin-right: 0.5em;
+	margin-top: 0.3em;
+	margin-bottom: 0.3em;
+	white-space: nowrap;
+}
+
+.collection-title {
+	display: inline-block;
+	margin-right: 1em;
+}
+
+.page-description {
+	margin-bottom: 2em;
+}
+
+.simple-table {
+	margin-top: 1em;
+	font-size: 0.875rem;
+	empty-cells: show;
+}
+.simple-table td {
+	height: 29px;
+	min-width: 120px;
+}
+
+.simple-table th {
+	height: 29px;
+	min-width: 120px;
+}
+
+.simple-table-header-color {
+	background: rgb(247, 246, 243);
+	color: black;
+}
+.simple-table-header {
+	font-weight: 500;
+}
+
+time {
+	opacity: 0.5;
+}
+
+.icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	max-width: 1.2em;
+	max-height: 1.2em;
+	text-decoration: none;
+	vertical-align: text-bottom;
+	margin-right: 0.5em;
+}
+
+img.icon {
+	border-radius: 3px;
+}
+
+.callout img.notion-static-icon {
+	width: 1em;
+	height: 1em;
+}
+
+.callout p {
+	margin: 0;
+}
+
+.callout h1,
+.callout h2,
+.callout h3 {
+	margin: 0 0 0.6rem;
+}
+
+.user-icon {
+	width: 1.5em;
+	height: 1.5em;
+	border-radius: 100%;
+	margin-right: 0.5rem;
+}
+
+.user-icon-inner {
+	font-size: 0.8em;
+}
+
+.text-icon {
+	border: 1px solid #000;
+	text-align: center;
+}
+
+.page-cover-image {
+	display: block;
+	object-fit: cover;
+	width: 100%;
+	max-height: 30vh;
+}
+
+.page-header-icon {
+	font-size: 3rem;
+	margin-bottom: 1rem;
+}
+
+.page-header-icon-with-cover {
+	margin-top: -0.72em;
+	margin-left: 0.07em;
+}
+
+.page-header-icon img {
+	border-radius: 3px;
+}
+
+.link-to-page {
+	margin: 1em 0;
+	padding: 0;
+	border: none;
+	font-weight: 500;
+}
+
+p > .user {
+	opacity: 0.5;
+}
+
+td > .user,
+td > time {
+	white-space: nowrap;
+}
+
+input[type="checkbox"] {
+	transform: scale(1.5);
+	margin-right: 0.6em;
+	vertical-align: middle;
+}
+
+p {
+	margin-top: 0.5em;
+	margin-bottom: 0.5em;
+}
+
+.image {
+	border: none;
+	margin: 1.5em 0;
+	padding: 0;
+	border-radius: 0;
+	text-align: center;
+}
+
+.code,
+code {
+	background: rgba(135, 131, 120, 0.15);
+	border-radius: 3px;
+	padding: 0.2em 0.4em;
+	border-radius: 3px;
+	font-size: 85%;
+	tab-size: 2;
+}
+
+code {
+	color: #eb5757;
+}
+
+.code {
+	padding: 1.5em 1em;
+}
+
+.code-wrap {
+	white-space: pre-wrap;
+	word-break: break-all;
+}
+
+.code > code {
+	background: none;
+	padding: 0;
+	font-size: 100%;
+	color: inherit;
+}
+
+blockquote {
+	font-size: 1em;
+	margin: 1em 0;
+	padding-left: 1em;
+	border-left: 3px solid rgb(55, 53, 47);
+}
+
+blockquote.quote-large {
+	font-size: 1.25em;
+}
+
+.bookmark {
+	text-decoration: none;
+	max-height: 8em;
+	padding: 0;
+	display: flex;
+	width: 100%;
+	align-items: stretch;
+}
+
+.bookmark-title {
+	font-size: 0.85em;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	height: 1.75em;
+	white-space: nowrap;
+}
+
+.bookmark-text {
+	display: flex;
+	flex-direction: column;
+}
+
+.bookmark-info {
+	flex: 4 1 180px;
+	padding: 12px 14px 14px;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+}
+
+.bookmark-image {
+	width: 33%;
+	flex: 1 1 180px;
+	display: block;
+	position: relative;
+	object-fit: cover;
+	border-radius: 1px;
+}
+
+.bookmark-description {
+	color: rgba(55, 53, 47, 0.6);
+	font-size: 0.75em;
+	overflow: hidden;
+	max-height: 4.5em;
+	word-break: break-word;
+}
+
+.bookmark-href {
+	font-size: 0.75em;
+	margin-top: 0.25em;
+}
+
+.sans { font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol"; }
+.code { font-family: "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace; }
+.serif { font-family: Lyon-Text, Georgia, ui-serif, serif; }
+.mono { font-family: iawriter-mono, Nitti, Menlo, Courier, monospace; }
+.pdf .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK JP'; }
+.pdf:lang(zh-CN) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK SC'; }
+.pdf:lang(zh-TW) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK TC'; }
+.pdf:lang(ko-KR) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK KR'; }
+.pdf .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK JP'; }
+.pdf:lang(zh-CN) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK SC'; }
+.pdf:lang(zh-TW) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK TC'; }
+.pdf:lang(ko-KR) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK KR'; }
+.pdf .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK JP'; }
+.pdf:lang(zh-CN) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK SC'; }
+.pdf:lang(zh-TW) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK TC'; }
+.pdf:lang(ko-KR) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK KR'; }
+.pdf .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK JP'; }
+.pdf:lang(zh-CN) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK SC'; }
+.pdf:lang(zh-TW) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK TC'; }
+.pdf:lang(ko-KR) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK KR'; }
+.highlight-default {
+	color: rgba(44, 44, 43, 1);
+}
+.highlight-gray {
+	color: rgba(125, 122, 117, 1);
+	fill: rgba(125, 122, 117, 1);
+}
+.highlight-brown {
+	color: rgba(159, 118, 90, 1);
+	fill: rgba(159, 118, 90, 1);
+}
+.highlight-orange {
+	color: rgba(210, 123, 45, 1);
+	fill: rgba(210, 123, 45, 1);
+}
+.highlight-yellow {
+	color: rgba(203, 148, 52, 1);
+	fill: rgba(203, 148, 52, 1);
+}
+.highlight-teal {
+	color: rgba(80, 148, 110, 1);
+	fill: rgba(80, 148, 110, 1);
+}
+.highlight-blue {
+	color: rgba(56, 125, 201, 1);
+	fill: rgba(56, 125, 201, 1);
+}
+.highlight-purple {
+	color: rgba(154, 107, 180, 1);
+	fill: rgba(154, 107, 180, 1);
+}
+.highlight-pink {
+	color: rgba(193, 76, 138, 1);
+	fill: rgba(193, 76, 138, 1);
+}
+.highlight-red {
+	color: rgba(207, 81, 72, 1);
+	fill: rgba(207, 81, 72, 1);
+}
+.highlight-default_background {
+	color: rgba(44, 44, 43, 1);
+}
+.highlight-gray_background {
+	background: rgba(42, 28, 0, 0.07);
+}
+.highlight-brown_background {
+	background: rgba(139, 46, 0, 0.086);
+}
+.highlight-orange_background {
+	background: rgba(224, 101, 1, 0.129);
+}
+.highlight-yellow_background {
+	background: rgba(211, 168, 0, 0.137);
+}
+.highlight-teal_background {
+	background: rgba(0, 100, 45, 0.09);
+}
+.highlight-blue_background {
+	background: rgba(0, 124, 215, 0.094);
+}
+.highlight-purple_background {
+	background: rgba(102, 0, 178, 0.078);
+}
+.highlight-pink_background {
+	background: rgba(197, 0, 93, 0.086);
+}
+.highlight-red_background {
+	background: rgba(223, 22, 0, 0.094);
+}
+.block-color-default {
+	color: inherit;
+	fill: inherit;
+}
+.block-color-gray {
+	color: rgba(125, 122, 117, 1);
+	fill: rgba(125, 122, 117, 1);
+}
+.block-color-brown {
+	color: rgba(159, 118, 90, 1);
+	fill: rgba(159, 118, 90, 1);
+}
+.block-color-orange {
+	color: rgba(210, 123, 45, 1);
+	fill: rgba(210, 123, 45, 1);
+}
+.block-color-yellow {
+	color: rgba(203, 148, 52, 1);
+	fill: rgba(203, 148, 52, 1);
+}
+.block-color-teal {
+	color: rgba(80, 148, 110, 1);
+	fill: rgba(80, 148, 110, 1);
+}
+.block-color-blue {
+	color: rgba(56, 125, 201, 1);
+	fill: rgba(56, 125, 201, 1);
+}
+.block-color-purple {
+	color: rgba(154, 107, 180, 1);
+	fill: rgba(154, 107, 180, 1);
+}
+.block-color-pink {
+	color: rgba(193, 76, 138, 1);
+	fill: rgba(193, 76, 138, 1);
+}
+.block-color-red {
+	color: rgba(207, 81, 72, 1);
+	fill: rgba(207, 81, 72, 1);
+}
+.block-color-default_background {
+	color: inherit;
+	fill: inherit;
+}
+.block-color-gray_background {
+	background: rgba(240, 239, 237, 1);
+}
+.block-color-brown_background {
+	background: rgba(245, 237, 233, 1);
+}
+.block-color-orange_background {
+	background: rgba(251, 235, 222, 1);
+}
+.block-color-yellow_background {
+	background: rgba(249, 243, 220, 1);
+}
+.block-color-teal_background {
+	background: rgba(232, 241, 236, 1);
+}
+.block-color-blue_background {
+	background: rgba(229, 242, 252, 1);
+}
+.block-color-purple_background {
+	background: rgba(243, 235, 249, 1);
+}
+.block-color-pink_background {
+	background: rgba(250, 233, 241, 1);
+}
+.block-color-red_background {
+	background: rgba(252, 233, 231, 1);
+}
+.select-value-color-default { background-color: rgba(42, 28, 0, 0.07); }
+.select-value-color-gray { background-color: rgba(28, 19, 1, 0.11); }
+.select-value-color-brown { background-color: rgba(127, 51, 0, 0.156); }
+.select-value-color-orange { background-color: rgba(196, 88, 0, 0.203); }
+.select-value-color-yellow { background-color: rgba(209, 156, 0, 0.282); }
+.select-value-color-green { background-color: rgba(0, 96, 38, 0.156); }
+.select-value-color-blue { background-color: rgba(0, 118, 217, 0.203); }
+.select-value-color-purple { background-color: rgba(92, 0, 163, 0.141); }
+.select-value-color-pink { background-color: rgba(183, 0, 78, 0.152); }
+.select-value-color-red { background-color: rgba(206, 24, 0, 0.164); }
+
+.checkbox {
+	display: inline-flex;
+	vertical-align: text-bottom;
+	width: 16;
+	height: 16;
+	background-size: 16px;
+	margin-left: 2px;
+	margin-right: 5px;
+}
+
+.checkbox-on {
+	background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%3Crect%20width%3D%2216%22%20height%3D%2216%22%20fill%3D%22%2358A9D7%22%2F%3E%0A%3Cpath%20d%3D%22M6.71429%2012.2852L14%204.9995L12.7143%203.71436L6.71429%209.71378L3.28571%206.2831L2%207.57092L6.71429%2012.2852Z%22%20fill%3D%22white%22%2F%3E%0A%3C%2Fsvg%3E");
+}
+
+.checkbox-off {
+	background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%3Crect%20x%3D%220.75%22%20y%3D%220.75%22%20width%3D%2214.5%22%20height%3D%2214.5%22%20fill%3D%22white%22%20stroke%3D%22%2336352F%22%20stroke-width%3D%221.5%22%2F%3E%0A%3C%2Fsvg%3E");
+}
+	
+</style></head><body><article id="2d2400b9-da5c-8036-84ab-ef41214aca8e" class="page mono"><header><h1 class="page-title" dir="auto">Assessment Setup</h1><p class="page-description" dir="auto"></p></header><div class="page-body"><div style="display:contents" dir="auto"><p id="2d2400b9-da5c-8005-89ea-faa7a6feeb2f" class="">
+</p></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-809d-8c13-d79d1a4589bb" class="toggle"><li><details open=""><summary><mark class="highlight-red_background"><strong>Analysis set-up, Page </strong></mark><mark class="highlight-blue_background"><strong>(1)</strong></mark></summary><div style="display:contents" dir="ltr"><figure class="block-color-gray_background callout" style="white-space:pre-wrap;display:flex" id="2d2400b9-da5c-8039-bd94-c5786bb8f7d0"><div style="font-size:1.5em"><img class="icon notion-static-icon" src="https://www.notion.so/icons/thought-dialogue_red.svg"/></div><div style="width:100%"><div style="display:contents" dir="auto"><p id="2d2400b9-da5c-80cc-8451-c9e4872edb62" class=""><strong>Team: </strong><mark class="highlight-yellow_background"><strong>                   </strong></mark></p></div><div style="display:contents" dir="auto"><hr id="2d2400b9-da5c-806d-9ce5-c135f0dceb54"/></div><div style="display:contents" dir="auto"><ol type="a" id="2d2400b9-da5c-8048-8f93-c6ea27f1013f" class="numbered-list" start="1"><li><strong>If you’d like, you can see how this team compares to other teams that share one or more of its characteristics:</strong></li></ol></div><div style="display:contents" dir="ltr"><figure class="block-color-gray_background callout" style="white-space:pre-wrap;display:flex" id="2d2400b9-da5c-8097-93b4-ea2ec160ab6a"><div style="font-size:1.5em"><img class="icon notion-static-icon" src="https://www.notion.so/icons/new-alert_pink.svg"/></div><div style="width:100%"><div style="display:contents" dir="auto"><p id="2d2400b9-da5c-806d-b64f-ebed780ba26b" class=""><em>Note that if more than one comparison criteria is selected, ew will produce a separate comparison analysis for each criteria</em></p></div></div></figure></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-80a4-93a4-d5150909ddf0" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">Compare to other teams in the organisation</span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-804a-a457-c0ea795af210" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">Compare to other Scrum teams</span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-80f6-bbc0-da5dd5505c3f" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">Compare to other teams with similar levels of demand variability</span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-8037-81c9-f38f543acae5" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">Compare to other teams with similar volume of work</span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-800e-8a36-eed30d92fb1c" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">Compare to other teams that have been active for &gt;6 months</span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-805d-931f-e54bbf7fc4e6" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">Compare to other Tribe teams</span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-80d9-a41a-ddf73aed045b" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">Compare to specific teams (select teams: <mark class="highlight-yellow_background">                    </mark><mark class="highlight-default_background">). </mark></span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><hr id="2d2400b9-da5c-807c-ba0b-ca904304f341"/></div><div style="display:contents" dir="auto"><p id="2d2400b9-da5c-8082-bb06-e152d949c647" class="">b. <strong>How far back do you want us to look? </strong></p></div><div style="display:contents" dir="auto"><p id="2d2400b9-da5c-80e5-a5f1-e96180330563" class="">from <mark class="highlight-yellow_background">  </mark><mark class="highlight-yellow_background"><time>@December 1, 2025</time></mark><mark class="highlight-yellow_background"> to </mark><mark class="highlight-yellow_background"><time>@December 23, 2025</time></mark><mark class="highlight-yellow_background">.</mark></p></div><div style="display:contents" dir="auto"><p id="2d2400b9-da5c-80b9-9798-dd6e35254efb" class="">To generate the trend, the data should be grouped:<div class="indented"><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-80b0-9c16-f901c1251a84" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">Monthly</span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-8052-8aa4-dcc0cc2ff04e" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">Fortnightly</span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-801a-ad23-c5b32b8b95cd" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">Weekly</span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-80b8-b626-e7ce9e92711b" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">…</span><div class="indented"></div></li></ul></div></div></p></div></div></figure></div><div style="display:contents" dir="auto"><hr id="2d2400b9-da5c-8047-b86d-fb5bedb3efec"/></div></details></li></ul></div><div style="display:contents" dir="auto"><p id="2d2400b9-da5c-80c7-9b41-c52909e87ec6" class="">
+</p></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-8026-9b65-def7c0ea3d21" class="toggle"><li><details open=""><summary><mark class="highlight-red_background"><strong>Analysis set-up, Page </strong></mark><mark class="highlight-blue_background"><strong>(2)</strong></mark></summary><div style="display:contents" dir="ltr"><figure class="block-color-gray_background callout" style="white-space:pre-wrap;display:flex" id="2d2400b9-da5c-802a-9042-df18428633f9"><div style="font-size:1.5em"><img class="icon notion-static-icon" src="https://www.notion.so/icons/thought-dialogue_red.svg"/></div><div style="width:100%"><div style="display:contents" dir="auto"><p id="2d2400b9-da5c-8058-9b27-c73ced4dd54c" class=""><em>What dimensions and indicators do you want to track?</em></p></div><div style="display:contents" dir="auto"><p id="2d2400b9-da5c-80eb-8b3a-c2b55d88b4b1" class=""><em>[Will add the individual indicators and when applicable indicator groups under each dimension]</em></p></div><div style="display:contents" dir="auto"><hr id="2d2400b9-da5c-8038-a4ce-fb95f6d28ff9"/></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-80b8-826e-c57222eae23e" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked"><strong>Is all the work captured in Jira?</strong></span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-80f2-af98-ee27289bf8e2" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked"><strong>Do the issues in Jira capture (in reasonable detail) what needs to be delivered, in what order, and why?</strong></span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-8078-bfe1-c8cce03cfbf1" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked"><strong>Do we have estimates for </strong><em><strong>‘in progress’</strong></em><strong> work items?</strong></span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-80e0-932e-f02e10b4cf79" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked"><strong>For work items that we </strong><mark class="highlight-teal"><strong>do</strong></mark><strong> estimate, are those estimates consistent and reliable?</strong></span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-805c-bf61-fccce62770a3" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked"><strong>For work items that we </strong><mark class="highlight-red"><strong>do</strong></mark><strong> </strong><mark class="highlight-red"><strong>not</strong></mark><strong> estimate, are the work items sized in a way that enables effective planning and forecasting?</strong></span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-8052-aba3-ce5d76eaf4e0" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked"><strong>Do we use issue types consistenly?</strong></span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-80d7-a62f-c2ce54948dfe" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked"><strong>Does the data that we see represent an up-to-date view of the work?</strong></span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-80a1-aae5-ff213bbe1881" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked"><strong>Do we promptly capture blockers &amp; impediments in Jira so that they could be effectively managed?</strong></span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-8064-b31f-f7557c4ab0b9" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked"><strong>Is the work connected in such a way that I can see how progress made on user stories &amp; tasks adds up to higher level Epics &amp; Initiatives?</strong></span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-80ca-89c1-e11fcba3d5df" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked"><strong>How good is our sprint </strong><mark class="highlight-blue"><strong>hygiene</strong></mark><strong>?</strong></span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-80ac-90f0-fff8e4916763" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked"><strong>Are we using Jira to collaborate effectively (within our team and with other teams)?</strong></span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-8016-9dff-e1613c04648a" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked"><strong>Is there manual/repetitive work that could be optimised via Jira Automation?</strong></span><div class="indented"></div></li></ul></div></div></figure></div><div style="display:contents" dir="auto"><hr id="2d2400b9-da5c-804d-932f-f8b3ac6b8eb5"/></div><div style="display:contents" dir="auto"><p id="2d2400b9-da5c-803a-ba53-fe59b1cc7915" class="">
+</p></div></details></li></ul></div><div style="display:contents" dir="auto"><p id="2d2400b9-da5c-806c-9ed5-d662c84e8b4c" class="">
+</p></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-8099-9315-f2906f259d34" class="toggle"><li><details open=""><summary><mark class="highlight-red_background"><strong>Analysis set-up, Page </strong></mark><mark class="highlight-blue_background"><strong>(3)</strong></mark></summary><div style="display:contents" dir="ltr"><figure class="block-color-gray_background callout" style="white-space:pre-wrap;display:flex" id="2d2400b9-da5c-8088-b3f9-eccd99fae673"><div style="font-size:1.5em"><img class="icon notion-static-icon" src="https://www.notion.so/icons/thought-dialogue_red.svg"/></div><div style="width:100%"><div style="display:contents" dir="auto"><ol type="1" id="2d2400b9-da5c-80e2-ac5c-d0272a59fc46" class="numbered-list" start="1"><li><strong>Select the issue types to include in the analysis</strong><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-805e-bdb9-d02b7e1b616f" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">User Story</span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-80c1-a575-d86a6ee11913" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">Task</span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-804b-a132-fc4c7f2aaee0" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">Epic</span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-80c3-bb7b-c3e30db9450c" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked"><mark class="highlight-blue"><strong>Add other issue types </strong></mark><em><mark class="highlight-blue">(when they click, they will be presented with a list of all the issue types in their system)</mark></em></span><div class="indented"><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-80d2-8708-d49466772547" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked"><mark class="highlight-blue">Risk</mark></span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-8054-b246-f3c46f41bbaf" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked"><mark class="highlight-blue">Dependency</mark></span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-809c-8696-dd391d04fdb3" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked"><mark class="highlight-blue">Assumption</mark></span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-80dd-b618-f404d103cfc3" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked"><mark class="highlight-blue">Bug</mark></span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-80bb-a600-f0e3122907b8" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked"><mark class="highlight-blue">…etc.</mark></span><div class="indented"></div></li></ul></div></div></li></ul></div></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d2400b9-da5c-806c-98d2-f3ed6d1a1779" class="numbered-list" start="2"><li><strong>Under each issue type they selected, select which critical fields to track</strong><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-8048-9250-f0de74f01201" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">User Story</span><div class="indented"><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-80bc-bf0a-c619c3bd03c6" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">Acceptance Criteria [Select the Jira field to match:  <mark class="highlight-yellow_background">                    </mark><mark class="highlight-default_background">]</mark></span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-80c0-900f-f27a750e4c0b" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">Parent Epic         [Select the Jira field to match:  <mark class="highlight-yellow_background">                    </mark><mark class="highlight-default_background">]</mark></span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-80eb-8498-f3d5bae26b18" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">Estimate            [Select the Jira field to match:  <mark class="highlight-yellow_background">                    </mark><mark class="highlight-default_background">]</mark></span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-8019-98a0-cc08d475a1fb" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">Assignee            [Select the Jira field to match:  <mark class="highlight-yellow_background">                    </mark><mark class="highlight-default_background">]</mark></span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-809c-bbee-d567d24bbe32" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">Due Date            [Select the Jira field to match:  <mark class="highlight-yellow_background">                    </mark><mark class="highlight-default_background">]</mark></span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-8078-805b-d2408f8d6fad" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">Priority            [Select the Jira field to match:  <mark class="highlight-yellow_background">                    </mark><mark class="highlight-default_background">]</mark></span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-8045-a358-cb0c2927199b" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked"><mark class="highlight-blue"><strong>Add other fields…</strong></mark></span><div class="indented"></div></li></ul></div></div></li></ul></div></li></ol></div></div></figure></div><div style="display:contents" dir="auto"><p id="2d2400b9-da5c-802a-8b7f-f7815395a0e4" class="">In <em>Add other fields</em> you get to add to what already comes out of the box. For new issue types, nothing will come out of the box. Also, in this analysis we will exclude mandatory fields as these should already be provided.</p></div><div style="display:contents" dir="ltr"><figure class="block-color-gray_background callout" style="white-space:pre-wrap;display:flex" id="2d2400b9-da5c-806d-b88b-e6876627236d"><div style="font-size:1.5em"><img class="icon notion-static-icon" src="https://www.notion.so/icons/thought-dialogue_red.svg"/></div><div style="width:100%"><div style="display:contents" dir="auto"><p id="2d2400b9-da5c-8097-b640-e3e51aa6b72f" class=""><mark class="highlight-blue"><strong>Select other fields (will pull from each type the fields relevant to it):</strong></mark><div class="indented"><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-807c-ac80-f2cbd5283ec6" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">Original estimate</span><div class="indented"><div style="display:contents" dir="auto"><p id="2d2400b9-da5c-808e-b3c2-fb457737d164" class="">→ Title   <mark class="highlight-yellow_background">    </mark><em><mark class="highlight-yellow_background"> &lt;By default it’s field name&gt; </mark></em><mark class="highlight-yellow_background">              </mark></p></div><div style="display:contents" dir="auto"><p id="2d2400b9-da5c-803f-be33-d640f9d8df6f" class="">→ Can also add: if the value is outside the range of a specific set of values, or if the value is numeric or categorical the distribution of the values (e.g. frequency of setting 1)</p></div></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-8091-a56a-c783e466c3e5" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">Labels</span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-8011-a77f-d40878bb793a" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">Custom_field124</span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-8019-8d6f-dc6f0c9a9451" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">…etc.</span><div class="indented"></div></li></ul></div></div></p></div></div></figure></div><div style="display:contents" dir="auto"><p id="2d2400b9-da5c-8052-a477-edd4f0d2f9d4" class=""><em><strong>For all fields we will do the same as with the out-of-the-box ones:</strong></em><em> what’s the % of issues that that thing doesn’t exist? How does that compare to the select group?</em></p></div><div style="display:contents" dir="auto"><hr id="2d2400b9-da5c-80b3-875d-fa4e81d7da5b"/></div></details></li></ul></div><div style="display:contents" dir="auto"><p id="2d2400b9-da5c-808a-9cb7-e29530d11f91" class="">
+</p></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-80fc-a64b-d707799042ee" class="toggle"><li><details open=""><summary><mark class="highlight-red_background"><strong>Analysis set-up, page</strong></mark><mark class="highlight-red_background"> </mark><mark class="highlight-blue_background"><strong>(4)</strong></mark></summary><div style="display:contents" dir="ltr"><figure class="block-color-gray_background callout" style="white-space:pre-wrap;display:flex" id="2d2400b9-da5c-80d0-8672-fe7f3760343f"><div style="font-size:1.5em"><img class="icon notion-static-icon" src="https://www.notion.so/icons/thought-dialogue_red.svg"/></div><div style="width:100%"><div style="display:contents" dir="auto"><p id="2d2400b9-da5c-8071-8428-f1c8677e328d" class=""><strong>What issue types do you estimate?</strong><div class="indented"><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-806a-9340-c46be0cb4b92" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">We don’t estimate</span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-80a2-89f0-d118307c495f" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">Stories</span><div class="indented"><div style="display:contents" dir="auto"><p id="2d2400b9-da5c-8063-b975-dfa70dab1b73" class="">→ When an issue type is clicked: <strong>Upon the transition to which state should work items of this type be estimated?</strong><div class="indented"><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-80e6-9392-e2406c388473" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">Open</span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-80a5-9266-e064b53d56a2" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">Ready</span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-8023-81bc-f84ae2235261" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">In Progress</span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-8072-86e2-e5f44f9cf2b8" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">…etc. <em>(pull the actual states from their Jira)</em></span><div class="indented"></div></li></ul></div></div></p></div></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-8093-9f8e-f22ae5bb2df6" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">Tasks</span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-8084-b74a-d5122d43659f" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">Epics</span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-8003-b93c-f927734176b1" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">…etc. <em>(pull the issue types from their Jira) </em></span><div class="indented"></div></li></ul></div></div></p></div></div></figure></div><div style="display:contents" dir="auto"><hr id="2d2400b9-da5c-80a0-9a37-ceda1074046c"/></div><div style="display:contents" dir="auto"><p id="2d2400b9-da5c-80ed-9c31-f6057a21433a" class="">
+</p></div><div style="display:contents" dir="auto"><p id="2d2400b9-da5c-80a5-8fab-f1ba6377cd74" class="">
+</p></div></details></li></ul></div><div style="display:contents" dir="auto"><p id="2d2400b9-da5c-8020-9a6e-c0bb3cfafeba" class="">
+</p></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-80ba-9dc5-d4751d6ae937" class="toggle"><li><details open=""><summary><mark class="highlight-red_background"><strong>Analysis set-up, page</strong></mark><mark class="highlight-red_background"> </mark><mark class="highlight-blue_background"><strong>(5)</strong></mark></summary><div style="display:contents" dir="ltr"><figure class="block-color-gray_background callout" style="white-space:pre-wrap;display:flex" id="2d2400b9-da5c-8060-adfe-d6101fb9fd60"><div style="font-size:1.5em"><img class="icon notion-static-icon" src="https://www.notion.so/icons/thought-dialogue_red.svg"/></div><div style="width:100%"><div style="display:contents" dir="auto"><p id="2d2400b9-da5c-80e0-9515-f44c225757df" class="">For the issue types that you typically estimate, are there any specific standards or guidelines that you’d like to see the degree to which we adhere to?</p></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-806d-a325-cff458825dc8" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked"><strong>How big issue types should be</strong></span><div class="indented"><div style="display:contents" dir="ltr"><table id="2d2400b9-da5c-804f-b61f-ef772de3fd2e" class="simple-table"><tbody><div style="display:contents" dir="ltr"><tr id="2d2400b9-da5c-80a4-ab55-c75b490c54a6"><td id="]pDo" class="" style="width:201.65625px">Issue Type</td><td id="nNgc" class="" style="width:251.65625px">Standard</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d2400b9-da5c-8042-90a5-d2c0dddfde16"><td id="]pDo" class="" style="width:201.65625px">✅ User story</td><td id="nNgc" class="" style="width:251.65625px">  <mark class="highlight-yellow_background">  &lt;standard in days&gt;   </mark></td></tr></div><div style="display:contents" dir="ltr"><tr id="2d2400b9-da5c-8010-bcd7-da22fa714701"><td id="]pDo" class="" style="width:201.65625px">✅ Task</td><td id="nNgc" class="" style="width:251.65625px">  <mark class="highlight-yellow_background">  &lt;standard in days&gt;   </mark></td></tr></div><div style="display:contents" dir="ltr"><tr id="2d2400b9-da5c-8062-a332-d3c6a8441d2a"><td id="]pDo" class="" style="width:201.65625px">✅ Epic</td><td id="nNgc" class="" style="width:251.65625px">  <mark class="highlight-yellow_background">  &lt;standard in days&gt;   </mark></td></tr></div></tbody></table></div></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-8025-b812-d82a87d5dfe2" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked"><strong>The estimation system to be used</strong></span><div class="indented"><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-8075-9829-c8f5a28d2796" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">Fibonacci</span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-80e5-8e38-f5a950fad1d4" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">Any numbers, no fractions</span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-8020-8c99-fefe121c2bcb" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">Fractions allowed</span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-80f5-8c54-f86706eaee3c" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">Other   <mark class="highlight-yellow_background">  &lt;Enter the units comprising your system separated by comma&gt;   <br/></mark></span><div class="indented"></div></li></ul></div></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-804e-896a-c61c01d6cedd" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">More rules…</span><div class="indented"></div></li></ul></div></div></figure></div><div style="display:contents" dir="auto"><hr id="2d2400b9-da5c-805a-b710-fbee69483dd0"/></div><div style="display:contents" dir="auto"><p id="2d2400b9-da5c-8011-9970-ee217d17c16a" class="">
+</p></div><div style="display:contents" dir="auto"><p id="2d2400b9-da5c-80c1-91ff-ded21e8a18d7" class="">
+</p></div><div style="display:contents" dir="auto"><p id="2d2400b9-da5c-804e-ba87-e4f39bc1b31d" class="">
+</p></div></details></li></ul></div><div style="display:contents" dir="auto"><p id="2d2400b9-da5c-80ee-9a15-f2d9866354d8" class="">
+</p></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-8001-8506-faf8348ca870" class="toggle"><li><details open=""><summary><mark class="highlight-red_background"><strong>Analysis set-up, page</strong></mark><mark class="highlight-red_background"> </mark><mark class="highlight-blue_background"><strong>(6)</strong></mark></summary><div style="display:contents" dir="ltr"><figure class="block-color-gray_background callout" style="white-space:pre-wrap;display:flex" id="2d2400b9-da5c-809e-b597-f757f91596ca"><div style="font-size:1.5em"><img class="icon notion-static-icon" src="https://www.notion.so/icons/thought-dialogue_red.svg"/></div><div style="width:100%"><div style="display:contents" dir="auto"><p id="2d2400b9-da5c-802b-9f3f-d80f2163b2d4" class=""><strong>We can perform an analysis of how closely your estimation patterns match those of other teams (e.g. teams that you work with closely/collaborate with to deliver large pieces of work), and how your use of issue types matches/differs from how other teams use them.</strong></p></div><div style="display:contents" dir="auto"><hr id="2d2400b9-da5c-8042-99f1-cfe256daabb6"/></div><div style="display:contents" dir="auto"><p id="2d2400b9-da5c-80f4-b70e-e6b3421acc32" class=""><strong>Would you like to perform this analysis?</strong><div class="indented"><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-8041-8025-efcc6a33def6" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">Don’t perform this analysis</span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-8037-a2af-fb74ebd4bfbc" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">Compare estimation patterns with other teams</span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-803d-b72e-de021ceeceef" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">Compare issue type use with other teams</span><div class="indented"></div></li></ul></div></div></p></div></div></figure></div><div style="display:contents" dir="auto"><hr id="2d2400b9-da5c-8067-9a02-c6b8261fcf16"/></div><div style="display:contents" dir="auto"><p id="2d2400b9-da5c-8069-b176-d6307b7bb60b" class="">
+</p></div><div style="display:contents" dir="auto"><p id="2d2400b9-da5c-8085-866d-f2f6755be64c" class="">
+</p></div><div style="display:contents" dir="auto"><p id="2d2400b9-da5c-803d-b268-f8086768b55d" class="">
+</p></div></details></li></ul></div><div style="display:contents" dir="auto"><p id="2d2400b9-da5c-80d0-a54f-d7d152a9656b" class="">
+</p></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-8071-b4a8-f539eabc67a0" class="toggle"><li><details open=""><summary><mark class="highlight-red_background"><strong>Analysis set-up, page</strong></mark><mark class="highlight-red_background"> </mark><mark class="highlight-blue_background"><strong>(7)</strong></mark></summary><div style="display:contents" dir="ltr"><figure class="block-color-gray_background callout" style="white-space:pre-wrap;display:flex" id="2d2400b9-da5c-8052-867c-e163b27d5220"><div style="font-size:1.5em"><img class="icon notion-static-icon" src="https://www.notion.so/icons/thought-dialogue_red.svg"/></div><div style="width:100%"><div style="display:contents" dir="auto"><p id="2d2400b9-da5c-802f-9a57-f6cadae0def0" class=""><strong>We define ‘stale’ work items as work items that have been dormant for a long time but still haven’t been closed. </strong></p></div><div style="display:contents" dir="auto"><p id="2d2400b9-da5c-8005-94dc-c32bee014940" class=""><em>(our default would be to map out all the non-Open, non-Closed statuses they use, and consider all of them — Active). A stale work item has to be active (can’t be closed obviously, and can’t just be pending in the backlog)</em></p></div><div style="display:contents" dir="auto"><hr id="2d2400b9-da5c-80db-b798-d1cc86ca95e7"/></div><div style="display:contents" dir="auto"><p id="2d2400b9-da5c-80c4-a333-f13bfc0b1447" class=""><strong>Select the issue types</strong> to be included in this analysis and <strong>view (and adjust) how long an issue type should be dormant</strong> before being considered ‘stale’. </p></div><div style="display:contents" dir="ltr"><table id="2d2400b9-da5c-801e-974e-e1a7bd251bcd" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2d2400b9-da5c-80eb-974b-dd9b50bd612d"><th id="]pDo" class="simple-table-header-color simple-table-header" style="width:201.65625px"><strong>Issue Type</strong></th><th id="nNgc" class="simple-table-header-color simple-table-header" style="width:355.65625px"><strong>Stale if no change in the last n days</strong></th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2d2400b9-da5c-80e4-bf89-c2de38bca806"><td id="]pDo" class="" style="width:201.65625px">✅ User story</td><td id="nNgc" class="" style="width:355.65625px"><em>  </em><em><mark class="highlight-yellow_background">  &lt;put editable default&gt;   </mark></em></td></tr></div><div style="display:contents" dir="ltr"><tr id="2d2400b9-da5c-80e7-9d3d-c9e16e4cb6d1"><td id="]pDo" class="" style="width:201.65625px">✅ Task</td><td id="nNgc" class="" style="width:355.65625px"><em>  </em><em><mark class="highlight-yellow_background">  &lt;put editable default&gt;   </mark></em></td></tr></div><div style="display:contents" dir="ltr"><tr id="2d2400b9-da5c-80c1-b078-c2665174552d"><td id="]pDo" class="" style="width:201.65625px">✅ Epic</td><td id="nNgc" class="" style="width:355.65625px"><em>  </em><em><mark class="highlight-yellow_background">  &lt;put editable default&gt;   </mark></em></td></tr></div><div style="display:contents" dir="ltr"><tr id="2d2400b9-da5c-80d5-9f40-d7b69e12c640"><td id="]pDo" class="" style="width:201.65625px"><strong>🔲 </strong>Bug</td><td id="nNgc" class="" style="width:355.65625px"></td></tr></div><div style="display:contents" dir="ltr"><tr id="2d2400b9-da5c-8030-9722-f5957786c573"><td id="]pDo" class="" style="width:201.65625px">…etc.</td><td id="nNgc" class="" style="width:355.65625px"></td></tr></div></tbody></table></div></div></figure></div><div style="display:contents" dir="auto"><hr id="2d2400b9-da5c-805e-b7e7-c044c7bca7d9"/></div><div style="display:contents" dir="auto"><p id="2d2400b9-da5c-8071-95fd-e81fc890bcdd" class="">
+</p></div><div style="display:contents" dir="auto"><p id="2d2400b9-da5c-80c0-b222-f32be210e3db" class="">
+</p></div><div style="display:contents" dir="auto"><p id="2d2400b9-da5c-8002-91ca-cfee076ed75e" class="">
+</p></div></details></li></ul></div><div style="display:contents" dir="auto"><p id="2d2400b9-da5c-806d-b115-c68553b8e8fa" class="">
+</p></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-80f8-b96b-f964152387cc" class="toggle"><li><details open=""><summary><mark class="highlight-red_background"><strong>Analysis set-up, page</strong></mark><mark class="highlight-red_background"> </mark><mark class="highlight-blue_background"><strong>(8)</strong></mark></summary><div style="display:contents" dir="ltr"><figure class="block-color-gray_background callout" style="white-space:pre-wrap;display:flex" id="2d2400b9-da5c-8052-8897-e64a1c300855"><div style="font-size:1.5em"><img class="icon notion-static-icon" src="https://www.notion.so/icons/thought-dialogue_red.svg"/></div><div style="width:100%"><div style="display:contents" dir="auto"><p id="2d2400b9-da5c-8015-97f1-c2201b822a1c" class="">Specify how blockers (impediments) are captured in your Jira project (select all that apply):</p></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-80a2-bac2-c709edbf858d" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">Using flags</span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-80e4-8d87-dd951a173e98" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">Using labels → (select the labels you use to signal blockers: <em><mark class="highlight-red"><mark class="highlight-default_background"><code>label #1</code></mark></mark></em><em><mark class="highlight-default_background"> </mark></em><em><mark class="highlight-red"><mark class="highlight-default_background"><code>label #2</code></mark></mark></em><em><mark class="highlight-default_background">)</mark></em></span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-801c-8983-ea99c852b7b5" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">Using a ‘blocked’ status → (select the status you use to signal blockers: <em><code>Blocked</code></em><em><mark class="highlight-default_background">)</mark></em></span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-8046-a97e-d9eb1a139d84" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">Linking to the blocking issues with the relationship type specified as ‘<strong>is blocked by’</strong></span><div class="indented"></div></li></ul></div></div></figure></div><div style="display:contents" dir="auto"><hr id="2d2400b9-da5c-80db-98e9-f4e013832c18"/></div><div style="display:contents" dir="auto"><p id="2d2400b9-da5c-80ee-b857-e510ca34709c" class="">
+</p></div></details></li></ul></div><div style="display:contents" dir="auto"><p id="2d2400b9-da5c-8039-90be-cabf9bd2335b" class="">
+</p></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-8071-937c-f1f17a01d9c9" class="toggle"><li><details open=""><summary><mark class="highlight-red_background"><strong>Analysis set-up, page</strong></mark><mark class="highlight-red_background"> </mark><mark class="highlight-blue_background"><strong>(9)</strong></mark></summary><div style="display:contents" dir="ltr"><figure class="block-color-gray_background callout" style="white-space:pre-wrap;display:flex" id="2d2400b9-da5c-8039-ae72-e5520e5d7e99"><div style="font-size:1.5em"><img class="icon notion-static-icon" src="https://www.notion.so/icons/thought-dialogue_red.svg"/></div><div style="width:100%"><div style="display:contents" dir="auto"><p id="2d2400b9-da5c-8073-9aed-df3b8e15b5e1" class=""><strong><span style="border-bottom:0.05em solid">Our sprint cadence:</span></strong></p></div><div style="display:contents" dir="auto"><ol type="1" id="2d2400b9-da5c-802f-9b55-c49d603e2927" class="numbered-list" start="1"><li><strong>What is our sprint cadence? </strong><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-8001-a730-cbef10c4dc70" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">Fortnightly</span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-80be-94f9-c57e19a03661" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">Weekly</span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-807f-a2b6-ecc9df3c03dd" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">Every 3 weeks</span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-80da-84f1-c59cf626a77e" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">Monthly</span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-80f5-bd93-dc07e35e6ed9" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">Other (put number of days in your sprint cycle:<em> </em><em><mark class="highlight-yellow_background">  &lt;no. of days&gt;   </mark></em><em><mark class="highlight-default_background">)</mark></em></span><div class="indented"></div></li></ul></div></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d2400b9-da5c-8079-a450-fcaa72fe545e" class="numbered-list" start="2"><li><strong>Has this cadence changed during the timespan of this analysis?</strong><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-80de-9edf-c83436c95fc5" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">No</span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-80ec-8ef6-d1e2b0b330d0" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">Yes (specify the previous cadence):</span><div class="indented"><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-8095-b373-efb57a5009de" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">Fortnightly</span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-8007-9737-cd12e1698dd9" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">Weekly</span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-8026-ad55-ef6e0f37abc0" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">Every 3 weeks</span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-80c7-8c34-d0989c870db3" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">Monthly</span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-80b4-9d86-c6d8ce4fbb03" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">Other (put number of days in your sprint cycle:<em> </em><em><mark class="highlight-yellow_background">  &lt;no. of days&gt;   </mark></em><em><mark class="highlight-default_background">)</mark></em></span><div class="indented"></div></li></ul></div></div></li></ul></div></li></ol></div></div></figure></div><div style="display:contents" dir="auto"><hr id="2d2400b9-da5c-8085-a083-f137abe5f221"/></div><div style="display:contents" dir="auto"><p id="2d2400b9-da5c-80eb-8a6f-e6af81950915" class="">
+</p></div><div style="display:contents" dir="auto"><p id="2d2400b9-da5c-801b-94f2-ffde98597eda" class="">
+</p></div></details></li></ul></div><div style="display:contents" dir="auto"><p id="2d2400b9-da5c-80dc-ab29-ec0abdb73696" class="">
+</p></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-805a-95ee-e4a1bfea6b94" class="toggle"><li><details open=""><summary><mark class="highlight-red_background"><strong>Analysis set-up, page </strong></mark><mark class="highlight-blue_background"><strong>(10)</strong></mark></summary><div style="display:contents" dir="ltr"><figure class="block-color-gray_background callout" style="white-space:pre-wrap;display:flex" id="2d2400b9-da5c-8095-afb7-d9af7fd46e33"><div style="font-size:1.5em"><img class="icon notion-static-icon" src="https://www.notion.so/icons/thought-dialogue_red.svg"/></div><div style="width:100%"><div style="display:contents" dir="auto"><p id="2d2400b9-da5c-8015-8f8f-dedb557a59a0" class=""><strong>Customise how you want the assessment reports to look: </strong></p></div><div style="display:contents" dir="auto"><hr id="2d2400b9-da5c-80c4-88af-f11abd588e44"/></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-80b4-84ad-ed43942d358f" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">Include trends (show if performance is getting better/worse)</span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-80a0-a8b6-fdfcb0db125b" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">Include description of each dimension</span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-802c-b84c-e51b1b64379a" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">Include why it matters</span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-80bd-bfec-e4c8c98561a8" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked">…</span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d2400b9-da5c-8051-9bea-cf0be3a361b3" class="to-do-list"><li><div class="checkbox checkbox-off"></div> <span class="to-do-children-unchecked"><em>(If looking at the indicator level)</em> Include comparison on the card itself</span><div class="indented"></div></li></ul></div><div style="display:contents" dir="auto"><hr id="2d2400b9-da5c-8076-bb04-e52ed5eb4d61"/></div><div style="display:contents" dir="auto"><p id="2d2400b9-da5c-8051-b408-fb88761f4d81" class=""><em><strong>Now they will be presented with the dimensions they already indicated they wanted to see and all the decisions they’ve made previously to finalise what they want to see and approve. This will be the place for them to select the specific indicators they want included, done with full knowledge of what they track/don’t track, what they estimate and don’t estimate, etc.</strong></em></p></div></div></figure></div><div style="display:contents" dir="auto"><hr id="2d2400b9-da5c-80f0-b967-c0115dcb56a2"/></div><div style="display:contents" dir="auto"><p id="2d2400b9-da5c-8007-be11-e344794f732f" class="">
+</p></div><div style="display:contents" dir="auto"><p id="2d2400b9-da5c-804f-9212-c5797c4900d5" class="">
+</p></div></details></li></ul></div></div></article><span class="sans" style="font-size:14px;padding-top:2em"></span></body></html>

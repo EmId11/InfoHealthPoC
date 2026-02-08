@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EstimateIQ — Know Which Plans You Can Trust</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: #1a1a2e;
+            line-height: 1.6;
+            background: #ffffff;
+        }
+
+        /* Navigation */
+        nav {
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1a1a2e;
+        }
+
+        .logo span {
+            color: #0066cc;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #4a4a68;
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #0066cc;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0052a3;
+        }
+
+        .btn-secondary {
+            background: #f0f4f8;
+            color: #1a1a2e;
+        }
+
+        .btn-secondary:hover {
+            background: #e2e8f0;
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: #0066cc;
+            border: 2px solid #0066cc;
+        }
+
+        .btn-outline:hover {
+            background: #e8f4fd;
+        }
+
+        /* Hero */
+        .hero {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 4rem 2rem 5rem;
+            text-align: center;
+        }
+
+        .hero-badges {
+            display: flex;
+            justify-content: center;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .hero-badge {
+            display: inline-block;
+            background: #e8f4fd;
+            color: #0066cc;
+            padding: 0.5rem 1rem;
+            border-radius: 100px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .hero-badge.security {
+            background: #ecfdf5;
+            color: #059669;
+        }
+
+        .hero h1 {
+            font-size: 3.25rem;
+            font-weight: 700;
+            line-height: 1.15;
+            margin-bottom: 1.5rem;
+            color: #1a1a2e;
+        }
+
+        .hero h1 span {
+            color: #0066cc;
+        }
+
+        .hero-subtitle {
+            font-size: 1.25rem;
+            color: #4a4a68;
+            max-width: 720px;
+            margin: 0 auto 2.5rem;
+            line-height: 1.7;
+        }
+
+        .hero-cta {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 2rem;
+        }
+
+        .hero-cta .btn {
+            padding: 1rem 2rem;
+            font-size: 1rem;
+        }
+
+        .hero-proof {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 2rem;
+            flex-wrap: wrap;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e2e8f0;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .hero-proof-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            color: #4a4a68;
+        }
+
+        .hero-proof-item svg {
+            color: #059669;
+        }
+
+        /* Vignette / Emotional Hook */
+        .vignette {
+            background: linear-gradient(135deg, #1a1a2e 0%, #2d2d4a 100%);
+            color: white;
+            padding: 4rem 2rem;
+        }
+
+        .vignette-inner {
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .vignette-label {
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            color: #60a5fa;
+            margin-bottom: 1.5rem;
+        }
+
+        .vignette p {
+            font-size: 1.35rem;
+            line-height: 1.8;
+            color: #e2e8f0;
+            font-style: italic;
+        }
+
+        .vignette p strong {
+            color: #ffffff;
+            font-style: normal;
+        }
+
+        /* Problem Section */
+        .problem {
+            background: #f8fafc;
+            padding: 5rem 2rem;
+        }
+
+        .problem-inner {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .section-label {
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            color: #0066cc;
+            margin-bottom: 1rem;
+        }
+
+        .problem h2 {
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            color: #1a1a2e;
+        }
+
+        .problem > .problem-inner > p {
+            font-size: 1.1rem;
+            color: #4a4a68;
+            margin-bottom: 1.25rem;
+        }
+
+        .problem-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.25rem;
+            margin: 2rem 0;
+        }
+
+        .problem-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 1.5rem;
+            border-left: 4px solid #dc2626;
+        }
+
+        .problem-card h4 {
+            font-size: 1rem;
+            color: #1a1a2e;
+            margin-bottom: 0.5rem;
+        }
+
+        .problem-card p {
+            font-size: 0.9rem;
+            color: #4a4a68;
+            line-height: 1.6;
+        }
+
+        /* Solution Section */
+        .solution {
+            padding: 5rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .solution-header {
+            text-align: center;
+            max-width: 700px;
+            margin: 0 auto 4rem;
+        }
+
+        .solution h2 {
+            font-size: 2.25rem;
+            margin-bottom: 1rem;
+        }
+
+        .solution-header p {
+            font-size: 1.1rem;
+            color: #4a4a68;
+        }
+
+        .pillars {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .pillar {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 2rem;
+            transition: box-shadow 0.2s;
+        }
+
+        .pillar:hover {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .pillar-number {
+            width: 2.5rem;
+            height: 2.5rem;
+            background: #0066cc;
+            color: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            margin-bottom: 1.25rem;
+        }
+
+        .pillar h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.75rem;
+            color: #1a1a2e;
+        }
+
+        .pillar p {
+            color: #4a4a68;
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+
+        /* How It Works (Risk Reduction) */
+        .how-it-works {
+            background: #f8fafc;
+            padding: 5rem 2rem;
+        }
+
+        .how-it-works-inner {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .how-it-works h2 {
+            font-size: 2rem;
+            text-align: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .how-it-works > .how-it-works-inner > p {
+            text-align: center;
+            color: #4a4a68;
+            margin-bottom: 3rem;
+            font-size: 1.1rem;
+        }
+
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+        }
+
+        .step {
+            text-align: center;
+            position: relative;
+        }
+
+        .step-number {
+            width: 3rem;
+            height: 3rem;
+            background: #0066cc;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.25rem;
+            margin: 0 auto 1rem;
+        }
+
+        .step h4 {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .step p {
+            font-size: 0.9rem;
+            color: #4a4a68;
+        }
+
+        .step-time {
+            display: inline-block;
+            background: #ecfdf5;
+            color: #059669;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.25rem 0.75rem;
+            border-radius: 100px;
+            margin-top: 0.75rem;
+        }
+
+        /* Indicators Section */
+        .indicators {
+            background: #1a1a2e;
+            color: white;
+            padding: 5rem 2rem;
+        }
+
+        .indicators-inner {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .indicators .section-label {
+            color: #60a5fa;
+        }
+
+        .indicators h2 {
+            font-size: 2.25rem;
+            margin-bottom: 1rem;
+        }
+
+        .indicators > .indicators-inner > p {
+            color: #a0aec0;
+            font-size: 1.1rem;
+            margin-bottom: 3rem;
+            max-width: 600px;
+        }
+
+        .indicator-categories {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .indicator-category {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .indicator-category-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .indicator-category-icon {
+            width: 2.5rem;
+            height: 2.5rem;
+            background: #0066cc;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .indicator-category-header h3 {
+            font-size: 1.1rem;
+        }
+
+        .indicator-category-header span {
+            font-size: 0.8rem;
+            color: #a0aec0;
+            font-weight: 400;
+        }
+
+        .indicator-list {
+            list-style: none;
+        }
+
+        .indicator-list li {
+            padding: 0.6rem 0;
+            font-size: 0.9rem;
+            color: #e2e8f0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+
+        .indicator-list li:last-child {
+            border-bottom: none;
+        }
+
+        .indicator-list li::before {
+            content: "→";
+            color: #60a5fa;
+            flex-shrink: 0;
+        }
+
+        /* Context Section */
+        .context {
+            padding: 5rem 2rem;
+        }
+
+        .context-inner {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .context h2 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .context > .context-inner > p {
+            text-align: center;
+            color: #4a4a68;
+            font-size: 1.1rem;
+            max-width: 650px;
+            margin: 0 auto 3rem;
+        }
+
+        .context-features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+        }
+
+        .context-feature {
+            text-align: center;
+        }
+
+        .context-feature-icon {
+            width: 3.5rem;
+            height: 3.5rem;
+            background: #e8f4fd;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            font-size: 1.5rem;
+        }
+
+        .context-feature h4 {
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .context-feature p {
+            font-size: 0.875rem;
+            color: #4a4a68;
+        }
+
+        /* Playbooks Section */
+        .playbooks {
+            padding: 5rem 2rem;
+            background: #f8fafc;
+        }
+
+        .playbooks-inner {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .playbooks-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            align-items: center;
+        }
+
+        .playbooks h2 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .playbooks-content p {
+            color: #4a4a68;
+            font-size: 1.05rem;
+            margin-bottom: 1.5rem;
+            line-height: 1.7;
+        }
+
+        .playbook-examples {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 2rem;
+        }
+
+        .playbook-example {
+            padding: 1rem 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .playbook-example:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .playbook-example:first-child {
+            padding-top: 0;
+        }
+
+        .playbook-condition {
+            font-weight: 600;
+            color: #dc2626;
+            font-size: 0.9rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .playbook-action {
+            color: #4a4a68;
+            font-size: 0.9rem;
+        }
+
+        /* Objections Section */
+        .objections {
+            padding: 5rem 2rem;
+        }
+
+        .objections-inner {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .objections h2 {
+            font-size: 2rem;
+            margin-bottom: 0.75rem;
+            text-align: center;
+        }
+
+        .objections > .objections-inner > p {
+            text-align: center;
+            color: #4a4a68;
+            margin-bottom: 3rem;
+        }
+
+        .objection {
+            background: #f8fafc;
+            border-radius: 10px;
+            padding: 1.75rem;
+            margin-bottom: 1rem;
+            border: 1px solid #e2e8f0;
+        }
+
+        .objection-q {
+            font-weight: 600;
+            color: #1a1a2e;
+            margin-bottom: 0.75rem;
+            font-size: 1.05rem;
+        }
+
+        .objection-a {
+            color: #4a4a68;
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+
+        /* Credibility Section */
+        .credibility {
+            background: #f8fafc;
+            padding: 4rem 2rem;
+        }
+
+        .credibility-inner {
+            max-width: 900px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .credibility h2 {
+            font-size: 1.75rem;
+            margin-bottom: 2rem;
+        }
+
+        .credibility-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            text-align: left;
+        }
+
+        .credibility-item {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 1.5rem;
+        }
+
+        .credibility-item h4 {
+            font-size: 0.9rem;
+            color: #0066cc;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .credibility-item p {
+            font-size: 0.95rem;
+            color: #4a4a68;
+            line-height: 1.6;
+        }
+
+        /* Secondary CTA */
+        .secondary-cta {
+            padding: 4rem 2rem;
+            text-align: center;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .secondary-cta-inner {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .secondary-cta h3 {
+            font-size: 1.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .secondary-cta p {
+            color: #4a4a68;
+            margin-bottom: 1.5rem;
+        }
+
+        /* CTA Section */
+        .cta {
+            padding: 6rem 2rem;
+            text-align: center;
+            background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+            color: white;
+        }
+
+        .cta h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .cta p {
+            font-size: 1.15rem;
+            opacity: 0.9;
+            max-width: 550px;
+            margin: 0 auto 2rem;
+        }
+
+        .cta .btn {
+            background: white;
+            color: #0066cc;
+            padding: 1rem 2.5rem;
+            font-size: 1.05rem;
+        }
+
+        .cta .btn:hover {
+            background: #f0f4f8;
+        }
+
+        .cta-subtext {
+            margin-top: 1rem;
+            font-size: 0.875rem;
+            opacity: 0.8;
+        }
+
+        /* Footer */
+        footer {
+            padding: 3rem 2rem;
+            text-align: center;
+            color: #4a4a68;
+            font-size: 0.875rem;
+        }
+
+        footer .logo {
+            margin-bottom: 1rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.25rem;
+            }
+
+            .playbooks-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .hero-proof {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .vignette p {
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="logo">Estimate<span>IQ</span></div>
+        <div class="nav-links">
+            <a href="#how-it-works">How It Works</a>
+            <a href="#indicators">Indicators</a>
+            <a href="#playbooks">Playbooks</a>
+            <a href="#" class="btn btn-primary">Get Early Access</a>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero">
+        <div class="hero-badges">
+            <span class="hero-badge">For Jira Cloud</span>
+            <span class="hero-badge security">🔒 Read-Only Access</span>
+        </div>
+        <h1>Finally know which forecasts<br><span>are worth betting on</span></h1>
+        <p class="hero-subtitle">EstimateIQ reveals which teams estimate reliably and which don't—so you can plan with confidence instead of crossed fingers.</p>
+        <div class="hero-cta">
+            <a href="#" class="btn btn-primary">Get Early Access</a>
+            <a href="#" class="btn btn-secondary">Download the Guide</a>
+        </div>
+        <div class="hero-proof">
+            <div class="hero-proof-item">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0zm3.78 5.28-4.5 6a.75.75 0 0 1-1.18.02l-2-2.5a.75.75 0 1 1 1.18-.94l1.38 1.72 3.92-5.22a.75.75 0 1 1 1.2.92z"/></svg>
+                <span>Set up in under 5 minutes</span>
+            </div>
+            <div class="hero-proof-item">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0zm3.78 5.28-4.5 6a.75.75 0 0 1-1.18.02l-2-2.5a.75.75 0 1 1 1.18-.94l1.38 1.72 3.92-5.22a.75.75 0 1 1 1.2.92z"/></svg>
+                <span>Works with your existing data</span>
+            </div>
+            <div class="hero-proof-item">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0zm3.78 5.28-4.5 6a.75.75 0 0 1-1.18.02l-2-2.5a.75.75 0 1 1 1.18-.94l1.38 1.72 3.92-5.22a.75.75 0 1 1 1.2.92z"/></svg>
+                <span>Free for teams under 50</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Vignette / Emotional Hook -->
+    <section class="vignette">
+        <div class="vignette-inner">
+            <div class="vignette-label">Sound Familiar?</div>
+            <p>The steering committee wants a date. You open the roadmap, run the numbers, and... hesitate. The math says eight weeks. But you know the Platform team's estimates run long, and the Mobile squad just lost two seniors. <strong>The spreadsheet gives you a number. Your gut says add three weeks.</strong> You split the difference and hope for the best. Again.</p>
+        </div>
+    </section>
+
+    <!-- Problem -->
+    <section class="problem">
+        <div class="problem-inner">
+            <div class="section-label">The Problem</div>
+            <h2>Velocity only works when estimates mean something</h2>
+            <p>Every roadmap assumes the underlying numbers are solid. But without a way to verify that, you're forecasting in the dark.</p>
+            
+            <div class="problem-grid">
+                <div class="problem-card">
+                    <h4>The translation problem</h4>
+                    <p>One team's "medium" is another team's "large." When you roll up estimates across squads, you're adding numbers that don't share a common language.</p>
+                </div>
+                <div class="problem-card">
+                    <h4>The drift problem</h4>
+                    <p>Even a well-calibrated team drifts over time. New hires, changing tech, shifting scope—but nothing tells you when the baseline has moved.</p>
+                </div>
+                <div class="problem-card">
+                    <h4>The revision problem</h4>
+                    <p>When estimates change mid-flight, the original expectation vanishes. You can't learn from misses you never see.</p>
+                </div>
+                <div class="problem-card">
+                    <h4>The rollover problem</h4>
+                    <p>Incomplete work sneaks into the next sprint with a fresh estimate. Systemic optimism stays buried until the deadline arrives.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="how-it-works" id="how-it-works">
+        <div class="how-it-works-inner">
+            <div class="section-label">How It Works</div>
+            <h2>Insight from your existing Jira data</h2>
+            <p>No new fields. No process changes. No training sessions. Just connect and see what's been hiding in plain sight.</p>
+            
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h4>Connect</h4>
+                    <p>One-click install from the Atlassian Marketplace. Read-only—we never touch your data.</p>
+                    <span class="step-time">~2 minutes</span>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h4>Choose scope</h4>
+                    <p>Pick one project to pilot or roll out across the portfolio. Start narrow, expand when ready.</p>
+                    <span class="step-time">~1 minute</span>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h4>See the picture</h4>
+                    <p>Dashboards show where estimation is solid, where it's shaky, and what's trending in the wrong direction.</p>
+                    <span class="step-time">Instant</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Solution -->
+    <section class="solution">
+        <div class="solution-header">
+            <div class="section-label">What We Measure</div>
+            <h2>The three dimensions of trustworthy estimates</h2>
+            <p>We surface the patterns that determine whether your numbers can carry the weight of real decisions.</p>
+        </div>
+        
+        <div class="pillars">
+            <div class="pillar">
+                <div class="pillar-number">1</div>
+                <h3>Coverage</h3>
+                <p><strong>Is the data even there?</strong> Missing estimates, empty fields, and incomplete records undermine everything downstream. We flag gaps before they reach the boardroom.</p>
+            </div>
+            <div class="pillar">
+                <div class="pillar-number">2</div>
+                <h3>Reliability</h3>
+                <p><strong>Does the same input yield predictable output?</strong> We measure how tightly estimates correlate with outcomes—within teams and over time. Tight correlation means you can plan on it.</p>
+            </div>
+            <div class="pillar">
+                <div class="pillar-number">3</div>
+                <h3>Alignment</h3>
+                <p><strong>Do teams speak the same sizing language?</strong> When different squads contribute to shared goals, their estimates need to translate. We show where calibration diverges.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Indicators -->
+    <section class="indicators" id="indicators">
+        <div class="indicators-inner">
+            <div class="section-label">Under the Hood</div>
+            <h2>12 signals across two lenses</h2>
+            <p>Every indicator comes with distribution benchmarks, percentile rankings, historical trendlines, and directional momentum—context that turns data into decisions.</p>
+            
+            <div class="indicator-categories">
+                <div class="indicator-category">
+                    <div class="indicator-category-header">
+                        <div class="indicator-category-icon">📊</div>
+                        <div>
+                            <h3>Estimation Quality</h3>
+                            <span>When work is sized upfront</span>
+                        </div>
+                    </div>
+                    <ul class="indicator-list">
+                        <li>Story-level variance (within team)</li>
+                        <li>Story-level variance (vs. peers)</li>
+                        <li>Epic-level variance (within team)</li>
+                        <li>Epic-level variance (vs. peers)</li>
+                        <li>Effort concentration across epics</li>
+                        <li>Original estimate retention</li>
+                        <li>Carryover re-sizing rate</li>
+                    </ul>
+                </div>
+                <div class="indicator-category">
+                    <div class="indicator-category-header">
+                        <div class="indicator-category-icon">⏱️</div>
+                        <div>
+                            <h3>Outcome Predictability</h3>
+                            <span>When work isn't pre-sized</span>
+                        </div>
+                    </div>
+                    <ul class="indicator-list">
+                        <li>Task cycle-time variance (within team)</li>
+                        <li>Task cycle-time variance (vs. peers)</li>
+                        <li>Epic duration variance (within team)</li>
+                        <li>Epic duration variance (vs. peers)</li>
+                        <li>Unestimated work proportion</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Context -->
+    <section class="context">
+        <div class="context-inner">
+            <h2>Metrics that actually mean something</h2>
+            <p>A number without context is just trivia. Every indicator comes with the surrounding data you need to interpret it—and decide whether to act.</p>
+            
+            <div class="context-features">
+                <div class="context-feature">
+                    <div class="context-feature-icon">📊</div>
+                    <h4>Distribution</h4>
+                    <p>See how you compare to other teams in your org</p>
+                </div>
+                <div class="context-feature">
+                    <div class="context-feature-icon">🎯</div>
+                    <h4>Classification</h4>
+                    <p>Clear labels: Solid, Typical, Weak, At Risk</p>
+                </div>
+                <div class="context-feature">
+                    <div class="context-feature-icon">📈</div>
+                    <h4>History</h4>
+                    <p>Track how each signal has evolved over quarters</p>
+                </div>
+                <div class="context-feature">
+                    <div class="context-feature-icon">↗️</div>
+                    <h4>Momentum</h4>
+                    <p>Know whether things are getting better or worse</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Playbooks -->
+    <section class="playbooks" id="playbooks">
+        <div class="playbooks-inner">
+            <div class="playbooks-grid">
+                <div class="playbooks-content">
+                    <div class="section-label">Beyond the Dashboard</div>
+                    <h2>Playbooks that close the loop</h2>
+                    <p>Knowing you have a problem is step one. <strong>Knowing what to do about it is where value lives.</strong> Each indicator links to targeted guidance—specific to what the data shows, not generic advice.</p>
+                    <p>Think of it as a diagnostic that comes with a treatment plan.</p>
+                </div>
+                <div class="playbook-examples">
+                    <div class="playbook-example">
+                        <div class="playbook-condition">Variance trending upward →</div>
+                        <div class="playbook-action">Facilitated calibration sessions, anchor-story libraries, targeted retro prompts to surface root causes</div>
+                    </div>
+                    <div class="playbook-example">
+                        <div class="playbook-condition">Teams out of sync →</div>
+                        <div class="playbook-action">Cross-squad norming workshops, shared sizing references, portfolio-level adjustment coefficients</div>
+                    </div>
+                    <div class="playbook-example">
+                        <div class="playbook-condition">Estimates changing mid-cycle →</div>
+                        <div class="playbook-action">Scope-lock checkpoints, change-visibility rituals, root-cause triage for chronic movers</div>
+                    </div>
+                    <div class="playbook-example">
+                        <div class="playbook-condition">Coverage gaps →</div>
+                        <div class="playbook-action">Definition-of-ready tweaks, lightweight automation, board-level guardrails</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Objections -->
+    <section class="objections">
+        <div class="objections-inner">
+            <h2>Fair questions, straight answers</h2>
+            <p>You've seen tools promise to fix planning before. Here's where we're different—and where we're not.</p>
+            
+            <div class="objection">
+                <div class="objection-q">"Measuring estimates creates bad incentives."</div>
+                <div class="objection-a">It can—if you measure the wrong thing. Tracking whether estimates are "right" encourages sandbagging and gaming. <strong>We track whether they're stable.</strong> Stable estimates can be calibrated and improved. Unstable ones are noise regardless of how accurate any single guess turns out to be.</div>
+            </div>
+            
+            <div class="objection">
+                <div class="objection-q">"Teams will see this as surveillance."</div>
+                <div class="objection-a">That depends on how you use it—and we can't control that. What we can say: these indicators are designed as <strong>diagnostic instruments, not performance scorecards</strong>. A team with rising variance isn't failing; they have a signal that something shifted—new members, different problem space, process change—and an opportunity to recalibrate. If your culture would weaponise the data, address that first.</div>
+            </div>
+            
+            <div class="objection">
+                <div class="objection-q">"We already have BI tools. Why add another?"</div>
+                <div class="objection-a">You could build this in eazyBI or Power BI. Most organisations don't, because it requires deep expertise and ongoing maintenance. <strong>We're not competing with your BI stack.</strong> We're providing a focused lens that would otherwise stay unbuilt—continuous visibility into whether the data feeding your existing reports is trustworthy.</div>
+            </div>
+            
+            <div class="objection">
+                <div class="objection-q">"We're stretched thin. Another tool means more overhead."</div>
+                <div class="objection-a"><strong>Setup takes five minutes.</strong> No configuration wizards, no schema mapping, no training workshops. We read your existing Jira history and surface patterns immediately. If you have five minutes and a Jira Cloud instance, you can see your first estimation health snapshot today.</div>
+            </div>
+            
+            <div class="objection">
+                <div class="objection-q">"What if the results are ugly?"</div>
+                <div class="objection-a">Then you've learned something important. Right now, you're making commitments backed by data of unknown quality. <strong>Ugly-but-known beats pretty-but-blind.</strong> If estimation health is poor, you can invest in improvement, dial back confidence in forecasts, or adopt different approaches for different teams. What you can no longer do is assume the numbers are solid when they're not.</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Credibility -->
+    <section class="credibility">
+        <div class="credibility-inner">
+            <h2>Built for the enterprise. Obsessed with trust.</h2>
+            <div class="credibility-grid">
+                <div class="credibility-item">
+                    <h4>Security Architecture</h4>
+                    <p>Runs on Atlassian Forge—your data stays in Atlassian's infrastructure, never hits external servers. Read-only permissions. SOC 2 Type II certification underway.</p>
+                </div>
+                <div class="credibility-item">
+                    <h4>Practitioner DNA</h4>
+                    <p>Our team has lived in PMO trenches, run delivery for complex programmes, and felt the pain of plans that didn't hold. We built what we couldn't find.</p>
+                </div>
+                <div class="credibility-item">
+                    <h4>Portfolio Scale</h4>
+                    <p>Designed for organisations with many teams and layered planning horizons. Start with a pilot squad; expand to the full portfolio when you're ready.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Secondary CTA -->
+    <section class="secondary-cta">
+        <div class="secondary-cta-inner">
+            <h3>Prefer to read first?</h3>
+            <p>Our guide unpacks the methodology—what we measure, why it matters, and how to interpret results. No signup required.</p>
+            <a href="#" class="btn btn-outline">Get the PDF: Trusting Your Estimates</a>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta">
+        <h2>Replace guesswork with evidence</h2>
+        <p>Join the early access list and be first in line when EstimateIQ hits the Atlassian Marketplace.</p>
+        <a href="#" class="btn">Request Early Access</a>
+        <p class="cta-subtext">Free for teams under 50 users. No credit card required.</p>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="logo">Estimate<span>IQ</span></div>
+        <p>For Jira Cloud. Launching soon on the Atlassian Marketplace.</p>
+    </footer>
+</body>
+</html>

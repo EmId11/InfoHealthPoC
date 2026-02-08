@@ -1,0 +1,1744 @@
+\documentclass[11pt,a4paper]{article}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{geometry}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{tocloft}
+
+% Page geometry
+\geometry{
+    left=25mm,
+    right=25mm,
+    top=25mm,
+    bottom=25mm
+}
+
+% Colors
+\definecolor{linkcolor}{RGB}{0,102,204}
+\definecolor{tableheader}{RGB}{245,245,245}
+
+% Hyperref setup
+\hypersetup{
+    colorlinks=true,
+    linkcolor=linkcolor,
+    urlcolor=linkcolor,
+    citecolor=linkcolor,
+    pdftitle={Invisible Work Detection: Methodology Specification},
+    pdfauthor={Jira Health Assessment Team}
+}
+
+% Header/Footer
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{Invisible Work Detection Methodology}
+\fancyhead[R]{Version 1.0}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% Title formatting
+\titleformat{\section}{\Large\bfseries}{\thesection}{1em}{}
+\titleformat{\subsection}{\large\bfseries}{\thesubsection}{1em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries}{\thesubsubsection}{1em}{}
+
+% Code formatting
+\newcommand{\code}[1]{\texttt{#1}}
+
+% Table column types
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+\newcolumntype{R}[1]{>{\raggedleft\arraybackslash}p{#1}}
+
+\begin{document}
+
+% Title page
+\begin{titlepage}
+    \centering
+    \vspace*{2cm}
+
+    {\Huge\bfseries Invisible Work Detection\\[0.5cm]}
+    {\LARGE Methodology Specification\\[2cm]}
+
+    {\Large Version 1.0\\[0.5cm]}
+    {\large 2026-01-28\\[3cm]}
+
+    {\large Jira Health Assessment Framework\\[1cm]}
+
+    \vfill
+
+    {\small Technical Specification Document}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% EXECUTIVE SUMMARY
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section*{Executive Summary}
+\addcontentsline{toc}{section}{Executive Summary}
+
+\subsection*{The Problem}
+
+\textbf{Invisible work} is effort that occurs but is not tracked in Jira. It includes meetings, support requests, unplanned firefighting, ad-hoc fixes, technical debt work without tickets, and context-switching overhead. By definition, we cannot directly measure invisible work---it leaves no Jira footprint.
+
+\subsection*{The Approach}
+
+Instead of direct measurement, this methodology detects invisible work through \textbf{statistical fingerprints}---anomalous patterns in Jira data that suggest hidden work is occurring. When teams show high throughput variability, stale in-progress items, and low daily engagement with Jira, these signals collectively indicate that significant effort is happening outside the system.
+
+\subsection*{Key Design Decisions}
+
+\begin{enumerate}
+    \item \textbf{CSS-Heavy Scoring}: The Invisible Work Risk (IWR) score uses a modified Composite Health Score formula weighted 75\% toward Current State Score (CSS) and 25\% toward Trajectory Score (TRS). Peer Growth Score (PGS) is explicitly excluded due to circular reasoning concerns.
+
+    \item \textbf{17 Indicators in 3 Tiers}: Indicators are organized into Primary (55\% weight), Supporting (35\%), and Contextual (10\%) tiers based on their causal connection to invisible work.
+
+    \item \textbf{Risk Framing}: Results are presented as ``Invisible Work Risk Indicators'' rather than definitive measurements, acknowledging the indirect nature of detection.
+
+    \item \textbf{Higher Correlation Adjustment}: The methodology uses $\bar{\rho} = 0.45$ (vs.\ 0.30 for general CHS) to account for the higher inter-correlation among invisible work signals.
+\end{enumerate}
+
+\subsection*{Output}
+
+The methodology produces:
+\begin{itemize}
+    \item \textbf{IWR Score} (0--100): Higher scores indicate higher risk of invisible work
+    \item \textbf{90\% Confidence Interval}: Quantified uncertainty
+    \item \textbf{Precision Category}: High/Medium/Low based on data quality
+    \item \textbf{Risk Label}: Low/Moderate/Typical/Elevated/High
+\end{itemize}
+
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% SECTION 1: CONCEPTUAL FRAMEWORK
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Conceptual Framework}
+
+\subsection{Theoretical Foundation}
+
+Before diving into implementation details, it's important to establish the theoretical basis for invisible work detection. This methodology rests on three foundational premises:
+
+\subsubsection*{Premise 1: Capacity Conservation}
+
+Team capacity is finite. When visible work output decreases without staffing changes, the ``missing'' capacity must be going somewhere---either to invisible work or to reduced productivity. Mathematically:
+
+\begin{equation}
+\text{Total Capacity} = \text{Visible Work} + \text{Invisible Work} + \text{Slack}
+\end{equation}
+
+If visible work and slack remain constant but output varies significantly, invisible work is the likely explanation.
+
+\subsubsection*{Premise 2: Signal Consistency}
+
+A single anomalous metric could have many explanations. However, when multiple independent signals align---high throughput variability, stale items, low Jira engagement, and mid-sprint additions---the probability that all are caused by factors other than invisible work becomes vanishingly small. This is the ``constellation of signals'' approach.
+
+\subsubsection*{Premise 3: Measurable Proxies}
+
+While we cannot directly observe invisible work, its effects are measurable. These effects manifest as:
+\begin{itemize}
+    \item \textbf{Variability} in metrics that should be stable
+    \item \textbf{Staleness} in items that should be actively worked
+    \item \textbf{Gaps} in engagement that should be continuous
+    \item \textbf{Anomalies} in workflow that should follow patterns
+\end{itemize}
+
+This methodology systematically measures these proxies and aggregates them into a risk assessment.
+
+\subsection{What Is Invisible Work?}
+
+Invisible work encompasses any effort expended by team members that does not appear in Jira. This includes:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Category} & \textbf{Examples} \\
+\midrule
+Meetings \& Ceremonies & Sprint planning, standups, retros, 1:1s, all-hands \\
+Support \& Escalations & Customer support, internal requests, production incidents \\
+Unplanned Firefighting & Urgent bugs, infrastructure issues, security patches \\
+Context Switching & Task switching overhead, re-orientation time \\
+Communication & Slack conversations, email threads, ad-hoc discussions \\
+Technical Debt & Quick fixes, workarounds, ``I'll ticket this later'' work \\
+Learning \& Growth & Training, documentation reading, skill development \\
+\bottomrule
+\end{tabular}
+\caption{Categories of Invisible Work}
+\end{table}
+
+These activities consume team capacity but often leave no trace in project management systems. A team with 8 engineers may have only 60\% of their time available for tracked work due to invisible work burden.
+
+\subsection{Why Invisible Work Matters}
+
+Teams with high invisible work burden exhibit predictable symptoms:
+
+\textbf{Operational Impact:}
+\begin{itemize}
+    \item Unpredictable velocity despite consistent staffing
+    \item Missed sprint commitments without clear cause
+    \item Chronic under-delivery vs.\ estimates
+\end{itemize}
+
+\textbf{Team Health Impact:}
+\begin{itemize}
+    \item Burnout from feeling ``always busy but never done''
+    \item Frustration when velocity metrics don't reflect actual effort
+    \item Cynicism about planning processes that ignore invisible load
+\end{itemize}
+
+\textbf{Organizational Impact:}
+\begin{itemize}
+    \item Inaccurate capacity planning
+    \item Unrealistic expectations from stakeholders
+    \item Difficulty comparing team productivity
+\end{itemize}
+
+\subsection{Detection Philosophy: Statistical Fingerprints}
+
+Since invisible work is untracked by definition, we cannot measure it directly. Instead, we detect it through its \textbf{statistical fingerprints}---patterns in Jira data that are difficult to explain without assuming significant untracked work.
+
+The core insight is that invisible work manifests as \textbf{unexplained variability}:
+
+\begin{equation}
+\text{Observed Variability} = \text{Explainable Variability} + \text{Invisible Work Signal}
+\end{equation}
+
+When throughput, cycle times, and WIP counts vary dramatically without corresponding changes in complexity, team composition, or process---something external is consuming capacity.
+
+\textbf{Key detection heuristics:}
+\begin{enumerate}
+    \item \textbf{Variability Anomalies}: High variation in output, cycle times, and individual performance that can't be explained by visible factors
+    \item \textbf{Engagement Gaps}: Low Jira update frequency suggesting work happens elsewhere
+    \item \textbf{Staleness Patterns}: In-progress items not updated indicate attention is elsewhere
+    \item \textbf{Side-Door Entries}: Mid-sprint additions suggest work enters through unofficial channels
+\end{enumerate}
+
+\subsection{Important Limitations}
+
+\textbf{This methodology measures risk indicators, not invisible work itself.}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}lc@{}}
+\toprule
+\textbf{Claim} & \textbf{Validity} \\
+\midrule
+``Team A has high throughput variability'' & \checkmark\ Directly measurable \\
+``Team A likely has invisible work'' & \checkmark\ Reasonable inference \\
+``Team A has 20 hours/week of invisible work'' & $\times$ Cannot be determined \\
+\bottomrule
+\end{tabular}
+\caption{Validity of Claims}
+\end{table}
+
+\textbf{Known blind spots:}
+\begin{enumerate}
+    \item \textbf{Uniformly distributed invisible work}: If all teams have similar invisible work levels, relative comparison won't detect it
+    \item \textbf{Correlated visible complexity}: Some variability may be legitimate complexity that happens to correlate with invisible work periods
+    \item \textbf{Small teams}: Higher natural variability in small teams may produce false positives
+\end{enumerate}
+
+\textbf{Recommendations for use:}
+\begin{itemize}
+    \item Present results as ``Risk Indicators'' not ``Measurements''
+    \item Encourage teams to validate signals against their actual experience
+    \item Use as a conversation starter, not a verdict
+\end{itemize}
+
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% SECTION 2: INDICATOR SELECTION
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Indicator Selection}
+
+\subsection{Selection Criteria}
+
+Each of the 117 indicators in the Jira Health Assessment framework was evaluated against four criteria:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}llL{7cm}@{}}
+\toprule
+\textbf{Criterion} & \textbf{Weight} & \textbf{Definition} \\
+\midrule
+Causal Connection & 40\% & Does invisible work directly cause this pattern? \\
+Specificity & 25\% & Are there few alternative explanations for this pattern? \\
+Actionability & 20\% & Does improving this indicator require addressing invisible work? \\
+Measurability & 15\% & Can we reliably detect this pattern in Jira data? \\
+\bottomrule
+\end{tabular}
+\caption{Indicator Selection Criteria}
+\end{table}
+
+Indicators scoring $\geq 3.0$ (on a 1--5 scale) were selected. The full analysis is documented in the Indicator Selection Matrix.
+
+\subsection{Selected Indicators (17 Total)}
+
+\subsubsection{Primary Signals (7 indicators, 55\% total weight)}
+
+These indicators have the strongest causal connection to invisible work:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}lrL{6.5cm}@{}}
+\toprule
+\textbf{Indicator} & \textbf{Score} & \textbf{Signal Interpretation} \\
+\midrule
+\code{throughputVariability} & 4.55 & Sprint output swings without demand changes = hidden work consuming capacity \\
+\code{memberThroughputVariability} & 4.35 & Individual output varies = pulled into untracked activities \\
+\code{workflowStageTimeVariability} & 4.30 & Same stages take different times = interruptions and context switching \\
+\code{sameSizeTimeVariability} & 4.20 & Similar-sized items vary = hidden complexity or distractions \\
+\code{avgDailyUpdates} & 4.15 & Low Jira engagement = work happening elsewhere \\
+\code{staleWorkItems} & 4.10 & In-progress items not updated = attention is elsewhere \\
+\code{inProgressItemsVariability} & 3.90 & WIP count fluctuates = ad-hoc invisible work \\
+\bottomrule
+\end{tabular}
+\caption{Primary Signal Indicators}
+\end{table}
+
+\subsubsection{Supporting Signals (7 indicators, 35\% total weight)}
+
+These indicators provide corroborating evidence:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}lrL{6.5cm}@{}}
+\toprule
+\textbf{Indicator} & \textbf{Score} & \textbf{Signal Interpretation} \\
+\midrule
+\code{closedWithoutComments} & 3.90 & No discussion = decisions made off-platform \\
+\code{midSprintCreations} & 3.90 & Mid-sprint additions = work enters through side doors \\
+\code{frequentUseVariability} & 3.90 & Usage patterns vary = inconsistent Jira habits \\
+\code{collaborationVariability} & 3.55 & Communication swings = off-platform discussions \\
+\code{staleEpics} & 3.45 & Epics untouched = strategic work not tracked \\
+\code{bulkChanges} & 3.40 & Bulk updates = batch housekeeping discipline \\
+\code{lastDayCompletions} & 3.40 & End-of-sprint clustering = batched status updates \\
+\bottomrule
+\end{tabular}
+\caption{Supporting Signal Indicators}
+\end{table}
+
+\subsubsection{Contextual Signals (3 indicators, 10\% total weight)}
+
+These indicators add context but have lower specificity:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}lrL{6.5cm}@{}}
+\toprule
+\textbf{Indicator} & \textbf{Score} & \textbf{Signal Interpretation} \\
+\midrule
+\code{zombieItemCount} & 3.60 & Backlog zombies = visible work displaced by invisible \\
+\code{estimationVariability} & 3.25 & Erratic estimates = scope discovered mid-flight \\
+\code{capacitySplitAcrossProjects} & 3.05 & Multi-project = invisible work in other contexts \\
+\bottomrule
+\end{tabular}
+\caption{Contextual Signal Indicators}
+\end{table}
+
+\subsection{Indicators Not Included}
+
+Three indicators from the current Invisible Work dimension were removed:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}lL{10cm}@{}}
+\toprule
+\textbf{Indicator} & \textbf{Reason for Removal} \\
+\midrule
+\code{unresolvedEpicChildren} & Measures data hygiene, not invisible work \\
+\code{sprintHygiene} & Too composite; unclear mechanism to invisible work \\
+\code{siloedWorkItems} & Better fit for Team Collaboration dimension \\
+\bottomrule
+\end{tabular}
+\caption{Excluded Indicators}
+\end{table}
+
+\subsection{Why These Indicators Work: The Causal Model}
+
+Understanding \textit{why} these indicators detect invisible work helps interpret results and avoid misuse.
+
+\subsubsection*{The Throughput Variability $\rightarrow$ Invisible Work Link}
+
+Consider a team that completes 40 story points one sprint and 18 the next, with no changes in staffing, vacation, or planned work complexity. What explains this?
+
+\textbf{Possible explanations:}
+\begin{enumerate}
+    \item \textbf{Invisible work consumed sprint 2 capacity} (meetings, support escalations, firefighting)
+    \item Work was harder than expected (but estimates were similar)
+    \item Team members were less productive (but no evidence of that)
+    \item Random variation (unlikely at this magnitude)
+\end{enumerate}
+
+The first explanation is most parsimonious. The ``missing'' 22 points went somewhere---invisible work is the likely culprit.
+
+\textbf{Mathematical framing:}
+
+Let $V_t$ be throughput in period $t$. Without invisible work:
+\begin{equation}
+V_t = \text{Capacity} \times \text{Productivity} \times \text{Complexity Factor}_t + \epsilon_t
+\end{equation}
+
+With invisible work $I_t$:
+\begin{equation}
+V_t = (\text{Capacity} - I_t) \times \text{Productivity} \times \text{Complexity Factor}_t + \epsilon_t
+\end{equation}
+
+When $I_t$ varies unpredictably, $V_t$ inherits that variation---even if productivity and complexity are stable.
+
+\subsubsection*{The Staleness $\rightarrow$ Invisible Work Link}
+
+A work item in ``In Progress'' status for 10 days without updates suggests one of:
+\begin{enumerate}
+    \item \textbf{The assignee is working on something else} (invisible work)
+    \item The item is blocked (should be flagged as such)
+    \item The assignee forgot to update Jira (symptom of invisible work culture)
+    \item The item is actually done but not closed (data hygiene issue)
+\end{enumerate}
+
+Options 1 and 3 both indicate invisible work patterns. Staleness is a strong signal that tracked work is not receiving attention.
+
+\subsubsection*{The Engagement Gap $\rightarrow$ Invisible Work Link}
+
+Average daily Jira updates measure ``continuous engagement'' with the tracking system. Low engagement suggests:
+\begin{enumerate}
+    \item \textbf{Work is happening elsewhere} (not in Jira)
+    \item Team culture de-emphasizes real-time tracking
+    \item Work items are too large (single update spans multiple days)
+\end{enumerate}
+
+All three indicate invisible work risk. Either actual invisible work is occurring, or the culture creates conditions where invisible work can hide.
+
+\subsection{Indicator Weights}
+
+Weights are assigned by tier, with equal distribution within tiers:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}llr@{}}
+\toprule
+\textbf{Indicator} & \textbf{Tier} & \textbf{Weight} \\
+\midrule
+\code{throughputVariability} & Primary & 7.86\% \\
+\code{memberThroughputVariability} & Primary & 7.86\% \\
+\code{workflowStageTimeVariability} & Primary & 7.86\% \\
+\code{sameSizeTimeVariability} & Primary & 7.86\% \\
+\code{avgDailyUpdates} & Primary & 7.86\% \\
+\code{staleWorkItems} & Primary & 7.86\% \\
+\code{inProgressItemsVariability} & Primary & 7.86\% \\
+\midrule
+\code{closedWithoutComments} & Supporting & 5.00\% \\
+\code{midSprintCreations} & Supporting & 5.00\% \\
+\code{frequentUseVariability} & Supporting & 5.00\% \\
+\code{collaborationVariability} & Supporting & 5.00\% \\
+\code{staleEpics} & Supporting & 5.00\% \\
+\code{bulkChanges} & Supporting & 5.00\% \\
+\code{lastDayCompletions} & Supporting & 5.00\% \\
+\midrule
+\code{zombieItemCount} & Contextual & 3.33\% \\
+\code{estimationVariability} & Contextual & 3.33\% \\
+\code{capacitySplitAcrossProjects} & Contextual & 3.33\% \\
+\midrule
+\textbf{Total} & & \textbf{100\%} \\
+\bottomrule
+\end{tabular}
+\caption{Complete Indicator Weight Assignment}
+\end{table}
+
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% SECTION 3: MATHEMATICAL METHODOLOGY
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Mathematical Methodology}
+
+\subsection{Overview: CSS-Heavy Approach}
+
+Based on practitioner-statistician assessment, the Invisible Work Risk score uses a modified CHS formula:
+
+\begin{equation}
+\text{IWR} = 0.75 \times \text{CSS}_{\text{inv}} + 0.25 \times \text{TRS}_{\text{inv}}
+\end{equation}
+
+Where:
+\begin{itemize}
+    \item $\text{CSS}_{\text{inv}}$ = Current State Score for invisible work indicators
+    \item $\text{TRS}_{\text{inv}}$ = Trajectory Score for invisible work indicators
+\end{itemize}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}lrrL{5cm}@{}}
+\toprule
+\textbf{Component} & \textbf{General CHS} & \textbf{Invisible Work} & \textbf{Rationale} \\
+\midrule
+CSS & 50\% & \textbf{75\%} & Current state is most actionable \\
+TRS & 35\% & \textbf{25\%} & Variability indicators are noisy \\
+PGS & 15\% & \textbf{0\%} & Circular reasoning risk \\
+\bottomrule
+\end{tabular}
+\caption{Component Weight Comparison}
+\end{table}
+
+\textbf{PGS Exclusion Rationale}: Peer Growth Score compares a team's trajectory to peers at similar starting points. For invisible work, this creates circular reasoning: if many teams start with high invisible work, improvements would be penalized by peers also improving.
+
+\subsection{Data Transformation}
+
+\subsubsection{Variability Indicator Transformation}
+
+Variability indicators (coefficient of variation, standard deviation ratios) are typically right-skewed with a long tail. Before aggregation, apply log-transformation:
+
+\begin{equation}
+\tilde{X}_i = -\log(\max(X_i, 0.01))
+\end{equation}
+
+The floor of 0.01 prevents undefined logarithms. The negative sign ensures that after transformation:
+\begin{itemize}
+    \item Low variability (good) $\rightarrow$ High transformed value
+    \item High variability (bad) $\rightarrow$ Low transformed value
+\end{itemize}
+
+\textbf{Example:}
+\begin{itemize}
+    \item CV = 0.15 (low variability): $\tilde{X} = -\log(0.15) = 1.90$
+    \item CV = 0.60 (high variability): $\tilde{X} = -\log(0.60) = 0.51$
+\end{itemize}
+
+\subsubsection{Rate/Count Indicator Transformation}
+
+Non-variability indicators use standard direction-adjusted transformation:
+
+\begin{equation}
+\tilde{X}_i = d_i \times X_i
+\end{equation}
+
+Where $d_i$ is the direction coefficient:
+\begin{itemize}
+    \item $d_i = +1$ if higher values indicate more invisible work risk
+    \item $d_i = -1$ if higher values indicate less invisible work risk
+\end{itemize}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Indicator} & \textbf{Direction} \\
+\midrule
+\code{avgDailyUpdates} & $-1$ (more updates = less risk) \\
+All variability indicators & $+1$ (more variability = more risk) \\
+\code{staleWorkItems}, \code{staleEpics} & $+1$ (more stale = more risk) \\
+\code{midSprintCreations} & $+1$ (more mid-sprint = more risk) \\
+\code{closedWithoutComments} & $+1$ (more silent closures = more risk) \\
+\code{lastDayCompletions} & $+1$ (more clustering = more risk) \\
+\code{bulkChanges} & $+1$ (more bulk = more risk) \\
+\code{zombieItemCount} & $+1$ (more zombies = more risk) \\
+\code{capacitySplitAcrossProjects} & $+1$ (more split = more risk) \\
+\bottomrule
+\end{tabular}
+\caption{Indicator Direction Coefficients}
+\end{table}
+
+\subsubsection{Winsorization}
+
+Before standardization, winsorize extreme values:
+\begin{itemize}
+    \item \textbf{Variability indicators}: P1/P99 (wider bounds due to heavy tails)
+    \item \textbf{Rate indicators}: P2/P98 (standard bounds)
+\end{itemize}
+
+\begin{equation}
+X_i \leftarrow \text{clip}(X_i, P_{\text{low}}, P_{\text{high}})
+\end{equation}
+
+\subsection{Current State Score (CSS) Calculation}
+
+\subsubsection*{Step 1: Standardization}
+
+For each indicator $i$, compute z-score against baseline population norms:
+
+\begin{equation}
+z_i = \frac{\tilde{X}_i - \mu_{\text{baseline},i}}{\sigma_{\text{baseline},i}}
+\end{equation}
+
+Where:
+\begin{itemize}
+    \item $\mu_{\text{baseline},i}$ = Population mean for indicator $i$ at calibration
+    \item $\sigma_{\text{baseline},i}$ = Population standard deviation at calibration
+\end{itemize}
+
+\textbf{Note:} Baseline norms should be re-calibrated annually or when the comparison population changes significantly.
+
+\subsubsection*{Step 2: Z-Score Capping}
+
+Cap individual z-scores to prevent extreme values from dominating:
+
+\begin{equation}
+z_i \leftarrow \text{clip}(z_i, -3, +3)
+\end{equation}
+
+\subsubsection*{Step 3: Weighted Aggregation}
+
+Compute the raw CSS as weighted sum:
+
+\begin{equation}
+\text{CSS}_{\text{raw}} = \sum_{i=1}^{m} w_i \cdot z_i
+\end{equation}
+
+Where $w_i$ is the weight for indicator $i$, and $\sum w_i = 1$.
+
+\subsubsection*{Step 4: Variance Calculation}
+
+The variance of the aggregate depends on weights and indicator correlations:
+
+\begin{equation}
+\text{Var}(\text{CSS}_{\text{raw}}) = \sum_{i=1}^{m} w_i^2 \cdot (1 - \bar{\rho}) + \bar{\rho}
+\end{equation}
+
+For invisible work indicators, use $\bar{\rho} = 0.45$ (higher than general CHS $\bar{\rho} = 0.30$).
+
+With the tier-based weighting:
+\begin{align}
+\sum w_i^2 &= 7 \times (0.0786)^2 + 7 \times (0.05)^2 + 3 \times (0.0333)^2 \\
+&= 0.0432 + 0.0175 + 0.0033 = 0.064 \\
+\text{Var}(\text{CSS}_{\text{raw}}) &= 0.064 \times (1 - 0.45) + 0.45 = 0.035 + 0.45 = 0.485
+\end{align}
+
+\subsubsection*{Step 5: Scaling}
+
+Scale to achieve SD $\approx 15$ on a 0--100 scale:
+
+\begin{equation}
+k_{\text{css}} = \frac{15}{\sqrt{\text{Var}(\text{CSS}_{\text{raw}})}} = \frac{15}{\sqrt{0.485}} \approx 21.5
+\end{equation}
+
+\begin{equation}
+\text{CSS}_{\text{inv}} = 50 + k_{\text{css}} \times \text{CSS}_{\text{raw}}
+\end{equation}
+
+\subsubsection*{Step 6: Bounding}
+
+Bound to [5, 95] to avoid extreme scores:
+
+\begin{equation}
+\text{CSS}_{\text{inv}} = \text{clip}(\text{CSS}_{\text{inv}}, 5, 95)
+\end{equation}
+
+\textbf{Interpretation:}
+\begin{itemize}
+    \item CSS = 50: Average invisible work risk relative to baseline
+    \item CSS = 65: Risk is 1 SD above average
+    \item CSS = 35: Risk is 1 SD below average
+\end{itemize}
+
+\subsection{Trajectory Score (TRS) Calculation}
+
+\subsubsection*{Step 1: Period Segmentation}
+
+Divide the assessment period into early and recent windows:
+\begin{itemize}
+    \item \textbf{Early period}: First 4--6 time periods (sprints/weeks)
+    \item \textbf{Recent period}: Last 4--6 time periods
+\end{itemize}
+
+\subsubsection*{Step 2: Effect Size per Indicator}
+
+For each indicator $i$, calculate the trajectory as standardized effect size:
+
+\begin{equation}
+\text{trajectory}_i = \frac{\bar{X}_{i,\text{recent}} - \bar{X}_{i,\text{early}}}{\sigma_{i,\text{pooled}}}
+\end{equation}
+
+Where:
+\begin{itemize}
+    \item $\bar{X}_{i,\text{recent}}$ = Mean of indicator $i$ in recent period
+    \item $\bar{X}_{i,\text{early}}$ = Mean of indicator $i$ in early period
+    \item $\sigma_{i,\text{pooled}}$ = Pooled standard deviation across all periods
+\end{itemize}
+
+\subsubsection*{Step 3: Trajectory Capping}
+
+Cap individual trajectories more aggressively for invisible work (due to noise):
+
+\begin{equation}
+\text{trajectory}_i \leftarrow \text{clip}(\text{trajectory}_i, -2, +2)
+\end{equation}
+
+This is tighter than general CHS ($\pm 3$) because variability indicators are noisier.
+
+\subsubsection*{Step 4: Weighted Aggregation}
+
+\begin{equation}
+\text{TRS}_{\text{raw}} = \sum_{i=1}^{m} w_i \cdot \text{trajectory}_i
+\end{equation}
+
+\subsubsection*{Step 5: Aggregate Capping}
+
+\begin{equation}
+\text{TRS}_{\text{raw}} \leftarrow \text{clip}(\text{TRS}_{\text{raw}}, -3.0, +3.0)
+\end{equation}
+
+Tighter than general CHS ($\pm 4.5$) to reduce trajectory noise influence.
+
+\subsubsection*{Step 6: Scaling}
+
+\begin{equation}
+\text{TRS}_{\text{inv}} = 50 + 10 \times \text{TRS}_{\text{raw}}
+\end{equation}
+
+\begin{equation}
+\text{TRS}_{\text{inv}} = \text{clip}(\text{TRS}_{\text{inv}}, 20, 80)
+\end{equation}
+
+\textbf{Interpretation:}
+\begin{itemize}
+    \item TRS = 50: Stable, no significant change
+    \item TRS = 60: Improving (risk decreasing)
+    \item TRS = 40: Worsening (risk increasing)
+\end{itemize}
+
+\subsection{Final Risk Score Aggregation}
+
+\subsubsection*{Composite Calculation}
+
+\begin{equation}
+\text{IWR} = 0.75 \times \text{CSS}_{\text{inv}} + 0.25 \times \text{TRS}_{\text{inv}}
+\end{equation}
+
+\subsubsection*{Standard Error Calculation}
+
+By propagation of uncertainty (assuming component independence):
+
+\begin{equation}
+\text{SE}(\text{IWR})_{\text{raw}} = \sqrt{0.75^2 \times \text{SE}(\text{CSS}_{\text{inv}})^2 + 0.25^2 \times \text{SE}(\text{TRS}_{\text{inv}})^2}
+\end{equation}
+
+Apply inflation factor for component correlation:
+
+\begin{equation}
+\text{SE}(\text{IWR}) = 1.30 \times \text{SE}(\text{IWR})_{\text{raw}}
+\end{equation}
+
+The 1.30 factor (vs.\ 1.20 for general CHS) accounts for higher correlation between CSS and TRS for invisible work indicators.
+
+\subsubsection*{Confidence Interval}
+
+90\% confidence interval:
+
+\begin{equation}
+\text{IWR} \pm 1.645 \times \text{SE}(\text{IWR})
+\end{equation}
+
+\subsection{Risk Score Interpretation}
+
+Since we're measuring \textbf{risk} rather than \textbf{health}, the scale interpretation is inverted:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}llL{6cm}@{}}
+\toprule
+\textbf{IWR Score} & \textbf{Risk Label} & \textbf{Interpretation} \\
+\midrule
+$\leq 30$ & Low Risk & Work well-captured in Jira; signals are consistent \\
+31--45 & Moderate Risk & Most work visible; some monitoring warranted \\
+46--55 & Typical Risk & Average visibility; room for improvement \\
+56--70 & Elevated Risk & Suggests hidden work streams; investigation recommended \\
+$> 70$ & High Risk & Likely substantial invisible work; action needed \\
+\bottomrule
+\end{tabular}
+\caption{Risk Score Interpretation}
+\end{table}
+
+\textbf{Mapping to Health Score:} For UI consistency with other dimensions, convert:
+
+\begin{equation}
+\text{Health Score} = 100 - \text{IWR}
+\end{equation}
+
+\subsection{Precision Categories}
+
+Based on standard error and data coverage:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}llll@{}}
+\toprule
+\textbf{SE(IWR)} & \textbf{Coverage} & \textbf{Precision} & \textbf{UI Treatment} \\
+\midrule
+$\leq 5$ & $\geq 90\%$ & High & Full display \\
+5--10 & 70--89\% & Medium & Show with caveat \\
+$> 10$ & $< 70\%$ & Low & Flag as provisional \\
+\bottomrule
+\end{tabular}
+\caption{Precision Categories}
+\end{table}
+
+\textbf{Note:} These thresholds are wider than general CHS (80/65/45 vs.\ 85/75/50) due to inherent measurement noise in variability indicators.
+
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% SECTION 4: EDGE CASE HANDLING
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Edge Case Handling}
+
+\subsection{Missing Indicators}
+
+\subsubsection*{Coverage Threshold}
+
+Teams must have valid data for at least \textbf{60\%} of weighted indicators:
+
+\begin{equation}
+\text{coverage} = \sum_{i \in \text{valid}} w_i
+\end{equation}
+
+If coverage $< 60\%$, the IWR score is not calculated. Display: ``Insufficient Data.''
+
+\subsubsection*{Reweighting for Partial Data}
+
+When $60\% \leq \text{coverage} < 100\%$, reweight available indicators:
+
+\begin{equation}
+w_i' = \frac{w_i}{\sum_{j \in \text{valid}} w_j}
+\end{equation}
+
+Flag the score as ``Limited Data'' when coverage $< 80\%$.
+
+\subsection{Small Sample Sizes}
+
+\subsubsection*{Minimum Data Requirements}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Data Availability} & \textbf{Calculation Approach} & \textbf{Flag} \\
+\midrule
+$< 4$ weeks & Not calculated & ``Insufficient Data'' \\
+4--7 weeks & CSS-only (no TRS) & ``Provisional'' \\
+$\geq 8$ weeks & Full CSS + TRS & Standard \\
+\bottomrule
+\end{tabular}
+\caption{Minimum Data Requirements}
+\end{table}
+
+\subsubsection*{Small Team Adjustment}
+
+Teams with $< 5$ members have higher natural variability. Apply shrinkage toward population mean:
+
+\begin{equation}
+\text{IWR}_{\text{adjusted}} = \alpha \times \text{IWR} + (1 - \alpha) \times 50
+\end{equation}
+
+Where:
+
+\begin{equation}
+\alpha = \frac{n_{\text{members}}}{n_{\text{members}} + 3}
+\end{equation}
+
+For a 3-person team: $\alpha = 3/6 = 0.5$, so the score is shrunk 50\% toward the mean.
+
+\subsection{Extreme Values}
+
+\subsubsection*{Individual Indicator Outliers}
+
+After winsorization and z-score capping, individual indicators are bounded to $\pm 3$ SDs.
+
+\subsubsection*{Team-Level Outliers}
+
+If $> 50\%$ of indicators are at ceiling ($z = 3$) or floor ($z = -3$), flag for manual review. This pattern is unusual and may indicate:
+\begin{itemize}
+    \item Data quality issues
+    \item Team in exceptional circumstances
+    \item Methodology calibration needed for this team type
+\end{itemize}
+
+\subsection{New Teams}
+
+Teams with $< 8$ weeks of history:
+
+\begin{enumerate}
+    \item Calculate CSS-only score
+    \item Set TRS = 50 (neutral)
+    \item Use modified formula: $\text{IWR} = 0.85 \times \text{CSS} + 0.15 \times 50$
+    \item Flag as ``Provisional -- New Team''
+    \item Increase SE by 25\%
+\end{enumerate}
+
+\subsection{Holiday/Vacation Periods}
+
+Periods with $< 50\%$ normal team activity should be:
+\begin{enumerate}
+    \item Excluded from TRS calculation (early/recent period assignment)
+    \item Flagged in CSS calculation
+    \item Noted in output: ``Assessment period includes reduced-activity weeks''
+\end{enumerate}
+
+\subsection{Methodology Transitions}
+
+When teams transition methodologies (e.g., Scrum to Kanban):
+\begin{enumerate}
+    \item Flag first 4 weeks after transition
+    \item Increase SE by 30\%
+    \item Note: ``Recent methodology change may affect signal reliability''
+\end{enumerate}
+
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% SECTION 5: SCENARIO ANALYSIS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Scenario Analysis}
+
+This section presents 10 detailed scenarios to validate the methodology produces sensible results. Each scenario includes context, input data, step-by-step calculations, and validation against expected outcomes.
+
+\subsection{Validation Criteria}
+
+For each scenario, we assess:
+\begin{enumerate}
+    \item \textbf{Face validity}: Does the score match intuition about invisible work?
+    \item \textbf{Discrimination}: Does the methodology distinguish different situations?
+    \item \textbf{Robustness}: Is the score stable to small input changes?
+    \item \textbf{Actionability}: Does the result guide meaningful action?
+\end{enumerate}
+
+\subsection{Scenario 1: Team with Genuine High Invisible Work}
+
+\textbf{Context:} Engineering team of 7, heavily burdened by production support and meetings.
+
+\textbf{Input Data:}
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}llr@{}}
+\toprule
+\textbf{Indicator} & \textbf{Raw Value} & \textbf{Z-Score} \\
+\midrule
+\code{throughputVariability} & CV = 0.55 & +2.1 \\
+\code{memberThroughputVariability} & CV = 0.48 & +1.8 \\
+\code{workflowStageTimeVariability} & CV = 0.42 & +1.5 \\
+\code{sameSizeTimeVariability} & CV = 0.38 & +1.2 \\
+\code{avgDailyUpdates} & 1.8/day & $-1.9$ \\
+\code{staleWorkItems} & 35\% & +2.0 \\
+\code{inProgressItemsVariability} & CV = 0.40 & +1.4 \\
+Supporting indicators & (moderate) & avg +1.0 \\
+Contextual indicators & (moderate) & avg +0.8 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Calculation:}
+\begin{align}
+\text{CSS}_{\text{raw}} &= 0.55 \times 1.57 + 0.35 \times 1.0 + 0.10 \times 0.8 = 1.29 \\
+\text{CSS}_{\text{inv}} &= 50 + 21.5 \times 1.29 = 77.7 \\
+\text{TRS}_{\text{inv}} &= 52 \text{ (slightly worsening)} \\
+\text{IWR} &= 0.75 \times 77.7 + 0.25 \times 52 = 71.3
+\end{align}
+
+\textbf{Result:} IWR = 71 (High Risk)
+
+\textbf{Validation:} This is correct. The team shows strong signals across all tiers, consistent with reported high support burden.
+
+\subsection{Scenario 2: Team with High Variability but No Invisible Work}
+
+\textbf{Context:} Team of 5 working on R\&D projects with genuine complexity variation.
+
+\textbf{Input Data:}
+\begin{itemize}
+    \item High throughput variability (CV = 0.45, z = +1.6)
+    \item But: excellent Jira engagement (5.2 updates/day, z = $-1.8$)
+    \item Low staleness (8\% stale, z = $-1.2$)
+    \item Active collaboration (z = $-0.8$)
+\end{itemize}
+
+\textbf{Calculation:}
+\begin{align}
+\text{CSS}_{\text{raw}} &= 0.55 \times 0.74 + 0.35 \times (-0.3) + 0.10 \times (-0.2) = 0.28 \\
+\text{CSS}_{\text{inv}} &= 50 + 21.5 \times 0.28 = 56.0 \\
+\text{TRS}_{\text{inv}} &= 50 \text{ (stable)} \\
+\text{IWR} &= 0.75 \times 56 + 0.25 \times 50 = 54.5
+\end{align}
+
+\textbf{Result:} IWR = 55 (Typical Risk)
+
+\textbf{Validation:} Correct. Despite high throughput variability, the team's strong engagement (low staleness, high updates) pulls the score toward typical.
+
+\subsection{Scenario 3: Team with Low Jira Engagement but No Hidden Work}
+
+\textbf{Context:} Small team of 3 developers, minimal process overhead, prefer code over tickets.
+
+\textbf{Input Data:}
+\begin{itemize}
+    \item Low daily updates (2.1/day, z = $-0.8$)
+    \item Higher staleness (22\%, z = +0.6)
+    \item But: very consistent throughput (CV = 0.12, z = $-1.5$)
+    \item Consistent cycle times (CV = 0.15, z = $-1.3$)
+\end{itemize}
+
+\textbf{Calculation:}
+\begin{align}
+\text{CSS}_{\text{raw}} &= 0.55 \times (-0.37) + 0.35 \times 0.5 + 0.10 \times (-0.1) = -0.03 \\
+\text{CSS}_{\text{inv}} &= 50 + 21.5 \times (-0.03) = 49.4
+\end{align}
+
+\textbf{Apply small team adjustment:}
+\begin{align}
+\alpha &= 3/(3+3) = 0.5 \\
+\text{CSS}_{\text{adjusted}} &= 0.5 \times 49.4 + 0.5 \times 50 = 49.7 \\
+\text{IWR} &= 0.75 \times 49.7 + 0.25 \times 50 = 49.8
+\end{align}
+
+\textbf{Result:} IWR = 50 (Typical Risk), with small-team flag
+
+\textbf{Validation:} Correct. The low engagement signals are offset by excellent variability scores.
+
+\subsection{Scenario 4: Team Improving Invisible Work Discipline}
+
+\textbf{Context:} Team implemented a ``capture everything'' policy 8 weeks ago.
+
+\textbf{Input Data:}
+\begin{itemize}
+    \item Early period: High variability, low engagement
+    \item Recent period: Lower variability, higher engagement
+    \item Current CSS suggests moderate risk
+\end{itemize}
+
+\textbf{Trajectory Calculation:}
+\begin{align}
+\text{trajectory}_{\text{throughput}} &= (0.30 - 0.48) / 0.15 = -1.2 \text{ (improving)} \\
+\text{trajectory}_{\text{stale}} &= (15 - 32) / 8 = -2.1 \text{ (capped at } -2.0\text{)} \\
+\text{trajectory}_{\text{updates}} &= (4.5 - 2.1) / 1.0 = +2.4 \text{ (capped at } +2.0\text{)}
+\end{align}
+
+\textbf{Result:} IWR = 50 (Typical Risk), trending toward Low
+
+\textbf{Validation:} Correct. The team's current state shows improvement, and the trajectory confirms the positive trend.
+
+\subsection{Scenario 5: Team with Partial Data Availability}
+
+\textbf{Context:} New project; some indicators not available. Coverage = 75\%.
+
+\textbf{Missing indicators:}
+\begin{itemize}
+    \item \code{sameSizeTimeVariability} (no size estimates)
+    \item \code{estimationVariability} (no estimates)
+    \item \code{collaborationVariability} (insufficient history)
+\end{itemize}
+
+\textbf{Calculation with reweighting:}
+\begin{align}
+\text{Available weight} &= 1.0 - 0.0786 - 0.0333 - 0.05 = 0.838 \\
+\text{Reweighted primary} &= 0.55 \times (6/7) / 0.838 = 0.563 \\
+\text{CSS}_{\text{raw}} &= 0.733 \times 1.2 + 0.267 \times 0.8 = 1.09 \\
+\text{CSS}_{\text{inv}} &= 50 + 21.5 \times 1.09 = 73.4
+\end{align}
+
+\textbf{Result:} IWR = 68 (Elevated Risk), flagged ``Limited Data''
+
+\textbf{Validation:} Correct. Score calculated but appropriately flagged.
+
+\subsection{Scenario 6: Team with Extreme Outlier Values}
+
+\textbf{Context:} Team had production incident causing extreme metrics in one sprint.
+
+\textbf{Raw data (before winsorization):}
+\begin{itemize}
+    \item Throughput CV = 1.2 (one sprint had 5 points vs.\ normal 35)
+    \item Stale items = 85\% (everyone on incident response)
+\end{itemize}
+
+\textbf{With winsorization (P1/P99):}
+\begin{itemize}
+    \item CV = 1.2 is winsorized to P99 $\approx$ 0.85
+    \item Stale 85\% is winsorized to P99 $\approx$ 65\%
+    \item Resulting z-scores: +3.0 (capped)
+\end{itemize}
+
+\textbf{Result:} IWR = 56 (Elevated Risk)
+
+\textbf{Validation:} Correct. Winsorization and capping prevent a single bad week from dominating.
+
+\subsection{Scenario 7: Cross-Project Team with Split Capacity}
+
+\textbf{Context:} Team works across 3 Jira projects, capacity fragmented.
+
+\textbf{Input Data:}
+\begin{itemize}
+    \item \code{capacitySplitAcrossProjects} = 0.65 (high fragmentation, z = +1.8)
+    \item Higher variability in primary project metrics
+    \item Moderate engagement overall
+\end{itemize}
+
+\textbf{Calculation:}
+\begin{align}
+\text{CSS}_{\text{raw}} &\approx 0.75 \\
+\text{CSS}_{\text{inv}} &= 50 + 21.5 \times 0.75 = 66.1
+\end{align}
+
+\textbf{Result:} IWR = 62 (Elevated Risk)
+
+\textbf{Validation:} Correct. Methodology appropriately flags cross-project teams as higher risk.
+
+\subsection{Scenario 8: New Team with 4 Weeks History}
+
+\textbf{Context:} Newly formed team, limited data.
+
+\textbf{Handling:}
+\begin{enumerate}
+    \item CSS calculated from 4 weeks of data
+    \item TRS not calculated (insufficient history)
+    \item Modified formula applied
+\end{enumerate}
+
+\textbf{Calculation:}
+\begin{align}
+\text{CSS}_{\text{inv}} &= 52 \text{ (CSS-only)} \\
+\text{TRS} &= 50 \text{ (neutral, by rule)} \\
+\text{IWR} &= 0.85 \times 52 + 0.15 \times 50 = 51.7
+\end{align}
+
+\textbf{Result:} IWR = 52 (Typical Risk), flagged ``Provisional -- New Team''
+
+\textbf{Validation:} Correct. Score is conservative and appropriately flagged.
+
+\subsection{Scenario 9: Team During Holiday Period}
+
+\textbf{Context:} Assessment spans December with 3 weeks of reduced activity.
+
+\textbf{Handling:}
+\begin{enumerate}
+    \item Weeks 3--5 excluded from TRS calculation
+    \item TRS uses Weeks 1--2 (early) vs.\ Weeks 6--8 (recent)
+    \item CSS includes all weeks but flags the assessment
+\end{enumerate}
+
+\textbf{Result:} IWR = 48 (Typical Risk), noted ``Assessment period includes reduced-activity weeks''
+
+\textbf{Validation:} Correct. Holiday periods don't artificially inflate risk scores.
+
+\subsection{Scenario 10: Team Transitioning Scrum to Kanban}
+
+\textbf{Context:} Team switched from 2-week sprints to Kanban flow 3 weeks ago.
+
+\textbf{Handling:}
+\begin{enumerate}
+    \item Flag first 4 weeks post-transition
+    \item Increase SE by 30\%
+    \item TRS reliability reduced
+\end{enumerate}
+
+\textbf{Result:} IWR = 55 (Typical Risk), flagged ``Recent methodology change may affect signal reliability'', SE = 9.2
+
+\textbf{Validation:} Correct. Methodology doesn't penalize the transition but acknowledges reduced confidence.
+
+\subsection{Sensitivity Analysis}
+
+Beyond individual scenarios, we must understand how sensitive the methodology is to parameter choices and input variations.
+
+\subsubsection{Weight Sensitivity}
+
+\textbf{Question:} How much does changing tier weights affect final scores?
+
+\textbf{Test:} Compare scores under three weight schemes:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+\textbf{Scheme} & \textbf{Primary} & \textbf{Supporting} & \textbf{Contextual} \\
+\midrule
+Default & 55\% & 35\% & 10\% \\
+Primary-heavy & 70\% & 25\% & 5\% \\
+Balanced & 45\% & 40\% & 15\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Results for Scenario 1 (High Invisible Work):}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+\textbf{Scheme} & \textbf{CSS\_raw} & \textbf{CSS\_inv} & \textbf{IWR} \\
+\midrule
+Default & 1.29 & 77.7 & 71 \\
+Primary-heavy & 1.42 & 80.5 & 74 \\
+Balanced & 1.18 & 75.4 & 69 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation:} Score varies by $\pm$3 points across reasonable weight alternatives. Team is consistently identified as ``High Risk'' regardless of weighting scheme.
+
+\subsubsection{Correlation Parameter Sensitivity}
+
+\textbf{Question:} How sensitive is the score to the assumed correlation $\bar{\rho}$?
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+$\bar{\rho}$ & \textbf{Var(CSS\_raw)} & $k_{\text{css}}$ & \textbf{CSS (Scenario 1)} \\
+\midrule
+0.30 & 0.35 & 25.4 & 82.8 \\
+0.45 (default) & 0.49 & 21.5 & 77.7 \\
+0.60 & 0.62 & 19.0 & 74.5 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation:} Higher assumed correlation produces more conservative (lower) scores. The score varies by $\sim$8 points across the full range---material but not category-changing for most teams.
+
+\subsubsection{Single Indicator Sensitivity}
+
+\textbf{Question:} Can a single indicator dominate the score?
+
+\textbf{Test:} For Scenario 1, set each primary indicator to $z = 0$ while keeping others unchanged.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+\textbf{Zeroed Indicator} & \textbf{CSS\_raw} & \textbf{CSS\_inv} & \textbf{Change} \\
+\midrule
+None (baseline) & 1.29 & 77.7 & --- \\
+\code{throughputVariability} & 1.12 & 74.1 & $-3.6$ \\
+\code{memberThroughputVariability} & 1.15 & 74.7 & $-3.0$ \\
+\code{avgDailyUpdates} & 1.14 & 74.5 & $-3.2$ \\
+\code{staleWorkItems} & 1.13 & 74.3 & $-3.4$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation:} No single indicator changes the score by more than 4 points. The tiered weighting effectively prevents single-indicator dominance.
+
+\subsubsection{Missing Data Sensitivity}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}llrrr@{}}
+\toprule
+\textbf{Coverage} & \textbf{Missing Indicators} & \textbf{IWR} & \textbf{SE(IWR)} & \textbf{Precision} \\
+\midrule
+100\% & None & 71 & 4.2 & High \\
+85\% & 3 contextual & 71 & 4.8 & High \\
+75\% & 2 primary, 2 supporting & 69 & 6.1 & Medium \\
+65\% & 4 primary, 2 supporting & 66 & 8.3 & Low \\
+55\% & --- & Not calculated & --- & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation:} The score is stable down to $\sim$75\% coverage. The 60\% threshold for calculation is appropriate.
+
+\subsubsection{Stress Test: Ceiling Effects}
+
+\textbf{Scenario:} Team with all indicators at $z = -1.5$ (well below average risk)
+
+\textbf{Calculation:}
+\begin{align}
+\text{CSS}_{\text{raw}} &= -1.5 \\
+\text{CSS}_{\text{inv}} &= 50 + 21.5 \times (-1.5) = 17.8 \text{ (bounded to 5)} \\
+\text{IWR} &= 0.75 \times 5 + 0.25 \times 50 = 16.3
+\end{align}
+
+\textbf{Result:} IWR = 16 (Low Risk, at floor)
+
+\textbf{Implication:} Teams at the floor have limited room to show improvement. Display ``Excellent -- Minimal invisible work risk detected.''
+
+\subsection{Scenario Summary}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}clcll@{}}
+\toprule
+\textbf{\#} & \textbf{Scenario} & \textbf{IWR} & \textbf{Risk Level} & \textbf{Key Validation} \\
+\midrule
+1 & High invisible work & 71 & High & Correct detection \\
+2 & High variability, no invisible work & 55 & Typical & False positive avoided \\
+3 & Low engagement, small team & 50 & Typical & Shrinkage applied correctly \\
+4 & Improving discipline & 50 & Typical & Trend captured \\
+5 & Partial data & 68 & Elevated & Limited data flag works \\
+6 & Extreme outlier & 56 & Elevated & Winsorization effective \\
+7 & Cross-project team & 62 & Elevated & Fragmentation captured \\
+8 & New team & 52 & Typical & Provisional handling correct \\
+9 & Holiday period & 48 & Typical & Reduced activity handled \\
+10 & Methodology transition & 55 & Typical & Reliability flag appropriate \\
+\bottomrule
+\end{tabular}
+\caption{Scenario Summary}
+\end{table}
+
+\textbf{Overall Assessment:} The methodology produces sensible, interpretable results across diverse scenarios. It correctly identifies high-risk teams, avoids obvious false positives, handles edge cases gracefully, and maintains stability under parameter perturbations.
+
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% SECTION 6: IMPLEMENTATION NOTES
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Implementation Notes}
+
+\subsection{Minimum Data Requirements}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Requirement} & \textbf{Threshold} & \textbf{Handling} \\
+\midrule
+Historical data & $\geq 4$ weeks & Below: ``Insufficient Data'' \\
+Indicator coverage & $\geq 60\%$ weighted & Below: ``Insufficient Data'' \\
+TRS data & $\geq 8$ weeks & 4--7 weeks: CSS-only \\
+Team size & $\geq 3$ members & Below: Apply shrinkage \\
+\bottomrule
+\end{tabular}
+\caption{Minimum Data Requirements}
+\end{table}
+
+\subsection{Computational Considerations}
+
+All calculations are feasible within Forge constraints:
+\begin{itemize}
+    \item No iterative optimization required
+    \item No external library dependencies beyond basic math
+    \item Single-pass aggregation for each component
+    \item Total calculation $< 100$ms for typical team
+\end{itemize}
+
+\subsection{Caching Strategy}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Data Element} & \textbf{Cache Duration} & \textbf{Invalidation} \\
+\midrule
+Baseline norms ($\mu$, $\sigma$) & 1 year & Annual recalibration \\
+Team raw metrics & 1 week & New data ingestion \\
+IWR scores & 1 week & New assessment run \\
+Indicator z-scores & 1 week & New raw metrics \\
+\bottomrule
+\end{tabular}
+\caption{Caching Strategy}
+\end{table}
+
+\subsection{Recommended Refresh Frequency}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}llL{6cm}@{}}
+\toprule
+\textbf{Use Case} & \textbf{Refresh} & \textbf{Rationale} \\
+\midrule
+Dashboard display & Weekly & Balance freshness with stability \\
+Trend analysis & Monthly & Reduce noise in trajectory \\
+Annual review & Quarterly & Sufficient data for robust TRS \\
+\bottomrule
+\end{tabular}
+\caption{Recommended Refresh Frequency}
+\end{table}
+
+\subsection{Integration with CHS}
+
+The IWR score can be converted to a health score for dimensional display:
+
+\begin{equation}
+\text{Invisible Work Health} = 100 - \text{IWR}
+\end{equation}
+
+This maintains consistency with other dimensions where higher = healthier.
+
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% SECTION 7: LIMITATIONS AND FUTURE WORK
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Limitations and Future Work}
+
+\subsection{Statistical Properties and Assumptions}
+
+\subsubsection*{Distributional Assumptions}
+
+\textbf{Variability indicators} are assumed to follow a log-normal distribution after transformation. This is appropriate because:
+\begin{itemize}
+    \item Coefficient of variation is bounded below by 0
+    \item Empirically, CV distributions show right-skew with occasional extreme values
+    \item Log transformation normalizes the distribution for z-score calculation
+\end{itemize}
+
+\textbf{Rate indicators} (e.g., stale item percentage, daily updates) are assumed approximately normal after winsorization.
+
+\textbf{Composite score} distribution approaches normality by the Central Limit Theorem, given that we're aggregating 17 indicators.
+
+\subsubsection*{Independence Assumptions}
+
+The methodology assumes:
+\begin{enumerate}
+    \item \textbf{Indicators within a team are correlated} (captured by $\bar{\rho} = 0.45$)
+    \item \textbf{Teams are independent} for baseline norm calculation
+    \item \textbf{Time periods within a team are correlated} (captured in TRS calculation)
+\end{enumerate}
+
+\subsubsection*{Stationarity Assumptions}
+
+The methodology assumes indicator distributions are approximately stationary over the assessment period. Non-stationarity (e.g., organization-wide process change) could invalidate TRS calculation.
+
+\subsection{Construct Validity Limitations}
+
+The primary uncertainty is whether these indicators actually measure invisible work or something else:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}L{4cm}L{3cm}L{5cm}@{}}
+\toprule
+\textbf{Concern} & \textbf{Impact} & \textbf{Mitigation} \\
+\midrule
+Variability may reflect legitimate complexity & False positives & Supporting indicators provide cross-validation \\
+Invisible work uniformly distributed & Undetectable & Relative comparison assumes variation exists \\
+Team self-report bias & Validation challenge & Use objective calendar/meeting data where available \\
+\bottomrule
+\end{tabular}
+\caption{Construct Validity Limitations}
+\end{table}
+
+\subsection{Known Blind Spots}
+
+\begin{enumerate}
+    \item \textbf{Invisible work in meetings that produce visible output}: Productive meetings that create Jira tickets aren't ``invisible'' but consume time
+    \item \textbf{Efficient invisible work}: Some teams handle support efficiently with minimal disruption
+    \item \textbf{Cultural differences}: Some teams prefer minimal documentation regardless of invisible work
+\end{enumerate}
+
+\subsection{Future Enhancements}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}L{4cm}L{5cm}l@{}}
+\toprule
+\textbf{Enhancement} & \textbf{Benefit} & \textbf{Complexity} \\
+\midrule
+Calendar integration & Direct meeting burden measurement & High \\
+Communication analysis & Slack/Teams activity correlation & High \\
+Individual-level scoring & Identify specific capacity drains & Medium \\
+Predictive modeling & Forecast invisible work trends & Medium \\
+Benchmark expansion & Industry-specific norms & Low \\
+\bottomrule
+\end{tabular}
+\caption{Future Enhancements}
+\end{table}
+
+\subsection{Validation Study Design}
+
+\subsubsection*{Phase 1: Pilot Study (10 teams, 3 months)}
+
+\textbf{Objective:} Establish basic construct validity
+
+\textbf{Data Collection:}
+\begin{itemize}
+    \item Weekly self-reported invisible work hours (survey)
+    \item IWR scores calculated weekly
+    \item Qualitative feedback on score reasonableness
+\end{itemize}
+
+\textbf{Analysis:}
+\begin{itemize}
+    \item Pearson correlation between IWR and reported hours
+    \item Target: $r > 0.5$ (moderate correlation)
+    \item Identify indicators with strongest/weakest signal
+\end{itemize}
+
+\textbf{Success Criteria:}
+\begin{itemize}
+    \item Correlation is statistically significant ($p < 0.05$)
+    \item Teams with self-reported high invisible work show elevated IWR
+    \item No systematic bias by team size or methodology
+\end{itemize}
+
+\subsubsection*{Phase 2: Calibration Study (50 teams, 6 months)}
+
+\textbf{Objective:} Refine methodology parameters
+
+\textbf{Data Collection:}
+\begin{itemize}
+    \item Expanded team sample across departments
+    \item Calendar integration (meeting hours) where available
+    \item Communication platform activity (optional)
+\end{itemize}
+
+\textbf{Analysis:}
+\begin{itemize}
+    \item Multiple regression: IWR $\sim$ reported\_hours + meeting\_hours + slack\_activity
+    \item Identify redundant indicators
+    \item Recalibrate tier weights based on empirical signal strength
+    \item Establish population norms ($\mu_{\text{baseline}}$, $\sigma_{\text{baseline}}$)
+\end{itemize}
+
+\textbf{Success Criteria:}
+\begin{itemize}
+    \item $R^2 > 0.30$ for multiple regression model
+    \item All primary indicators show significant unique contribution
+    \item Population norms are stable (low variance across subgroups)
+\end{itemize}
+
+\subsubsection*{Phase 3: Deployment (Organization-wide)}
+
+\textbf{Objective:} Production rollout with monitoring
+
+\textbf{Success Criteria:}
+\begin{itemize}
+    \item False positive rate $< 15\%$
+    \item False negative rate $< 20\%$
+    \item $> 70\%$ of teams find score ``reasonable'' or ``accurate''
+\end{itemize}
+
+\subsection{Interpretation Guidelines for Practitioners}
+
+When presenting IWR scores to teams, use the following communication guidelines:
+
+\textbf{DO say:}
+\begin{itemize}
+    \item ``Your invisible work risk indicators suggest there may be work happening outside Jira''
+    \item ``These patterns are consistent with teams that report high meeting load or support burden''
+    \item ``Consider whether your team's Jira practices capture all meaningful work''
+\end{itemize}
+
+\textbf{DON'T say:}
+\begin{itemize}
+    \item ``You have 40\% invisible work''
+    \item ``Your score proves you're not tracking work properly''
+    \item ``Teams with your score have exactly X hours of untracked work''
+\end{itemize}
+
+\textbf{Frame as conversation starter:}
+The IWR score should prompt discussion, not judgment. Questions to explore:
+\begin{enumerate}
+    \item ``What work consumes your time that doesn't appear in Jira?''
+    \item ``Are there recurring meetings or support duties that should be tracked?''
+    \item ``Could we create better tickets for interrupt-driven work?''
+\end{enumerate}
+
+\textbf{Acknowledge limitations:}
+\begin{itemize}
+    \item ``This is a risk indicator, not a measurement''
+    \item ``High variability can have causes other than invisible work''
+    \item ``Your team knows your work better than any metric''
+\end{itemize}
+
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% SECTION 8: GLOSSARY
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Glossary}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}lL{10cm}@{}}
+\toprule
+\textbf{Term} & \textbf{Definition} \\
+\midrule
+Invisible Work & Effort that occurs but is not tracked in Jira \\
+IWR & Invisible Work Risk: Composite score (0--100) indicating likelihood of invisible work \\
+CSS & Current State Score: Component measuring current indicator levels vs.\ baseline \\
+TRS & Trajectory Score: Component measuring trend over time within assessment period \\
+PGS & Peer Growth Score: Peer comparison component (not used in IWR) \\
+CV & Coefficient of Variation: Standard deviation divided by mean \\
+Z-score & Number of standard deviations from the mean \\
+Winsorization & Capping extreme values at specified percentiles \\
+Baseline norms & Population mean and standard deviation at calibration time \\
+Effect size & Standardized difference between two means \\
+\bottomrule
+\end{tabular}
+\caption{Glossary of Terms}
+\end{table}
+
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% APPENDICES
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\appendix
+
+\section{Complete Indicator Reference}
+
+\subsection{Indicator Details}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}cllcr@{}}
+\toprule
+\textbf{ID} & \textbf{Indicator} & \textbf{Type} & \textbf{Direction} & \textbf{Weight} \\
+\midrule
+1 & \code{throughputVariability} & Variability & +1 & 7.86\% \\
+2 & \code{memberThroughputVariability} & Variability & +1 & 7.86\% \\
+3 & \code{workflowStageTimeVariability} & Variability & +1 & 7.86\% \\
+4 & \code{sameSizeTimeVariability} & Variability & +1 & 7.86\% \\
+5 & \code{avgDailyUpdates} & Rate & $-1$ & 7.86\% \\
+6 & \code{staleWorkItems} & Rate & +1 & 7.86\% \\
+7 & \code{inProgressItemsVariability} & Variability & +1 & 7.86\% \\
+8 & \code{closedWithoutComments} & Rate & +1 & 5.00\% \\
+9 & \code{midSprintCreations} & Rate & +1 & 5.00\% \\
+10 & \code{frequentUseVariability} & Variability & +1 & 5.00\% \\
+11 & \code{collaborationVariability} & Variability & +1 & 5.00\% \\
+12 & \code{staleEpics} & Rate & +1 & 5.00\% \\
+13 & \code{bulkChanges} & Rate & +1 & 5.00\% \\
+14 & \code{lastDayCompletions} & Rate & +1 & 5.00\% \\
+15 & \code{zombieItemCount} & Count & +1 & 3.33\% \\
+16 & \code{estimationVariability} & Variability & +1 & 3.33\% \\
+17 & \code{capacitySplitAcrossProjects} & Rate & +1 & 3.33\% \\
+\bottomrule
+\end{tabular}
+\caption{Complete Indicator Reference}
+\end{table}
+
+\subsection{Indicator Calculation Details}
+
+\textbf{\code{throughputVariability}}: Coefficient of variation (CV) of completed story points per sprint over the assessment period. CV = $\sigma/\mu$ where $\sigma$ is standard deviation and $\mu$ is mean. Higher CV indicates more variability.
+
+\textbf{\code{memberThroughputVariability}}: For each team member, calculate their throughput CV. Then average across members. This captures individual-level variation that may be masked by team aggregates.
+
+\textbf{\code{workflowStageTimeVariability}}: CV of time spent in ``In Progress'' or equivalent status. Calculated per work item, then aggregated. High variability suggests inconsistent work patterns.
+
+\textbf{\code{sameSizeTimeVariability}}: Group work items by story point bucket (1, 2, 3, 5, 8, 13). Within each bucket, calculate CV of cycle time. Average across buckets. High variability means same-sized work takes unpredictably different times.
+
+\textbf{\code{avgDailyUpdates}}: Count all Jira updates (status changes, comments, field edits) and divide by calendar days in assessment period. Compare to team size to normalize.
+
+\textbf{\code{staleWorkItems}}: Percentage of ``In Progress'' items not updated in the configured stale threshold (default: 5 days). Excludes items flagged as blocked.
+
+\textbf{\code{inProgressItemsVariability}}: CV of daily WIP count. Count items in active workflow states each day, calculate CV of that time series.
+
+\textbf{\code{closedWithoutComments}}: Percentage of resolved items with zero comments. Indicates decisions made off-platform.
+
+\textbf{\code{midSprintCreations}}: For sprint-based teams, percentage of completed items that were created after sprint start. High rates indicate ``side door'' work entry.
+
+\textbf{\code{frequentUseVariability}}: CV of daily update counts. Stable teams have consistent daily Jira activity; variable teams have ``burst'' patterns.
+
+\textbf{\code{collaborationVariability}}: CV of average comments per item per sprint. Measures consistency of communication patterns.
+
+\textbf{\code{staleEpics}}: Percentage of in-progress epics not updated in the stale threshold. Strategic work visibility signal.
+
+\textbf{\code{bulkChanges}}: Percentage of updates that occur in bulk operations ($>$10 items modified within 5 minutes). Indicates batch housekeeping rather than real-time tracking.
+
+\textbf{\code{lastDayCompletions}}: Percentage of sprint completions occurring on the final day. High rates suggest batch status updates rather than continuous tracking.
+
+\textbf{\code{zombieItemCount}}: Count of backlog items with no updates in 180+ days but still open. Normalized by total backlog size.
+
+\textbf{\code{estimationVariability}}: CV of (actual\_time / estimated\_time) ratio. High variability means estimates are unreliable.
+
+\textbf{\code{capacitySplitAcrossProjects}}: Herfindahl-Hirschman Index (HHI) of work distribution across projects. Lower HHI = more fragmentation = more risk of invisible work in ``other'' projects.
+
+\newpage
+
+\section{Formula Quick Reference}
+
+\subsection*{Transformation}
+
+\textbf{Variability indicators:}
+\begin{equation}
+\tilde{X}_i = -\log(\max(X_i, 0.01))
+\end{equation}
+
+\textbf{Rate indicators:}
+\begin{equation}
+\tilde{X}_i = d_i \times X_i
+\end{equation}
+
+\subsection*{CSS Calculation}
+
+\begin{align}
+z_i &= \frac{\tilde{X}_i - \mu_{\text{baseline},i}}{\sigma_{\text{baseline},i}} \\[1em]
+\text{CSS}_{\text{raw}} &= \sum_{i=1}^{m} w_i \cdot z_i \\[1em]
+\text{Var}(\text{CSS}_{\text{raw}}) &= \sum_{i=1}^{m} w_i^2 \cdot (1 - \bar{\rho}) + \bar{\rho} \\[1em]
+k_{\text{css}} &= \frac{15}{\sqrt{\text{Var}(\text{CSS}_{\text{raw}})}} \\[1em]
+\text{CSS}_{\text{inv}} &= \text{clip}(50 + k_{\text{css}} \times \text{CSS}_{\text{raw}}, 5, 95)
+\end{align}
+
+\subsection*{TRS Calculation}
+
+\begin{align}
+\text{trajectory}_i &= \frac{\bar{X}_{i,\text{recent}} - \bar{X}_{i,\text{early}}}{\sigma_{i,\text{pooled}}} \\[1em]
+\text{TRS}_{\text{raw}} &= \text{clip}\left(\sum_{i=1}^{m} w_i \cdot \text{clip}(\text{trajectory}_i, -2, +2), -3, +3\right) \\[1em]
+\text{TRS}_{\text{inv}} &= \text{clip}(50 + 10 \times \text{TRS}_{\text{raw}}, 20, 80)
+\end{align}
+
+\subsection*{Final Score}
+
+\begin{align}
+\text{IWR} &= 0.75 \times \text{CSS}_{\text{inv}} + 0.25 \times \text{TRS}_{\text{inv}} \\[1em]
+\text{SE}(\text{IWR}) &= 1.30 \times \sqrt{0.75^2 \times \text{SE}(\text{CSS})^2 + 0.25^2 \times \text{SE}(\text{TRS})^2} \\[1em]
+\text{90\% CI} &= \text{IWR} \pm 1.645 \times \text{SE}(\text{IWR})
+\end{align}
+
+\subsection*{Health Score Conversion}
+
+\begin{equation}
+\text{Invisible Work Health} = 100 - \text{IWR}
+\end{equation}
+
+\newpage
+
+\section{Scenario Calculation Details}
+
+Summary of scenario results (see Section 5 for detailed worked examples):
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}clcll@{}}
+\toprule
+\textbf{\#} & \textbf{Scenario} & \textbf{IWR} & \textbf{Risk Level} & \textbf{Notes} \\
+\midrule
+1 & High invisible work team & 71 & High & Correct detection \\
+2 & High variability, no invisible work & 55 & Typical & False positive avoided \\
+3 & Low engagement, small team & 50 & Typical & Shrinkage applied \\
+4 & Improving discipline & 50 & Typical & Trend captured \\
+5 & Partial data & 68 & Elevated & Limited data flag \\
+6 & Extreme outlier & 56 & Elevated & Winsorization effective \\
+7 & Cross-project team & 62 & Elevated & Fragmentation captured \\
+8 & New team (4 weeks) & 52 & Typical & Provisional flag \\
+9 & Holiday period & 48 & Typical & Reduced activity handled \\
+10 & Methodology transition & 55 & Typical & Reliability flag \\
+\bottomrule
+\end{tabular}
+\caption{Scenario Calculation Summary}
+\end{table}
+
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% REVISION HISTORY
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section*{Revision History}
+\addcontentsline{toc}{section}{Revision History}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Version} & \textbf{Date} & \textbf{Changes} \\
+\midrule
+1.0 & 2026-01-28 & Initial specification \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\vfill
+
+\begin{center}
+\rule{0.5\textwidth}{0.4pt}\\[1em]
+\textit{Document version 1.0. Invisible Work Detection Methodology Specification.}\\
+\textit{2026-01-28}
+\end{center}
+
+\end{document}
