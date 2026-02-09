@@ -29,6 +29,7 @@ import ArrowLeftIcon from '@atlaskit/icon/glyph/arrow-left';
 import RefreshIcon from '@atlaskit/icon/glyph/refresh';
 import SettingsIcon from '@atlaskit/icon/glyph/settings';
 import ShareIcon from '@atlaskit/icon/glyph/share';
+import MediaServicesActualSizeIcon from '@atlaskit/icon/glyph/media-services/actual-size';
 import { PersonaSwitcher } from '../persona';
 import { getDimensionDescription } from '../../constants/clusterDescriptions';
 import { getOutcomesForDimension } from '../../constants/outcomeDefinitions';
@@ -577,7 +578,7 @@ const AssessmentResultsLayout: React.FC<AssessmentResultsLayoutProps> = ({
                             else if (lastTier < firstTier) overallTrend = 'down';
                           }
                           const healthScore = dimension.healthScore ?? Math.round(dimension.overallPercentile);
-                          const trendIcon = overallTrend === 'up' ? '↗' : overallTrend === 'down' ? '↘' : '→';
+                          const trendIcon = overallTrend === 'up' ? '↗' : overallTrend === 'down' ? '↘' : <MediaServicesActualSizeIcon label="" size="small" primaryColor="#6B778C" />;
                           const trendLabel = overallTrend === 'up' ? 'Improving' : overallTrend === 'down' ? 'Declining' : 'Stable';
                           const trendColor = overallTrend === 'up' ? '#36B37E' : overallTrend === 'down' ? '#DE350B' : '#6B778C';
 
@@ -669,7 +670,7 @@ const AssessmentResultsLayout: React.FC<AssessmentResultsLayoutProps> = ({
                         <div style={styles.endpointLeft}>
                           <span style={styles.endpointLabel}>← {dimension.spectrumLeftLabel || 'NEEDS WORK'}</span>
                           <p style={styles.endpointDescription}>
-                            Below average performance. Opportunities for improvement identified.
+                            Most tickets are missing required fields, descriptions, or acceptance criteria. The backlog can't be relied on for planning or handoffs.
                           </p>
                         </div>
 
@@ -762,7 +763,7 @@ const AssessmentResultsLayout: React.FC<AssessmentResultsLayoutProps> = ({
                         <div style={styles.endpointRight}>
                           <span style={styles.endpointLabelGood}>{dimension.spectrumRightLabel || 'EXCELLENT'} →</span>
                           <p style={styles.endpointDescription}>
-                            Above average performance. Strong practices in place.
+                            All tracked fields are complete and current. Tickets provide clear context for anyone picking them up.
                           </p>
                         </div>
                       </div>

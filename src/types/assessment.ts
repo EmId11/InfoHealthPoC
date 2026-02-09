@@ -350,13 +350,14 @@ export type Dimension2IndicatorId =
   | 'dueDate'                  // % with no due date
   | 'subTasks'                 // % with sub-tasks (for large items)
   | 'prioritySet'              // % with priority other than 'Normal'
-  // 2.b Quality of Readiness/Refinement (6 indicators)
+  // 2.b Insights (8 indicators)
   | 'infoAddedAfterCommitment' // % where key fields added after in-progress
-  | 'creationToCommitmentTime' // Average days between creation and commitment
   | 'midSprintMissingFields'   // % added mid-sprint without key fields
-  | 'firstTimePassRate'        // % completed without re-opening
-  | 'creationCommitmentCorrelation' // Correlation: days to commit vs. carryover
-  | 'changesCorrelation'       // Correlation: days to commit vs. changes
+  | 'staleWorkItems'           // % of in-progress items that are stale
+  | 'bulkChanges'              // % of updates done in bulk
+  | 'jiraUpdateFrequency'      // Average updates per issue per day
+  | 'fieldUpdateLag'           // Days between creation and key fields being filled
+  | 'descriptionEditFrequency' // % of issues with description edits after creation
   | 'timeToStability';         // Days for priority to stop changing
 
 // ============================================

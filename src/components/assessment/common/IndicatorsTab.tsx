@@ -355,20 +355,20 @@ const CategorySection: React.FC<CategorySectionProps> = ({
           <thead>
             <tr style={styles.tableHeaderRow}>
               <th style={{ ...styles.th, width: '18%' }}>Indicator</th>
-              <th style={{ ...styles.th, width: '18%' }}>Why It Matters</th>
+              <th style={{ ...styles.th, width: '10%' }}>Value</th>
+              <th style={{ ...styles.th, width: '16%' }}>Why It Matters</th>
               <th style={{ ...styles.th, width: '28%' }}>
                 <span>Peer Comparison</span>
                 <span style={styles.historyHint}>(your value vs others)</span>
               </th>
-              <th style={{ ...styles.th, width: '12%' }}>
+              <th style={{ ...styles.th, width: '14%' }}>
                 <span>Health</span>
                 <span style={styles.historyHint}>(indicator tier)</span>
               </th>
-              <th style={{ ...styles.th, width: '12%' }}>
+              <th style={{ ...styles.th, width: '14%' }}>
                 <span>History</span>
                 <span style={styles.historyHint}>(click to expand)</span>
               </th>
-              <th style={{ ...styles.th, width: '12%' }}>Trend</th>
             </tr>
           </thead>
           <tbody>
@@ -401,6 +401,22 @@ const CategorySection: React.FC<CategorySectionProps> = ({
                           {indicator.higherIsBetter ? ' higher better' : ' lower better'}
                         </span>
                       </div>
+                    </div>
+                  </td>
+
+                  {/* Value + Trend Arrow */}
+                  <td style={styles.td}>
+                    <div style={styles.valueCell}>
+                      <span style={{
+                        ...styles.valuePrimary,
+                        color: indicatorTier.color,
+                      }}>{indicator.displayValue}</span>
+                      <span style={{
+                        ...styles.trendArrow,
+                        backgroundColor: trendColors.bg,
+                      }}>
+                        {getTrendIcon(indicator.trend)}
+                      </span>
                     </div>
                   </td>
 
@@ -476,18 +492,6 @@ const CategorySection: React.FC<CategorySectionProps> = ({
                         height={24}
                       />
                     </div>
-                  </td>
-
-                  {/* Trend */}
-                  <td style={styles.td}>
-                    <span style={{
-                      ...styles.trendBadge,
-                      backgroundColor: trendColors.bg,
-                      color: trendColors.text,
-                    }}>
-                      {getTrendIcon(indicator.trend)}
-                      {getTrendLabel(indicator.trend)}
-                    </span>
                   </td>
                 </tr>
               );
@@ -724,11 +728,25 @@ const styles: Record<string, React.CSSProperties> = {
     lineHeight: 1.4,
   },
 
-  // Value cells
-  valueText: {
-    fontSize: '14px',
-    fontWeight: 400,
-    color: '#172B4D',
+  // Value + trend cell
+  valueCell: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+  },
+  valuePrimary: {
+    fontSize: '20px',
+    fontWeight: 700,
+    letterSpacing: '-0.3px',
+  },
+  trendArrow: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '22px',
+    height: '22px',
+    borderRadius: '50%',
+    flexShrink: 0,
   },
   percentileBadgeContainer: {
     display: 'flex',
@@ -747,15 +765,6 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '10px',
     color: '#6B778C',
     fontWeight: 500,
-  },
-  trendBadge: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '4px',
-    padding: '4px 8px',
-    borderRadius: '4px',
-    fontSize: '11px',
-    fontWeight: 600,
   },
 
   // Clickable sparkline
