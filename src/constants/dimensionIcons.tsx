@@ -27,7 +27,7 @@ import WarningIcon from '@atlaskit/icon/glyph/warning';
 // Dimension icon mapping by dimensionKey
 const dimensionIconMap: Record<string, React.ComponentType<{ label: string; size?: 'small' | 'medium' | 'large' | 'xlarge'; primaryColor?: string }>> = {
   workCaptured: WatchIcon,
-  informationHealth: DocumentIcon,
+  ticketReadiness: DocumentIcon,
   dataFreshness: RefreshIcon,
   issueTypeConsistency: LabelIcon,
   workHierarchy: LinkIcon,
@@ -60,7 +60,7 @@ const DIMENSION_ICON_COLOR = '#0052CC';
 
 /**
  * Get an icon element for a dimension by its key
- * @param dimensionKey - The unique key for the dimension (e.g., 'workCaptured', 'informationHealth')
+ * @param dimensionKey - The unique key for the dimension (e.g., 'workCaptured', 'ticketReadiness')
  * @param size - Icon size: 'small', 'medium', 'large', or 'xlarge'
  * @param color - Optional color override (defaults to Atlassian blue #0052CC)
  * @returns JSX element of the icon, or null if not found

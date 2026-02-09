@@ -921,7 +921,7 @@ function generateDimensionImpacts(
   // If no dimension data, generate mock dimensions
   if (dimensionMap.size === 0) {
     const mockDimensions = [
-      { key: 'info-health', name: 'Information Health', baseline: 32, change: 8.2 },
+      { key: 'ticket-readiness', name: 'Ticket Readiness', baseline: 32, change: 8.2 },
       { key: 'sprint-hygiene', name: 'Sprint Hygiene', baseline: 28, change: 12.5 },
       { key: 'estimation', name: 'Estimation Coverage', baseline: 45, change: 3.1 },
       { key: 'data-freshness', name: 'Data Freshness', baseline: 52, change: -2.3 },
@@ -1081,8 +1081,8 @@ function generateTeamProgressContext(
  * Maps dimension keys to their key indicators with realistic names
  */
 const DIMENSION_INDICATORS: Record<string, Array<{ id: string; name: string }>> = {
-  // Information Health
-  'informationHealth': [
+  // Ticket Readiness
+  'ticketReadiness': [
     { id: 'acceptanceCriteria', name: 'AC Coverage' },
     { id: 'firstTimePassRate', name: 'First Pass Rate' },
     { id: 'midSprintMissingFields', name: 'Description Quality' },
@@ -1254,7 +1254,7 @@ function generateImpactFlow(
       { outcomeId: 'improvement', weight: 0.25 },
       { outcomeId: 'commitments', weight: 0.10 },
     ],
-    'informationHealth': [
+    'ticketReadiness': [
       { outcomeId: 'commitments', weight: 0.15 },
       { outcomeId: 'portfolio', weight: 0.15 },
     ],
@@ -1292,7 +1292,7 @@ function generateImpactFlow(
   // Normalize dimension key for lookups
   const normalizeDimKey = (key: string): string => {
     const keyMap: Record<string, string> = {
-      'info-health': 'informationHealth',
+      'ticket-readiness': 'ticketReadiness',
       'sprint-hygiene': 'sprintHygiene',
       'estimation': 'estimationCoverage',
       'data-freshness': 'dataFreshness',

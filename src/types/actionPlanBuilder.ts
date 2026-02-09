@@ -25,7 +25,7 @@ export const DIMENSION_EXPLANATIONS: Record<string, DimensionExplanation> = {
     whyItMatters: 'When work happens outside Jira, you can\'t measure progress, identify bottlenecks, or plan accurately',
     impact: 'Hidden work leads to unrealistic commitments and burnout',
   },
-  informationHealth: {
+  ticketReadiness: {
     title: 'Ticket Quality',
     whatItMeans: 'Whether tickets have enough information to be actionable',
     whyItMatters: 'Well-documented tickets reduce back-and-forth questions and help new team members get up to speed',

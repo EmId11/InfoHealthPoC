@@ -89,7 +89,7 @@ const Dimension2Modal: React.FC<Dimension2ModalProps> = ({
             )}
             <div>
               <h2 style={styles.title}>
-                {selectedCategory ? selectedCategory.shortName : 'How We Assess Information Health'}
+                {selectedCategory ? selectedCategory.shortName : 'How We Assess Ticket Readiness'}
               </h2>
               <p style={styles.subtitle}>
                 {selectedCategory
@@ -157,7 +157,7 @@ const Dimension2Modal: React.FC<Dimension2ModalProps> = ({
 
               {/* Brief Intro */}
               <p style={styles.introText}>
-                We assess information health by analyzing <strong>three categories of leading indicators</strong>.
+                We assess ticket readiness by analyzing <strong>two categories of leading indicators</strong>.
                 Each category reveals a different aspect of how well your tickets capture the information needed
                 for successful delivery. Your team's indicators are compared against similar teams to determine
                 your overall health level.

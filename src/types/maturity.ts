@@ -162,8 +162,8 @@ export const DIMENSION_MATURITY_DESCRIPTIONS: Record<string, DimensionMaturityDe
     5: 'Work is comprehensively captured with excellent visibility',
   },
 
-  // Dimension 2: Information Health
-  informationHealth: {
+  // Dimension 2: Ticket Readiness
+  ticketReadiness: {
     1: 'Issue information is sparse with critical fields missing',
     2: 'Information quality is inconsistent across issues',
     3: 'Most issues have adequate information with some gaps',

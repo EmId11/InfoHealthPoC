@@ -1116,7 +1116,7 @@ export const formatPercentile = (percentile: number): string => {
 };
 
 // ============================================
-// DIMENSION 2: Information Health
+// DIMENSION 2: Ticket Readiness
 // "Do the issues capture what needs to be delivered?"
 // ============================================
 
@@ -1343,7 +1343,7 @@ const availabilityCategory: IndicatorCategory = {
   name: 'Availability of key information in tickets',
   shortName: 'Data Completeness',
   description: 'Measures whether critical fields are populated before work begins.',
-  rationale: 'Incomplete tickets force teams to <strong>guess at requirements</strong> or chase down information mid-development. Missing acceptance criteria leads to rework, missing estimates prevents planning, and missing assignees create accountability gaps. These indicators measure the <strong>baseline information health</strong> of your tickets—whether the fields that matter are actually filled in.',
+  rationale: 'Incomplete tickets force teams to <strong>guess at requirements</strong> or chase down information mid-development. Missing acceptance criteria leads to rework, missing estimates prevents planning, and missing assignees create accountability gaps. These indicators measure the <strong>baseline readiness</strong> of your tickets—whether the fields that matter are actually filled in.',
   statusColor: '#FFEBE6',
   status: 'high',
   issuesCount: 6,
@@ -1626,10 +1626,10 @@ const dimension2Recommendations: Recommendation[] = [
 
 // Dimension 2 Complete Result
 export const mockDimension2Result: DimensionResult = {
-  dimensionKey: 'informationHealth',
+  dimensionKey: 'ticketReadiness',
   dimensionNumber: 2,
-  dimensionName: 'Information Health',
-  dimensionTitle: 'Information Health',
+  dimensionName: 'Ticket Readiness',
+  dimensionTitle: 'Ticket Readiness',
   questionForm: 'Do your tickets capture what needs to be delivered, in what order, and why?',
   riskDescription: 'tickets lack key information',
   spectrumLeftLabel: 'Critical information missing from tickets',

@@ -479,11 +479,11 @@ export const invisibleWorkPlaybook: DimensionPlaybook = {
   }
 };
 
-// Playbook content for Information Health dimension
-export const informationHealthPlaybook: DimensionPlaybook = {
-  dimensionKey: 'informationHealth',
-  dimensionName: 'Information Health',
-  overview: 'Information health measures how complete, accurate, and useful the data in your Jira issues is. Poor information health leads to context-switching, repeated questions, and decisions made without full context. Well-documented issues accelerate onboarding, handoffs, and async collaboration.',
+// Playbook content for Ticket Readiness dimension
+export const ticketReadinessPlaybook: DimensionPlaybook = {
+  dimensionKey: 'ticketReadiness',
+  dimensionName: 'Ticket Readiness',
+  overview: 'Ticket readiness measures how complete, accurate, and useful the data in your Jira issues is. Poor readiness leads to context-switching, repeated questions, and decisions made without full context. Well-documented issues accelerate onboarding, handoffs, and async collaboration.',
 
   successCriteria: [
     {
@@ -867,7 +867,7 @@ export const informationHealthPlaybook: DimensionPlaybook = {
     5: {
       focus: 'Lead by example. Your issues should be case studies in clarity.',
       avoid: 'Don\'t assume everyone knows your standards. Keep documenting what "good" looks like.',
-      nextStep: 'Mentor other teams on information health practices.'
+      nextStep: 'Mentor other teams on ticket readiness practices.'
     }
   }
 };
@@ -5273,7 +5273,7 @@ export const backlogDisciplinePlaybook: DimensionPlaybook = {
 // Map of all playbooks by dimension key
 export const DIMENSION_PLAYBOOKS: Record<string, DimensionPlaybook> = {
   'workCaptured': invisibleWorkPlaybook,
-  'informationHealth': informationHealthPlaybook,
+  'ticketReadiness': ticketReadinessPlaybook,
   'dataFreshness': dataFreshnessPlaybook,
   'estimationCoverage': estimationCoveragePlaybook,
   'sizingConsistency': sizingConsistencyPlaybook,

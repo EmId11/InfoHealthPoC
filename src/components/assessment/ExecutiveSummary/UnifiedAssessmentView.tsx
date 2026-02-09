@@ -63,7 +63,7 @@ const getDimensionIcon = (dimensionKey: string, color: string) => {
   switch (dimensionKey) {
     case 'workCaptured':
       return <WatchIcon {...iconProps} />;
-    case 'informationHealth':
+    case 'ticketReadiness':
       return <DocumentIcon {...iconProps} />;
     case 'dataFreshness':
       return <RefreshIcon {...iconProps} />;

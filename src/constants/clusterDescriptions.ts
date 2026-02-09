@@ -97,8 +97,8 @@ export const dimensionDescriptions: DimensionDescription[] = [
     clusterId: 'dataQuality',
   },
   {
-    key: 'informationHealth',
-    name: 'Information Health',
+    key: 'ticketReadiness',
+    name: 'Ticket Readiness',
     headline: 'Do tickets have the information needed for planning?',
     summary: 'Measures whether critical fields are populated before work begins.',
     whatWeMeasure: `We check field completeness (descriptions, acceptance criteria, estimates), refinement quality (work readiness), and priority effectiveness (do labels predict delivery order?).`,

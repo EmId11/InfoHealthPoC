@@ -2,7 +2,7 @@
 export type DimensionKey =
   // Cluster 1: Data Quality & Completeness
   | 'workCaptured'
-  | 'informationHealth'
+  | 'ticketReadiness'
   | 'dataFreshness'
   | 'issueTypeConsistency'
   | 'workHierarchy'
@@ -34,8 +34,8 @@ export const allDimensions: DimensionInfo[] = [
     shortDescription: 'Is all work being captured in Jira?',
   },
   {
-    key: 'informationHealth',
-    label: 'Information Health',
+    key: 'ticketReadiness',
+    label: 'Ticket Readiness',
     shortDescription: 'Do tickets have the information needed for planning?',
   },
   {
@@ -120,7 +120,7 @@ export const dimensionPresets: DimensionPreset[] = [
     recommended: true,
     dimensions: [
       'workCaptured',
-      'informationHealth',
+      'ticketReadiness',
       'estimationCoverage',
       'dataFreshness',
       'sprintHygiene',
@@ -133,7 +133,7 @@ export const dimensionPresets: DimensionPreset[] = [
     description: 'All 14 dimensions for a thorough assessment',
     dimensions: [
       'workCaptured',
-      'informationHealth',
+      'ticketReadiness',
       'dataFreshness',
       'issueTypeConsistency',
       'workHierarchy',
@@ -155,7 +155,7 @@ export const dimensionPresets: DimensionPreset[] = [
     dimensions: [
       'estimationCoverage',
       'sizingConsistency',
-      'informationHealth',
+      'ticketReadiness',
       'workHierarchy',
       'issueTypeConsistency',
       'sprintHygiene',

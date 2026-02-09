@@ -46,7 +46,7 @@ const commitmentsOutcome: OutcomeAreaDefinition = {
         'Hidden work means commitments underestimate remaining effort. Invisible work skews all predictions.',
     },
     {
-      dimensionKey: 'informationHealth',
+      dimensionKey: 'ticketReadiness',
       weight: 0.15,
       whyItMatters:
         'Missing details force mid-sprint discovery, disrupting plans. Complete tickets enable accurate commitment.',
@@ -355,7 +355,7 @@ const portfolioOutcome: OutcomeAreaDefinition = {
         'Portfolio views only show tracked work. Hidden work creates blind spots in strategic planning.',
     },
     {
-      dimensionKey: 'informationHealth',
+      dimensionKey: 'ticketReadiness',
       weight: 0.15,
       whyItMatters:
         'Epics and initiatives need clear descriptions for stakeholder understanding. Sparse details undermine executive confidence.',

@@ -101,8 +101,8 @@ const AssessmentResultsLayout: React.FC<AssessmentResultsLayoutProps> = ({
   // Top-level tab state
   const [activeTab, setActiveTab] = useState<TopLevelTab>('assessment-results');
 
-  // Information Health is always dimension index 1
-  const INFORMATION_HEALTH_INDEX = 1;
+  // Ticket Readiness is always dimension index 1
+  const TICKET_READINESS_INDEX = 1;
 
   // State for comparison group modal
   const [isComparisonModalOpen, setIsComparisonModalOpen] = useState(false);
@@ -450,10 +450,10 @@ const AssessmentResultsLayout: React.FC<AssessmentResultsLayoutProps> = ({
           </div>
 
           {/* ═══════════════════════════════════════════════════════════════════
-              ASSESSMENT RESULTS TAB - Information Health Dimension Detail
+              ASSESSMENT RESULTS TAB - Ticket Readiness Dimension Detail
           ═══════════════════════════════════════════════════════════════════ */}
-          {activeTab === 'assessment-results' && assessmentResult.dimensions[INFORMATION_HEALTH_INDEX] && (() => {
-                const dimension = assessmentResult.dimensions[INFORMATION_HEALTH_INDEX];
+          {activeTab === 'assessment-results' && assessmentResult.dimensions[TICKET_READINESS_INDEX] && (() => {
+                const dimension = assessmentResult.dimensions[TICKET_READINESS_INDEX];
                 const dimDesc = getDimensionDescription(dimension.dimensionKey);
                 const tier = getIndicatorTier(dimension.healthScore ?? dimension.overallPercentile);
 
@@ -506,7 +506,7 @@ const AssessmentResultsLayout: React.FC<AssessmentResultsLayoutProps> = ({
                       teamCount={assessmentResult.comparisonTeamCount}
                       teams={assessmentResult.comparisonTeams}
                       criteria={assessmentResult.comparisonCriteria}
-                      onViewTeams={() => openComparisonModal(INFORMATION_HEALTH_INDEX)}
+                      onViewTeams={() => openComparisonModal(TICKET_READINESS_INDEX)}
                     />
 
                     <div style={{...styles.dimensionBlueBanner, background: tier.bgColor, borderColor: tier.borderColor}}>
@@ -514,7 +514,7 @@ const AssessmentResultsLayout: React.FC<AssessmentResultsLayoutProps> = ({
                       <div style={styles.heroCenterFlow}>
                         {/* Title row with info button */}
                         <div style={styles.heroTitleRow}>
-                          <span style={styles.heroSubtitle}>{dimension.dimensionName} Score</span>
+                          <span style={styles.heroSubtitle}>Readiness Score</span>
                           <span style={styles.heroInfoInline}>
                             <HeroInfoButton title={`About ${dimension.dimensionName}`}>
                               <div style={styles.infoModalBody}>
@@ -630,7 +630,7 @@ const AssessmentResultsLayout: React.FC<AssessmentResultsLayoutProps> = ({
                                       <TrendChart
                                         data={dimension.trendData}
                                         height={280}
-                                        dimensionName="Information Health"
+                                        dimensionName="Ticket Readiness"
                                       />
                                     </div>
                                   </div>
@@ -769,16 +769,16 @@ const AssessmentResultsLayout: React.FC<AssessmentResultsLayoutProps> = ({
                       </div>
                     </section>
 
-                    {/* Information Health Dimension Detail (Dimension2Results) */}
+                    {/* Ticket Readiness Dimension Detail (Dimension2Results) */}
                     <div style={styles.dimensionContentSection}>
                       <Dimension2Results
-                        dimension={assessmentResult.dimensions[INFORMATION_HEALTH_INDEX]}
+                        dimension={assessmentResult.dimensions[TICKET_READINESS_INDEX]}
                         reportOptions={wizardState.step6}
                         teamId={assessmentResult.teamId}
                         dateRange={assessmentResult.dateRange}
                         similarTeamsCount={assessmentResult.comparisonTeamCount}
-                        onViewSimilarTeams={() => openComparisonModal(INFORMATION_HEALTH_INDEX)}
-                        dimensionIndex={INFORMATION_HEALTH_INDEX}
+                        onViewSimilarTeams={() => openComparisonModal(TICKET_READINESS_INDEX)}
+                        dimensionIndex={TICKET_READINESS_INDEX}
                         onIndicatorDrillDown={onIndicatorDrillDown}
                       />
                     </div>

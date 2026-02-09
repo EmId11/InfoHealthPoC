@@ -65,12 +65,12 @@ export const dimension1Content: DimensionMethodologyContent = {
 };
 
 // ============================================
-// Dimension 2: Information Health
+// Dimension 2: Ticket Readiness
 // ============================================
 export const dimension2Content: DimensionMethodologyContent = {
   dimensionNumber: 2,
-  dimensionName: 'Information Health',
-  modalTitle: 'How We Measure Information Health',
+  dimensionName: 'Ticket Readiness',
+  modalTitle: 'How We Measure Ticket Readiness',
   modalSubtitle: 'Assessing the completeness and quality of ticket data',
   keyQuestion: 'Do your tickets have the information needed for planning?',
   overviewText: 'We analyze <strong>14 Jira indicators</strong> that measure whether your tickets contain sufficient information for effective planning and execution. Complete, well-refined tickets lead to better estimates and fewer surprises.',
@@ -478,7 +478,7 @@ export const methodologyContentByDimension: Record<number, DimensionMethodologyC
 // Lookup by dimension key
 export const methodologyContentByKey: Record<string, DimensionMethodologyContent> = {
   workCaptured: dimension1Content,
-  informationHealth: dimension2Content,
+  ticketReadiness: dimension2Content,
   estimationCoverage: dimension3Content,
   sizingConsistency: dimension4Content,
   issueTypeConsistency: dimension5Content,
