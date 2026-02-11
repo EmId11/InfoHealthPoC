@@ -34,38 +34,43 @@ const ComparisonExplainer: React.FC<ComparisonExplainerProps> = ({
 
   const parsedCriteria = parseCriteria();
 
+  const hasCriteria = criteria.length > 0;
+
   return (
     <div style={styles.container}>
       {/* Header - always visible */}
       <div
         style={styles.header}
-        onClick={() => setIsExpanded(!isExpanded)}
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => e.key === 'Enter' && setIsExpanded(!isExpanded)}
+        onClick={hasCriteria ? () => setIsExpanded(!isExpanded) : undefined}
+        role={hasCriteria ? 'button' : undefined}
+        tabIndex={hasCriteria ? 0 : undefined}
+        onKeyDown={hasCriteria ? (e) => e.key === 'Enter' && setIsExpanded(!isExpanded) : undefined}
       >
         <div style={styles.headerContent}>
           <span style={styles.headerText}>
-            Results compared against{' '}
+            Viewing results alongside{' '}
             <button
               style={styles.teamsLink}
               onClick={(e) => { e.stopPropagation(); onViewTeams(); }}
             >
-              {teamCount} similar teams
+              {teamCount} other team{teamCount !== 1 ? 's' : ''}
             </button>
+            {' '}in this assessment
           </span>
         </div>
-        <button style={styles.toggleButton}>
-          {isExpanded ? (
-            <ChevronUpIcon label="Collapse" size="small" primaryColor="#6B778C" />
-          ) : (
-            <ChevronDownIcon label="Expand" size="small" primaryColor="#6B778C" />
-          )}
-        </button>
+        {hasCriteria && (
+          <button style={styles.toggleButton}>
+            {isExpanded ? (
+              <ChevronUpIcon label="Collapse" size="small" primaryColor="#6B778C" />
+            ) : (
+              <ChevronDownIcon label="Expand" size="small" primaryColor="#6B778C" />
+            )}
+          </button>
+        )}
       </div>
 
-      {/* Expanded content - criteria as tags */}
-      {isExpanded && (
+      {/* Expanded content - criteria as tags (only when criteria exist) */}
+      {hasCriteria && isExpanded && (
         <div style={styles.expandedContent}>
           <div style={styles.sectionTitle}>Matching criteria</div>
           <div style={styles.criteriaGrid}>
@@ -79,7 +84,7 @@ const ComparisonExplainer: React.FC<ComparisonExplainerProps> = ({
             ))}
           </div>
           <p style={styles.helperText}>
-            Teams are matched based on these characteristics to ensure fair comparison.
+            These are the other teams included in this assessment.
           </p>
         </div>
       )}

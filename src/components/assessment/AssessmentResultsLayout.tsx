@@ -13,6 +13,7 @@ import {
 import { ImprovementPlanWizard } from './ExecutiveSummary/ImprovementPlanWizard';
 import Dimension2Results from './dimension2/Dimension2Results';
 import TrendChart from './common/TrendChart';
+import Sparkline from './common/Sparkline';
 import { getDimensionQuestion } from './common/ThemeSection';
 import ComparisonExplainer from './common/ComparisonExplainer';
 import ComparisonGroupModal from './common/ComparisonGroupModal';
@@ -27,9 +28,9 @@ import { DIMENSION_EXPLANATION } from '../../constants/pageExplanations';
 import { calculateExecutiveSummary } from '../../utils/executiveSummaryUtils';
 import ArrowLeftIcon from '@atlaskit/icon/glyph/arrow-left';
 import RefreshIcon from '@atlaskit/icon/glyph/refresh';
+import MediaServicesActualSizeIcon from '@atlaskit/icon/glyph/media-services/actual-size';
 import SettingsIcon from '@atlaskit/icon/glyph/settings';
 import ShareIcon from '@atlaskit/icon/glyph/share';
-import MediaServicesActualSizeIcon from '@atlaskit/icon/glyph/media-services/actual-size';
 import { PersonaSwitcher } from '../persona';
 import { getDimensionDescription } from '../../constants/clusterDescriptions';
 import { getOutcomesForDimension } from '../../constants/outcomeDefinitions';
@@ -37,6 +38,8 @@ import { getDimensionIcon, getOutcomeIcon } from '../../constants/dimensionIcons
 import { LensType } from '../../types/patterns';
 import LensCardsRow from './patterns/LensCardsRow';
 import PatternLensDetailView from './patterns/PatternLensDetailView';
+import IndicatorsTab from './common/IndicatorsTab';
+import { readinessCategory } from '../../constants/mockAssessmentData';
 
 // Top-level tabs
 type TopLevelTab = 'assessment-results' | 'improvement-plan' | 'reports';
@@ -477,7 +480,7 @@ const AssessmentResultsLayout: React.FC<AssessmentResultsLayoutProps> = ({
                 <div style={styles.lensTabsContainer}>
                   <div style={styles.lensTabs}>
                     {([
-                      { key: 'coverage', label: 'Coverage' },
+                      { key: 'coverage', label: 'Field Completeness' },
                       { key: 'integrity', label: 'Data Integrity' },
                       { key: 'timing', label: 'Timing' },
                       { key: 'behavioral', label: 'Behavioral' },
@@ -496,6 +499,24 @@ const AssessmentResultsLayout: React.FC<AssessmentResultsLayoutProps> = ({
                   </div>
                 </div>
               )}
+
+              {/* Comparison Explainer - shown for multi-team assessments, above all tab content */}
+              {assessmentResult.comparisonTeamCount > 0 && (
+                <ComparisonExplainer
+                  teamCount={assessmentResult.comparisonTeamCount}
+                  teams={assessmentResult.comparisonTeams}
+                  criteria={assessmentResult.comparisonCriteria}
+                  onViewTeams={() => setIsComparisonModalOpen(true)}
+                />
+              )}
+
+              {/* Lens Description Banner */}
+              <div style={styles.lensDescriptionBanner}>
+                {lensSubTab === 'coverage' && 'Measures whether critical fields are populated and contain meaningful content before work begins.'}
+                {lensSubTab === 'integrity' && 'Checks whether populated fields contain meaningful data and whether work is properly prepared before development.'}
+                {lensSubTab === 'timing' && 'Checks whether information was available when decisions were made, or added retroactively.'}
+                {lensSubTab === 'behavioral' && 'Detects patterns in how data is entered that may distort your metrics and reports.'}
+              </div>
 
               {/* Coverage Lens — existing Ticket Readiness detail */}
               {lensSubTab === 'coverage' && assessmentResult.dimensions[TICKET_READINESS_INDEX] && (() => {
@@ -536,25 +557,8 @@ const AssessmentResultsLayout: React.FC<AssessmentResultsLayoutProps> = ({
                   ? Math.round((needingAttention / allIndicators.length) * 100)
                   : 0;
 
-                // Extract "Key info added after commitment" from current dimension's readiness category
-                const readinessCat = dimension.categories.find(c => c.id === 'readiness');
-                const infoAfterCommitment = readinessCat?.indicators.find(i => i.id === 'infoAddedAfterCommitment');
-
-                // Extract "Stale In-Progress Work Items" from Data Freshness dimension
-                const dataFreshnessDim = assessmentResult.dimensions.find(d => d.dimensionKey === 'dataFreshness');
-                const staleItemsCat = dataFreshnessDim?.categories.find(c => c.id === 'dataFreshness');
-                const staleWorkItems = staleItemsCat?.indicators.find(i => i.id === 'staleWorkItems');
-
                 return (
                   <>
-                    {/* Comparison Explainer - consistent across pages */}
-                    <ComparisonExplainer
-                      teamCount={assessmentResult.comparisonTeamCount}
-                      teams={assessmentResult.comparisonTeams}
-                      criteria={assessmentResult.comparisonCriteria}
-                      onViewTeams={() => openComparisonModal(TICKET_READINESS_INDEX)}
-                    />
-
                     <div style={{...styles.dimensionBlueBanner, background: tier.bgColor, borderColor: tier.borderColor}}>
                       {/* Centered single-column flow */}
                       <div style={styles.heroCenterFlow}>
@@ -624,11 +628,14 @@ const AssessmentResultsLayout: React.FC<AssessmentResultsLayoutProps> = ({
                             else if (lastTier < firstTier) overallTrend = 'down';
                           }
                           const healthScore = dimension.healthScore ?? Math.round(dimension.overallPercentile);
-                          const trendIcon = overallTrend === 'up' ? '↗' : overallTrend === 'down' ? '↘' : <MediaServicesActualSizeIcon label="" size="small" primaryColor="#6B778C" />;
                           const trendLabel = overallTrend === 'up' ? 'Improving' : overallTrend === 'down' ? 'Declining' : 'Stable';
                           const trendColor = overallTrend === 'up' ? '#36B37E' : overallTrend === 'down' ? '#DE350B' : '#6B778C';
+                          const trendArrowPath = overallTrend === 'up'
+                            ? 'M3,10 L7,3 L11,10 L9,10 L9,12 L5,12 L5,10 Z'
+                            : 'M3,5 L7,12 L11,5 L9,5 L9,3 L5,3 L5,5 Z';
 
                           const sparkTrend = overallTrend === 'up' ? 'improving' as const : overallTrend === 'down' ? 'declining' as const : 'stable' as const;
+                          const hasTrendData = dimension.trendData && dimension.trendData.length >= 2;
 
                           return (
                             <>
@@ -637,32 +644,46 @@ const AssessmentResultsLayout: React.FC<AssessmentResultsLayoutProps> = ({
                                 <span style={styles.heroBigDenom}>/100</span>
                               </div>
 
-                              {/* Category + trend as unified status chip */}
-                              <div style={styles.heroMetaRow}>
-                                <span style={{
+                              {/* Category + trend + sparkline as unified chip */}
+                              <button
+                                style={{
                                   ...styles.heroStatusChip,
                                   backgroundColor: `${tier.color}18`,
                                   border: `1.5px solid ${tier.color}40`,
-                                }}>
-                                  <span style={{...styles.heroStatusDot, backgroundColor: tier.color}} />
-                                  <span style={{...styles.heroStatusTier, color: tier.color}}>{tier.name}</span>
-                                  <span style={styles.heroStatusDivider} />
-                                  <span style={{...styles.heroStatusTrend, color: trendColor}}>
-                                    {trendIcon} {trendLabel}
+                                  cursor: hasTrendData ? 'pointer' : 'default',
+                                }}
+                                onClick={hasTrendData ? () => setShowScoreHistory(true) : undefined}
+                                title={hasTrendData ? 'View score history' : undefined}
+                              >
+                                <span style={{...styles.heroStatusDot, backgroundColor: tier.color}} />
+                                <span style={{...styles.heroStatusTier, color: tier.color}}>{tier.name}</span>
+                                <span style={styles.heroStatusDivider} />
+                                {overallTrend === 'stable' ? (
+                                  <span style={{ display: 'inline-flex', flexShrink: 0 }}>
+                                    <MediaServicesActualSizeIcon label="" size="small" primaryColor={trendColor} />
                                   </span>
-                                </span>
-                                {dimension.trendData && dimension.trendData.length >= 2 && (
-                                  <button
-                                    onClick={() => setShowScoreHistory(true)}
-                                    style={styles.heroHistoryBtn}
-                                    title="View score history"
-                                  >
-                                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                                      <polyline points="1,11 3.5,7 6,8.5 8.5,3.5 11,6 13,2" stroke="#6B778C" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-                                    </svg>
-                                  </button>
+                                ) : (
+                                  <svg width="12" height="12" viewBox="0 0 14 14" style={{ flexShrink: 0 }}>
+                                    <path d={trendArrowPath} fill={trendColor} />
+                                  </svg>
                                 )}
-                              </div>
+                                <span style={{...styles.heroStatusTrend, color: trendColor}}>
+                                  {trendLabel}
+                                </span>
+                                {hasTrendData && (
+                                  <>
+                                    <span style={styles.heroStatusDivider} />
+                                    <span style={styles.heroSparklineWrap}>
+                                      <Sparkline
+                                        data={dimension.trendData!}
+                                        trend={sparkTrend}
+                                        width={56}
+                                        height={20}
+                                      />
+                                    </span>
+                                  </>
+                                )}
+                              </button>
 
                               {/* Score history modal */}
                               {showScoreHistory && dimension.trendData && dimension.trendData.length >= 2 && (
@@ -691,129 +712,100 @@ const AssessmentResultsLayout: React.FC<AssessmentResultsLayoutProps> = ({
                           {dimDesc?.summary || `Analysis of ${dimension.dimensionName} across your team's Jira data.`}
                         </p>
 
+                        {/* Inline peer comparison spectrum */}
+                        {assessmentResult.comparisonTeamCount > 0 && (
+                          <div style={styles.inlineSpectrumContainer}>
+                            <div style={styles.inlineSpectrumHeader}>
+                              <span style={styles.inlineSpectrumTitle}>Peer Comparison</span>
+                              <button
+                                style={styles.inlineSpectrumLink}
+                                onClick={() => openComparisonModal(TICKET_READINESS_INDEX)}
+                              >
+                                vs {assessmentResult.comparisonTeamCount} similar teams &rarr;
+                              </button>
+                            </div>
+                            {(() => {
+                              const sortedPositions = [...comparisonTeamPositions].sort((a, b) => a - b);
+                              const peerMin = sortedPositions[0] ?? 0;
+                              const peerMax = sortedPositions[sortedPositions.length - 1] ?? 100;
+                              const peerMedian = sortedPositions.length > 0
+                                ? sortedPositions[Math.floor(sortedPositions.length / 2)]
+                                : 50;
+                              return (
+                                <div style={styles.inlineSpectrumBar}>
+                                  {/* Gradient track */}
+                                  <div style={styles.inlineSpectrumTrack} />
+                                  {/* Score endpoints */}
+                                  <span style={styles.inlineSpectrumMin}>0</span>
+                                  <span style={styles.inlineSpectrumMax}>100</span>
+                                  {/* Peer range band (min→max shaded region) */}
+                                  <div
+                                    style={{
+                                      ...styles.inlinePeerRangeBand,
+                                      left: `${peerMin}%`,
+                                      width: `${peerMax - peerMin}%`,
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      const rect = e.currentTarget.getBoundingClientRect();
+                                      setTooltip({
+                                        visible: true,
+                                        x: rect.left + rect.width / 2,
+                                        y: rect.top,
+                                        label: `${assessmentResult.comparisonTeamCount} teams`,
+                                        value: `Range: ${Math.round(peerMin)}–${Math.round(peerMax)} · Median: ${Math.round(peerMedian)}`,
+                                      });
+                                    }}
+                                    onMouseLeave={() => setTooltip(prev => ({ ...prev, visible: false }))}
+                                  />
+                                  {/* Median tick */}
+                                  <div
+                                    style={{
+                                      ...styles.inlinePeerMedianTick,
+                                      left: `${peerMedian}%`,
+                                    }}
+                                  />
+                                  {/* Your team marker (prominent) */}
+                                  <div
+                                    style={{
+                                      ...styles.inlineYourTeamMarker,
+                                      left: `${yourPosition}%`,
+                                      backgroundColor: tier.color,
+                                      boxShadow: `0 0 0 3px ${tier.color}40`,
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      const rect = e.currentTarget.getBoundingClientRect();
+                                      setTooltip({
+                                        visible: true,
+                                        x: rect.left + rect.width / 2,
+                                        y: rect.top,
+                                        label: 'Your Team',
+                                        value: `Score: ${dimension.healthScore ?? Math.round(dimension.overallPercentile)}`,
+                                      });
+                                    }}
+                                    onMouseLeave={() => setTooltip(prev => ({ ...prev, visible: false }))}
+                                  />
+                                </div>
+                              );
+                            })()}
+                          </div>
+                        )}
+
+                        {/* Tooltip (fixed overlay for inline spectrum hover) */}
+                        {tooltip.visible && (
+                          <div style={{
+                            ...styles.tooltip,
+                            left: tooltip.x,
+                            top: tooltip.y - 8,
+                          }}>
+                            <div style={styles.tooltipLabel}>{tooltip.label}</div>
+                            <div style={styles.tooltipValue}>{tooltip.value}</div>
+                            <div style={styles.tooltipArrow} />
+                          </div>
+                        )}
+
                       </div>
                     </div>
 
-                    {/* How You Compare Section */}
-                    <section style={styles.spectrumSection}>
-                      <h2 style={styles.spectrumSectionTitle}>How You Compare</h2>
-
-                      {/* Tooltip */}
-                      {tooltip.visible && (
-                        <div style={{
-                          ...styles.tooltip,
-                          left: tooltip.x,
-                          top: tooltip.y - 8,
-                        }}>
-                          <div style={styles.tooltipLabel}>{tooltip.label}</div>
-                          <div style={styles.tooltipValue}>{tooltip.value}</div>
-                          <div style={styles.tooltipArrow} />
-                        </div>
-                      )}
-
-                      <div style={styles.spectrumLayout}>
-                        {/* Left endpoint */}
-                        <div style={styles.endpointLeft}>
-                          <span style={styles.endpointLabel}>← {dimension.spectrumLeftLabel || 'NEEDS WORK'}</span>
-                          <p style={styles.endpointDescription}>
-                            Most tickets are missing required fields, descriptions, or acceptance criteria. The backlog can't be relied on for planning or handoffs.
-                          </p>
-                        </div>
-
-                        {/* Center: Spectrum visualization */}
-                        <div style={styles.spectrumCenter}>
-                          {/* Comparison teams scattered above */}
-                          <div style={styles.comparisonTeamsArea}>
-                            {comparisonTeamPositions.map((pos, idx) => {
-                              const verticalOffset = ((Math.sin(idx * 1234) + 1) / 2) * 18 + 4;
-                              const dotCategory = getCHSCategoryConfig(Math.round(pos));
-                              return (
-                                <div
-                                  key={idx}
-                                  style={{
-                                    ...styles.comparisonDot,
-                                    left: `${pos}%`,
-                                    bottom: `${verticalOffset}px`,
-                                    backgroundColor: dotCategory.color,
-                                    opacity: 0.6,
-                                    cursor: 'pointer',
-                                  }}
-                                  onMouseEnter={(e) => {
-                                    const rect = e.currentTarget.getBoundingClientRect();
-                                    const estimatedScore = Math.round(pos);
-                                    setTooltip({
-                                      visible: true,
-                                      x: rect.left + rect.width / 2,
-                                      y: rect.top,
-                                      label: `Team ${idx + 1}`,
-                                      value: `Score: ${estimatedScore}`,
-                                    });
-                                  }}
-                                  onMouseLeave={() => setTooltip(prev => ({ ...prev, visible: false }))}
-                                />
-                              );
-                            })}
-                          </div>
-
-                          {/* Baseline indicator - label above with info button, dotted line going down */}
-                          <div style={styles.baselineContainer}>
-                            <div style={styles.baselineLabelRow}>
-                              <span style={styles.baselineLabel}>Baseline (50)</span>
-                              <button
-                                style={styles.baselineInfoButton}
-                                title="50 represents the average across all similar teams. Scores above 50 indicate better-than-average Jira health, while scores below 50 indicate areas for improvement."
-                              >
-                                ?
-                              </button>
-                            </div>
-                            <div style={styles.baselineDottedLine} />
-                          </div>
-
-                          {/* Spectrum bar with gradient */}
-                          <div style={styles.spectrumBarContainer}>
-                            {/* Score labels at ends */}
-                            <span style={styles.spectrumScoreLeft}>0</span>
-                            <span style={styles.spectrumScoreRight}>100</span>
-                            <div style={styles.spectrumGradient} />
-                            {/* Team position circle on the spectrum bar */}
-                            <div
-                              style={{
-                                ...styles.teamPositionCircle,
-                                left: `${yourPosition}%`,
-                                backgroundColor: tier.color,
-                                boxShadow: `0 0 0 4px ${tier.color}40`,
-                              }}
-                            />
-                            {/* "You are here" indicator - positioned above the circle */}
-                            <div
-                              style={{ ...styles.youAreHereContainer, left: `${yourPosition}%`, cursor: 'pointer' }}
-                              onMouseEnter={(e) => {
-                                const rect = e.currentTarget.getBoundingClientRect();
-                                setTooltip({
-                                  visible: true,
-                                  x: rect.left + rect.width / 2,
-                                  y: rect.top,
-                                  label: 'Your Team',
-                                  value: `Score: ${dimension.healthScore ?? Math.round(dimension.overallPercentile)}`,
-                                });
-                              }}
-                              onMouseLeave={() => setTooltip(prev => ({ ...prev, visible: false }))}
-                            >
-                              <span style={styles.youAreHereText}>YOU ARE HERE</span>
-                              <div style={{ ...styles.youAreHereArrow, borderTopColor: tier.color }} />
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Right endpoint */}
-                        <div style={styles.endpointRight}>
-                          <span style={styles.endpointLabelGood}>{dimension.spectrumRightLabel || 'EXCELLENT'} →</span>
-                          <p style={styles.endpointDescription}>
-                            All tracked fields are complete and current. Tickets provide clear context for anyone picking them up.
-                          </p>
-                        </div>
-                      </div>
-                    </section>
 
                     {/* Ticket Readiness Dimension Detail (Dimension2Results) */}
                     <div style={styles.dimensionContentSection}>
@@ -823,6 +815,7 @@ const AssessmentResultsLayout: React.FC<AssessmentResultsLayoutProps> = ({
                         teamId={assessmentResult.teamId}
                         dateRange={assessmentResult.dateRange}
                         similarTeamsCount={assessmentResult.comparisonTeamCount}
+                        comparisonTeamNames={assessmentResult.comparisonTeams.map(t => t.name)}
                         onViewSimilarTeams={() => openComparisonModal(TICKET_READINESS_INDEX)}
                         dimensionIndex={TICKET_READINESS_INDEX}
                         onIndicatorDrillDown={onIndicatorDrillDown}
@@ -834,7 +827,46 @@ const AssessmentResultsLayout: React.FC<AssessmentResultsLayoutProps> = ({
 
               {/* Data Integrity Lens */}
               {lensSubTab === 'integrity' && assessmentResult.lensResults && (
-                <PatternLensDetailView lensResult={assessmentResult.lensResults.integrity} />
+                <>
+                  <PatternLensDetailView lensResult={assessmentResult.lensResults.integrity} />
+                  <div style={{ marginTop: '24px' }}>
+                    <h3 style={{
+                      margin: '0 0 16px 0',
+                      fontSize: '16px',
+                      fontWeight: 600,
+                      color: '#172B4D',
+                    }}>Readiness &amp; Refinement</h3>
+                    <IndicatorsTab
+                      dimension={{
+                        dimensionKey: 'readiness',
+                        dimensionNumber: 0,
+                        dimensionName: 'Readiness & Refinement',
+                        dimensionTitle: 'Readiness & Refinement',
+                        questionForm: '',
+                        riskDescription: '',
+                        spectrumLeftLabel: '',
+                        spectrumRightLabel: '',
+                        verdict: '',
+                        verdictDescription: '',
+                        riskLevel: 'moderate',
+                        overallPercentile: 0,
+                        healthScore: 0,
+                        benchmarkComparison: '',
+                        benchmarkPercentile: 0,
+                        trend: 'stable',
+                        trendData: [],
+                        categories: [readinessCategory],
+                        whyItMatters: '',
+                        whyItMattersPoints: [],
+                        recommendations: [],
+                      }}
+                      dimensionIndex={0}
+                      onIndicatorDrillDown={onIndicatorDrillDown}
+                      comparisonTeamCount={assessmentResult.comparisonTeamCount}
+                      comparisonTeamNames={assessmentResult.comparisonTeams.map(t => t.name)}
+                    />
+                  </div>
+                </>
               )}
 
               {/* Timing Lens */}
@@ -1142,6 +1174,16 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#FFFFFF',
     boxShadow: '0 1px 3px rgba(0, 82, 204, 0.3)',
   },
+  lensDescriptionBanner: {
+    padding: '12px 20px',
+    backgroundColor: '#FAFBFC',
+    border: '1px solid #E4E6EB',
+    borderRadius: '8px',
+    fontSize: '13px',
+    color: '#5E6C84',
+    lineHeight: 1.5,
+    marginBottom: '20px',
+  },
   fullWidthContent: {
     width: '100%',
   },
@@ -1290,20 +1332,12 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'baseline',
   },
-  heroHistoryBtn: {
+  heroSparklineWrap: {
     display: 'inline-flex',
     alignItems: 'center',
-    justifyContent: 'center',
-    width: '30px',
-    height: '30px',
-    padding: 0,
-    backgroundColor: 'rgba(9, 30, 66, 0.06)',
-    border: '1px solid rgba(9, 30, 66, 0.12)',
-    borderRadius: '50%',
-    cursor: 'pointer',
-    outline: 'none',
-    transition: 'background-color 0.15s ease',
-  },
+    flexShrink: 0,
+    opacity: 0.8,
+  } as React.CSSProperties,
   scoreHistoryOverlay: {
     position: 'fixed' as const,
     top: 0,
@@ -1355,19 +1389,17 @@ const styles: Record<string, React.CSSProperties> = {
   scoreHistoryBody: {
     padding: '24px',
   },
-  heroMetaRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    marginTop: '12px',
-  },
   heroStatusChip: {
     display: 'inline-flex',
     alignItems: 'center',
     gap: '8px',
     padding: '6px 14px',
     borderRadius: '20px',
-  },
+    marginTop: '12px',
+    fontFamily: 'inherit',
+    outline: 'none',
+    transition: 'filter 0.15s ease',
+  } as React.CSSProperties,
   heroStatusDot: {
     width: '7px',
     height: '7px',
@@ -1774,26 +1806,6 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#0052CC',
   },
 
-  // Spectrum Section Styles
-  spectrumSection: {
-    backgroundColor: 'white',
-    borderRadius: '12px',
-    border: '1px solid #E4E6EB',
-    padding: '24px',
-    marginBottom: '24px',
-  },
-  spectrumHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: '20px',
-  },
-  spectrumSectionTitle: {
-    margin: '0 0 20px 0',
-    fontSize: '18px',
-    fontWeight: 600,
-    color: '#172B4D',
-  },
   // Tooltip styles
   tooltip: {
     position: 'fixed' as const,
@@ -1827,6 +1839,103 @@ const styles: Record<string, React.CSSProperties> = {
     borderRight: '6px solid transparent',
     borderTop: '6px solid #172B4D',
   },
+  // Inline spectrum styles (compact peer comparison inside hero)
+  inlineSpectrumContainer: {
+    marginTop: '24px',
+    padding: '16px 24px',
+    backgroundColor: 'rgba(9, 30, 66, 0.03)',
+    borderRadius: '10px',
+    width: '100%',
+    maxWidth: '480px',
+  } as React.CSSProperties,
+  inlineSpectrumHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: '12px',
+  } as React.CSSProperties,
+  inlineSpectrumTitle: {
+    fontSize: '11px',
+    fontWeight: 600,
+    color: '#6B778C',
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.5px',
+  } as React.CSSProperties,
+  inlineSpectrumLink: {
+    background: 'none',
+    border: 'none',
+    padding: 0,
+    fontSize: '12px',
+    fontWeight: 600,
+    color: '#0052CC',
+    cursor: 'pointer',
+    fontFamily: 'inherit',
+  } as React.CSSProperties,
+  inlineSpectrumBar: {
+    position: 'relative' as const,
+    height: '24px',
+    width: '100%',
+    display: 'flex',
+    alignItems: 'center',
+  } as React.CSSProperties,
+  inlineSpectrumTrack: {
+    position: 'absolute' as const,
+    left: 0,
+    right: 0,
+    height: '6px',
+    borderRadius: '3px',
+    background: 'linear-gradient(to right, #DE350B 0%, #DE350B 30%, #FF8B00 30%, #FF8B00 45%, #2684FF 45%, #2684FF 55%, #00875A 55%, #00875A 70%, #006644 70%, #006644 100%)',
+    opacity: 0.45,
+  } as React.CSSProperties,
+  inlineSpectrumMin: {
+    position: 'absolute' as const,
+    left: '-16px',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    fontSize: '10px',
+    fontWeight: 600,
+    color: '#97A0AF',
+  } as React.CSSProperties,
+  inlineSpectrumMax: {
+    position: 'absolute' as const,
+    right: '-22px',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    fontSize: '10px',
+    fontWeight: 600,
+    color: '#97A0AF',
+  } as React.CSSProperties,
+  inlinePeerRangeBand: {
+    position: 'absolute' as const,
+    height: '18px',
+    borderRadius: '9px',
+    backgroundColor: 'rgba(9, 30, 66, 0.10)',
+    transform: 'translateY(0)',
+    cursor: 'pointer',
+    zIndex: 1,
+    transition: 'background-color 0.15s ease',
+  } as React.CSSProperties,
+  inlinePeerMedianTick: {
+    position: 'absolute' as const,
+    width: '2px',
+    height: '14px',
+    backgroundColor: 'rgba(9, 30, 66, 0.25)',
+    borderRadius: '1px',
+    transform: 'translateX(-50%)',
+    zIndex: 2,
+    pointerEvents: 'none' as const,
+  } as React.CSSProperties,
+  inlineYourTeamMarker: {
+    position: 'absolute' as const,
+    top: '50%',
+    transform: 'translate(-50%, -50%)',
+    width: '14px',
+    height: '14px',
+    borderRadius: '50%',
+    border: '2.5px solid white',
+    zIndex: 3,
+    cursor: 'pointer',
+  } as React.CSSProperties,
   infoButton: {
     display: 'flex',
     alignItems: 'center',
@@ -1839,198 +1948,6 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
     transition: 'all 0.15s ease',
   },
-  spectrumLayout: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '24px',
-  },
-  endpointLeft: {
-    width: '160px',
-    flexShrink: 0,
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '6px',
-  },
-  endpointRight: {
-    width: '160px',
-    flexShrink: 0,
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '6px',
-    textAlign: 'right',
-  },
-  endpointLabel: {
-    fontSize: '11px',
-    fontWeight: 700,
-    color: '#CA3521',
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px',
-  },
-  endpointLabelGood: {
-    fontSize: '11px',
-    fontWeight: 700,
-    color: '#216E4E',
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px',
-  },
-  endpointDescription: {
-    margin: 0,
-    fontSize: '12px',
-    fontStyle: 'italic',
-    color: '#6B778C',
-    lineHeight: 1.4,
-  },
-  spectrumCenter: {
-    flex: 1,
-    position: 'relative',
-    minHeight: '90px',
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'flex-end',
-  },
-  comparisonTeamsArea: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: '35px',
-  },
-  comparisonDot: {
-    position: 'absolute',
-    width: '6px',
-    height: '6px',
-    borderRadius: '50%',
-    transform: 'translateX(-50%)',
-  },
-  youAreHereContainer: {
-    position: 'absolute',
-    bottom: '100%',
-    marginBottom: '2px',
-    transform: 'translateX(-50%)',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    zIndex: 4,
-  },
-  youAreHereText: {
-    fontSize: '9px',
-    fontWeight: 700,
-    color: '#5E6C84',
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px',
-    whiteSpace: 'nowrap',
-    marginBottom: '3px',
-  },
-  youAreHereArrow: {
-    width: 0,
-    height: 0,
-    borderLeft: '6px solid transparent',
-    borderRight: '6px solid transparent',
-    borderTop: '7px solid #5E6C84',
-  },
-  spectrumBarContainer: {
-    position: 'relative',
-    height: '24px',
-    width: '100%',
-    display: 'flex',
-    alignItems: 'center',
-  },
-  spectrumScoreLeft: {
-    position: 'absolute',
-    left: '-20px',
-    top: '50%',
-    transform: 'translateY(-50%)',
-    fontSize: '12px',
-    fontWeight: 600,
-    color: '#6B778C',
-  },
-  spectrumScoreRight: {
-    position: 'absolute',
-    right: '-28px',
-    top: '50%',
-    transform: 'translateY(-50%)',
-    fontSize: '12px',
-    fontWeight: 600,
-    color: '#6B778C',
-  },
-  spectrumGradient: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    height: '8px',
-    borderRadius: '4px',
-    // CHS 5-zone gradient: Needs Attention (0-30), Below Average (30-45), Average (45-55), Good (55-70), Excellent (70-100)
-    background: 'linear-gradient(to right, #DE350B 0%, #DE350B 30%, #FF8B00 30%, #FF8B00 45%, #2684FF 45%, #2684FF 55%, #00875A 55%, #00875A 70%, #006644 70%, #006644 100%)',
-    opacity: 0.5,
-  },
-  baselineContainer: {
-    position: 'absolute',
-    left: '50%',
-    top: '-10px',
-    transform: 'translateX(-50%)',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    zIndex: 5,
-  },
-  baselineLabelRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '4px',
-    marginBottom: '2px',
-  },
-  baselineLabel: {
-    fontSize: '9px',
-    color: '#6B778C',
-    fontWeight: 500,
-    whiteSpace: 'nowrap',
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    padding: '1px 6px',
-    borderRadius: '2px',
-  },
-  baselineInfoButton: {
-    width: '14px',
-    height: '14px',
-    borderRadius: '50%',
-    border: '1px solid #6B778C',
-    backgroundColor: 'transparent',
-    color: '#6B778C',
-    fontSize: '9px',
-    fontWeight: 600,
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 0,
-  },
-  baselineDottedLine: {
-    width: '1px',
-    height: '65px',
-    backgroundImage: 'repeating-linear-gradient(to bottom, #6B778C 0, #6B778C 3px, transparent 3px, transparent 6px)',
-    opacity: 0.5,
-  },
-  teamPositionCircle: {
-    position: 'absolute',
-    top: '50%',
-    transform: 'translate(-50%, -50%)',
-    width: '18px',
-    height: '18px',
-    borderRadius: '50%',
-    border: '3px solid white',
-    zIndex: 3,
-  },
-  tierMarker: {
-    borderRadius: '50%',
-    transition: 'all 0.2s ease',
-    flexShrink: 0,
-  },
-  teamCountLabel: {
-    marginTop: '8px',
-    fontSize: '11px',
-    color: '#97A0AF',
-    textAlign: 'center',
-  },
-
   // Stats Section Styles
   statsSection: {
     backgroundColor: 'white',

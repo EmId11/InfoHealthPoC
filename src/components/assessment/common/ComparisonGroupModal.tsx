@@ -85,7 +85,7 @@ const ComparisonGroupModal: React.FC<ComparisonGroupModalProps> = ({
       <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div style={styles.header}>
-          <h2 style={styles.title}>Your Comparison Group</h2>
+          <h2 style={styles.title}>Teams in This Assessment</h2>
           <button style={styles.closeButton} onClick={onClose}>
             <CrossIcon label="Close" size="small" />
           </button>
@@ -94,10 +94,9 @@ const ComparisonGroupModal: React.FC<ComparisonGroupModalProps> = ({
         {/* Body */}
         <div style={styles.body}>
           <p style={styles.intro}>
-            Your team is being compared against <strong>{teamCount} teams</strong> that match
-            your criteria: <em>{criteriaText}</em>.
+            This assessment includes <strong>{teamCount + 1} teams</strong>. Here are the other teams alongside yours.
             {yourRank && dimensionName && (
-              <> For <strong>{dimensionName}</strong>, you are ranked <strong>{yourRank}</strong> of {teamCount}.</>
+              <> For <strong>{dimensionName}</strong>, you are ranked <strong>{yourRank}</strong> of {teamCount + 1}.</>
             )}
           </p>
 
@@ -148,7 +147,7 @@ const ComparisonGroupModal: React.FC<ComparisonGroupModalProps> = ({
           ) : (
             /* Default view without rank context */
             <div style={styles.teamsSection}>
-              <h4 style={styles.sectionTitle}>Teams in your comparison group:</h4>
+              <h4 style={styles.sectionTitle}>Other teams in this assessment:</h4>
               <div style={styles.teamsList}>
                 {teams.map((team, index) => (
                   <div key={team.id} style={styles.teamItem}>
@@ -163,7 +162,7 @@ const ComparisonGroupModal: React.FC<ComparisonGroupModalProps> = ({
           <p style={styles.note}>
             {yourRank
               ? `Rankings are specific to ${dimensionName || 'this dimension'}. Teams may rank differently across other dimensions.`
-              : `When you see rankings like "Bottom 22%" or "Top 15%" on your assessment cards, they refer to your position relative to these ${teamCount} teams.`
+              : `When you see rankings like "Bottom 22%" or "Top 15%" on your assessment cards, they refer to your position relative to the other ${teamCount} teams in this assessment.`
             }
           </p>
         </div>

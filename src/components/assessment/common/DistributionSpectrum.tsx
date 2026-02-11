@@ -30,6 +30,8 @@ interface DistributionSpectrumProps {
   height?: number;
   showLabel?: boolean;
   subLabel?: string;            // Text shown below the value label (e.g., "Bottom 50%")
+  comparisonTeamCount?: number; // Number of comparison teams; defaults to 47
+  comparisonTeamNames?: string[]; // Actual team names for tooltips
 }
 
 /**
@@ -38,17 +40,19 @@ interface DistributionSpectrumProps {
 function generateAllTeamValues(
   seedValues: number[],
   min: number,
-  max: number
+  max: number,
+  teamCount: number = SIMILAR_TEAMS_COUNT
 ): number[] {
-  if (seedValues.length >= SIMILAR_TEAMS_COUNT) {
-    return seedValues.slice(0, SIMILAR_TEAMS_COUNT);
+  if (teamCount <= 0) return [];
+  if (seedValues.length >= teamCount) {
+    return seedValues.slice(0, teamCount);
   }
 
   const result: number[] = [...seedValues];
   const range = max - min;
 
-  // Generate additional values to reach 47 total
-  while (result.length < SIMILAR_TEAMS_COUNT) {
+  // Generate additional values to reach teamCount total
+  while (result.length < teamCount) {
     // Use a seeded random approach for consistency
     const seed = result.length * 9973;
     const normalRandom = () => {
@@ -68,6 +72,16 @@ function generateAllTeamValues(
 }
 
 /**
+ * Compute dot size for indicator spectrums (~216px container)
+ */
+const getIndicatorDotSize = (teamCount: number): number => {
+  if (teamCount <= 5) return 8;
+  if (teamCount <= 15) return 6;
+  if (teamCount <= 30) return 5;
+  return 4;
+};
+
+/**
  * Visual spectrum showing where a team falls relative to others.
  * Matches the TableScoreSpectrum style with banded gradient and zone dividers.
  */
@@ -83,7 +97,10 @@ const DistributionSpectrum: React.FC<DistributionSpectrumProps> = ({
   width = 280,
   showLabel = true,
   subLabel,
+  comparisonTeamCount,
+  comparisonTeamNames,
 }) => {
+  const effectiveTeamCount = comparisonTeamCount ?? SIMILAR_TEAMS_COUNT;
   const [tooltip, setTooltip] = useState<TooltipState>({
     visible: false,
     x: 0,
@@ -131,11 +148,12 @@ const DistributionSpectrum: React.FC<DistributionSpectrumProps> = ({
     return val.toFixed(2);
   };
 
-  // Generate all 47 team positions
+  // Generate team positions based on comparison team count
   const allTeamPositions = useMemo(() => {
+    if (effectiveTeamCount <= 0) return [];
     if (isValueMode && otherTeamValues && minValue !== undefined && maxValue !== undefined) {
-      // Value mode: generate 47 values and convert to positions
-      const allValues = generateAllTeamValues(otherTeamValues, minValue, maxValue);
+      // Value mode: generate values and convert to positions
+      const allValues = generateAllTeamValues(otherTeamValues, minValue, maxValue, effectiveTeamCount);
       const range = maxValue - minValue;
       if (range === 0) return [];
       return allValues.map((v, idx) => ({
@@ -144,9 +162,9 @@ const DistributionSpectrum: React.FC<DistributionSpectrumProps> = ({
         idx,
       }));
     } else {
-      // Percentile mode: generate 47 pseudo-random positions
+      // Percentile mode: generate pseudo-random positions
       const positions: { position: number; value: number; idx: number }[] = [];
-      for (let i = 0; i < SIMILAR_TEAMS_COUNT; i++) {
+      for (let i = 0; i < effectiveTeamCount; i++) {
         // Seeded random for consistency
         const seed = (clampedPercentile + 1) * (i + 1) * 9973;
         const normalRandom = () => {
@@ -163,7 +181,7 @@ const DistributionSpectrum: React.FC<DistributionSpectrumProps> = ({
       }
       return positions;
     }
-  }, [isValueMode, otherTeamValues, minValue, maxValue, clampedPercentile]);
+  }, [isValueMode, otherTeamValues, minValue, maxValue, clampedPercentile, effectiveTeamCount]);
 
   const barHeight = 8;
   const markerSize = 14;
@@ -204,8 +222,8 @@ const DistributionSpectrum: React.FC<DistributionSpectrumProps> = ({
     }
   };
 
-  // Zone boundaries for 5-tier system
-  const zoneBoundaries = [25, 50, 75, 90];
+  // Zone boundaries must match gradient transitions
+  const zoneBoundaries = higherIsBetter ? [25, 50, 75, 90] : [10, 25, 50, 75];
 
   const handleDotMouseEnter = (
     e: React.MouseEvent,
@@ -213,11 +231,12 @@ const DistributionSpectrum: React.FC<DistributionSpectrumProps> = ({
     idx: number
   ) => {
     const rect = e.currentTarget.getBoundingClientRect();
+    const teamName = comparisonTeamNames?.[idx] || `Team ${idx + 1}`;
     setTooltip({
       visible: true,
       x: rect.left + rect.width / 2,
       y: rect.top,
-      label: `Team ${idx + 1}`,
+      label: teamName,
       value: isValueMode ? formatValue(dotValue) : `${Math.round(dotValue)}%`,
     });
   };
@@ -288,7 +307,11 @@ const DistributionSpectrum: React.FC<DistributionSpectrumProps> = ({
         <div style={{ height: dotsAreaHeight, position: 'relative' }}>
           {allTeamPositions.map(dot => {
             const seed = (dot.position * 7 + dot.idx * 13) % 100;
-            const y = 2 + (seed % 16);
+            const dotSize = getIndicatorDotSize(effectiveTeamCount);
+            const scatterRange = Math.max(8, 20 - dotSize);
+            const y = 2 + (seed % scatterRange);
+            const dotPercentile = higherIsBetter ? dot.position : (100 - dot.position);
+            const dotTier = getIndicatorTier(Math.max(0, Math.min(100, dotPercentile)));
             return (
               <div
                 key={dot.idx}
@@ -296,10 +319,11 @@ const DistributionSpectrum: React.FC<DistributionSpectrumProps> = ({
                   position: 'absolute',
                   left: `${dot.position}%`,
                   top: y,
-                  width: 5,
-                  height: 5,
+                  width: dotSize,
+                  height: dotSize,
                   borderRadius: '50%',
-                  backgroundColor: 'rgba(107, 119, 140, 0.35)',
+                  backgroundColor: dotTier.color,
+                  opacity: 0.45,
                   transform: 'translateX(-50%)',
                   cursor: 'pointer',
                   transition: 'transform 0.1s ease, background-color 0.1s ease',

@@ -59,7 +59,7 @@ function generateDistribution(teamValue: number, higherIsBetter: boolean): Indic
   // Calculate realistic min/max based on team value
   const spread = teamValue * 0.6; // 60% spread around the value range
   let min = Math.max(0, teamValue - spread - Math.random() * spread * 0.5);
-  let max = Math.min(higherIsBetter ? 1 : teamValue * 2, teamValue + spread + Math.random() * spread * 0.5);
+  let max = Math.min(1, teamValue + spread + Math.random() * spread * 0.5);
 
   // Ensure min < teamValue < max
   if (teamValue <= min) {
@@ -96,7 +96,9 @@ function generateDistribution(teamValue: number, higherIsBetter: boolean): Indic
  */
 function generateStandardFieldIndicator(field: StandardFieldConfig): IndicatorResult {
   const mockValue = 0.4 + Math.random() * 0.4; // Random value between 40-80%
-  const percentile = Math.floor(20 + Math.random() * 60);
+  const deficiencyValue = 1 - mockValue; // 20-60% deficiency
+  // Derive percentile from deficiency: lower deficiency → higher (better) percentile
+  const percentile = Math.floor(Math.max(5, Math.min(95, (1 - deficiencyValue) * 100 + (Math.random() - 0.5) * 20)));
 
   const fieldDescriptions: Record<string, { desc: string; whyMatters: string }> = {
     acceptanceCriteria: {
@@ -140,22 +142,22 @@ function generateStandardFieldIndicator(field: StandardFieldConfig): IndicatorRe
 
   return {
     id: field.fieldId,
-    name: `Issues with ${field.fieldName.toLowerCase()}`,
+    name: `Issues without ${field.fieldName.toLowerCase()}`,
     description: info.desc,
     whyItMatters: info.whyMatters,
-    value: mockValue,
-    displayValue: `${Math.round(mockValue * 100)}%`,
+    value: deficiencyValue,
+    displayValue: `${Math.round(deficiencyValue * 100)}%`,
     unit: '%',
-    benchmarkValue: 0.75,
-    benchmarkDisplayValue: '75%',
+    benchmarkValue: 0.25,
+    benchmarkDisplayValue: '25%',
     benchmarkComparison: percentile < 50 ? `bottom ${100 - percentile}% of comparison group` : `top ${100 - percentile}% of comparison group`,
     benchmarkPercentile: percentile,
     trend: Math.random() > 0.5 ? 'improving' : Math.random() > 0.5 ? 'stable' : 'declining',
-    trendData: generateMockTrendData(mockValue),
-    higherIsBetter: true,
+    trendData: generateMockTrendData(deficiencyValue),
+    higherIsBetter: false,
     configSource: 'standard',
     jiraFieldId: field.fieldId,
-    distribution: generateDistribution(mockValue, true),
+    distribution: generateDistribution(deficiencyValue, false),
   };
 }
 
@@ -164,26 +166,27 @@ function generateStandardFieldIndicator(field: StandardFieldConfig): IndicatorRe
  */
 function generateCustomFieldIndicator(field: CustomFieldConfig): IndicatorResult {
   const mockValue = 0.3 + Math.random() * 0.5; // Random value between 30-80%
-  const percentile = Math.floor(20 + Math.random() * 60);
-
+  const deficiencyValue = 1 - mockValue; // 20-70% deficiency
+  // Derive percentile from deficiency: lower deficiency → higher (better) percentile
+  const percentile = Math.floor(Math.max(5, Math.min(95, (1 - deficiencyValue) * 100 + (Math.random() - 0.5) * 20)));
   return {
     id: field.id,
-    name: `Issues with ${field.displayName.toLowerCase()}`,
-    description: field.description || `Percentage of issues with ${field.displayName} populated.`,
+    name: `Issues without ${field.displayName.toLowerCase()}`,
+    description: field.description || `Percentage of issues without ${field.displayName} populated.`,
     whyItMatters: `Custom field tracking helps ensure organization-specific data requirements are met.`,
-    value: mockValue,
-    displayValue: `${Math.round(mockValue * 100)}%`,
+    value: deficiencyValue,
+    displayValue: `${Math.round(deficiencyValue * 100)}%`,
     unit: '%',
-    benchmarkValue: 0.70,
-    benchmarkDisplayValue: '70%',
+    benchmarkValue: 0.30,
+    benchmarkDisplayValue: '30%',
     benchmarkComparison: percentile < 50 ? `bottom ${100 - percentile}% of comparison group` : `top ${100 - percentile}% of comparison group`,
     benchmarkPercentile: percentile,
     trend: Math.random() > 0.5 ? 'improving' : Math.random() > 0.5 ? 'stable' : 'declining',
-    trendData: generateMockTrendData(mockValue),
-    higherIsBetter: true,
+    trendData: generateMockTrendData(deficiencyValue),
+    higherIsBetter: false,
     configSource: 'custom',
     jiraFieldId: field.jiraFieldId,
-    distribution: generateDistribution(mockValue, true),
+    distribution: generateDistribution(deficiencyValue, false),
   };
 }
 
@@ -869,58 +872,52 @@ export const getMaturityColors = (percentile: number): { color: string; bgColor:
 };
 
 // ============================================
-// Mock Comparison Teams (47 realistic team names)
+// Multi-Team Assessment Rosters
+// Each scenario has its own team list to exercise different dot counts
 // ============================================
 
-const mockComparisonTeams = [
-  { id: 'team-001', name: 'Platform Core' },
-  { id: 'team-002', name: 'Checkout Experience' },
-  { id: 'team-003', name: 'Search & Discovery' },
-  { id: 'team-004', name: 'Payments Integration' },
-  { id: 'team-005', name: 'User Authentication' },
-  { id: 'team-006', name: 'Mobile iOS' },
-  { id: 'team-007', name: 'Mobile Android' },
-  { id: 'team-008', name: 'Data Pipeline' },
-  { id: 'team-009', name: 'ML Platform' },
-  { id: 'team-010', name: 'DevOps Enablement' },
-  { id: 'team-011', name: 'Customer Support Tools' },
-  { id: 'team-012', name: 'Inventory Management' },
-  { id: 'team-013', name: 'Shipping & Logistics' },
-  { id: 'team-014', name: 'Vendor Portal' },
-  { id: 'team-015', name: 'Analytics Dashboard' },
-  { id: 'team-016', name: 'Notification Services' },
-  { id: 'team-017', name: 'Content Management' },
-  { id: 'team-018', name: 'Recommendations Engine' },
-  { id: 'team-019', name: 'Fraud Detection' },
-  { id: 'team-020', name: 'API Gateway' },
-  { id: 'team-021', name: 'Identity & Access' },
-  { id: 'team-022', name: 'Billing Services' },
-  { id: 'team-023', name: 'Customer Insights' },
-  { id: 'team-024', name: 'Order Fulfillment' },
-  { id: 'team-025', name: 'Returns & Refunds' },
-  { id: 'team-026', name: 'Product Catalog' },
-  { id: 'team-027', name: 'Promotions Engine' },
-  { id: 'team-028', name: 'Loyalty Program' },
-  { id: 'team-029', name: 'Partner Integration' },
-  { id: 'team-030', name: 'Compliance & Audit' },
-  { id: 'team-031', name: 'Infrastructure SRE' },
-  { id: 'team-032', name: 'Security Operations' },
-  { id: 'team-033', name: 'Developer Experience' },
-  { id: 'team-034', name: 'Quality Engineering' },
-  { id: 'team-035', name: 'Release Management' },
-  { id: 'team-036', name: 'Design Systems' },
-  { id: 'team-037', name: 'Accessibility' },
-  { id: 'team-038', name: 'Performance Engineering' },
-  { id: 'team-039', name: 'Localization' },
-  { id: 'team-040', name: 'A/B Testing Platform' },
-  { id: 'team-041', name: 'Event Processing' },
-  { id: 'team-042', name: 'Cache Infrastructure' },
-  { id: 'team-043', name: 'Database Platform' },
-  { id: 'team-044', name: 'Message Queue' },
-  { id: 'team-045', name: 'Service Mesh' },
-  { id: 'team-046', name: 'Observability' },
-  { id: 'team-047', name: 'Cost Optimization' },
+const TEAM_POOL = [
+  'Platform Team', 'Mobile Squad', 'Data Team', 'Phoenix Team', 'Legacy Crew',
+  'Frontend Crew', 'API Team', 'DevOps Core', 'Search Squad', 'Payments Team',
+  'Auth Service', 'Growth Engine', 'Analytics Pod', 'Infrastructure', 'QA Automation',
+  'Release Train', 'Content Ops', 'Design Systems', 'Edge Services', 'ML Pipeline',
+  'Core Services', 'Partner API', 'Billing Squad', 'Notifications', 'Media Team',
+  'Integrations', 'Developer Experience', 'Internal Tools', 'Compliance Engine', 'User Research',
+  'Site Reliability', 'Data Lake', 'Event Streaming', 'Identity Squad', 'Onboarding Flow',
+  'Messaging Team', 'Recommendations', 'Catalog Service', 'Logistics Pod', 'Pricing Engine',
+  'Customer Support Tools', 'Merchant Portal', 'Real-Time Analytics', 'Feature Flags', 'CDN Team',
+  'Mobile Infra', 'Web Performance', 'Accessibility', 'Localization', 'Security Ops',
+  'Cloud Migration', 'Database Team', 'Cache Layer', 'Service Mesh', 'API Gateway',
+  'Load Testing', 'Chaos Engineering', 'Observability', 'Cost Optimization', 'Incident Response',
+  'Platform Reliability', 'Developer Portal', 'SDK Team', 'Documentation', 'Build Systems',
+  'Deployment Pipeline', 'Config Management', 'Secret Management', 'Network Ops', 'Storage Team',
+  'Compute Platform', 'Container Orchestration', 'Serverless Team', 'Edge Computing', 'IoT Backend',
+  'Video Processing', 'Image Pipeline', 'Voice Services', 'Chat Infrastructure', 'Email Delivery',
 ];
+
+function generateTeamRoster(assessedTeamId: string, assessedTeamName: string, totalTeams: number): { id: string; name: string }[] {
+  const teams: { id: string; name: string }[] = [{ id: assessedTeamId, name: assessedTeamName }];
+  let poolIdx = 0;
+  while (teams.length < totalTeams && poolIdx < TEAM_POOL.length) {
+    const name = TEAM_POOL[poolIdx];
+    if (name !== assessedTeamName) {
+      teams.push({ id: `team-gen-${poolIdx}`, name });
+    }
+    poolIdx++;
+  }
+  return teams;
+}
+
+// 6 rosters with different sizes: comparison counts = 6, 17, 78, 9, 15, 42
+export const TEAMS_SOLID        = generateTeamRoster('team-1',        'Platform Team', 7);   // 6 comparison
+export const TEAMS_HIGH         = generateTeamRoster('team-high',     'Alpha Squad',   18);  // 17 comparison
+export const TEAMS_AVERAGE      = generateTeamRoster('team-average',  'Feature Team B', 79); // 78 comparison
+export const TEAMS_MIXED        = generateTeamRoster('team-5',        'Data Team',     10);  // 9 comparison
+export const TEAMS_IMPROVING    = generateTeamRoster('team-improving','Phoenix Team',  16);  // 15 comparison
+export const TEAMS_DECLINING    = generateTeamRoster('team-7',        'Legacy Crew',   43);  // 42 comparison
+
+/** @deprecated Use per-scenario team lists instead */
+export const MULTI_TEAM_ASSESSMENT_TEAMS = TEAMS_SOLID;
 
 // ============================================
 // Mock Assessment Result Generator
@@ -1020,12 +1017,29 @@ export const generateMockAssessmentResult = (
     comparisonParts.push('Process: Scrum (teams using sprint cycles)');
   }
 
-  // Mock team count based on criteria (in reality this would come from the backend)
-  const comparisonTeamCount = comparisonParts.length > 0 ? 47 : 0;
+  // Multi-team assessment: comparison group is the other teams in the assessment
+  const { teamIds, teamNames } = wizardState.step1;
+  const isMultiTeam = teamIds.length > 1;
 
-  const comparisonGroupDescription = comparisonParts.length > 0
-    ? `Comparing against ${comparisonTeamCount} teams (${comparisonParts.join(', ')})`
-    : 'No comparison group selected';
+  let comparisonTeamCount: number;
+  let comparisonTeams: { id: string; name: string }[];
+  let comparisonCriteria: string[];
+  let comparisonGroupDescription: string;
+
+  if (isMultiTeam) {
+    const currentTeamId = wizardState.step1.teamId;
+    comparisonTeams = teamIds
+      .map((id, i) => ({ id, name: teamNames[i] || id }))
+      .filter(t => t.id !== currentTeamId);
+    comparisonTeamCount = comparisonTeams.length;
+    comparisonCriteria = [];
+    comparisonGroupDescription = `Assessment includes ${teamIds.length} teams`;
+  } else {
+    comparisonTeams = [];
+    comparisonTeamCount = 0;
+    comparisonCriteria = comparisonParts;
+    comparisonGroupDescription = 'Single-team assessment';
+  }
 
   // Create dimension results with percentile-based risk levels
   const dimension1Result: DimensionResult = {
@@ -1043,8 +1057,8 @@ export const generateMockAssessmentResult = (
     dateRange,
     dataGrouping: wizardState.step1.dataGrouping,
     comparisonTeamCount,
-    comparisonTeams: mockComparisonTeams,
-    comparisonCriteria: comparisonParts,
+    comparisonTeams,
+    comparisonCriteria,
     comparisonGroupDescription,
     dimensions: [dimension1Result, dimension2Result],
   };
@@ -1125,70 +1139,72 @@ export const formatPercentile = (percentile: number): string => {
 const availabilityIndicators: IndicatorResult[] = [
   {
     id: 'acceptanceCriteria',
-    name: 'What % of issues have acceptance criteria?',
-    description: 'Percentage of in-progress issues that have acceptance criteria defined. Clear acceptance criteria ensures everyone knows what "done" looks like.',
+    name: 'What % of issues have NO acceptance criteria?',
+    description: 'Defines the conditions a story must meet to be considered complete. Typically written as a checklist of testable outcomes.',
     whyItMatters: 'Without acceptance criteria, teams can\'t verify work is complete—scope creep and rework become inevitable.',
-    value: 5,
-    displayValue: '5%',
+    value: 95,
+    displayValue: '95%',
     unit: '%',
-    benchmarkValue: 45,
-    benchmarkDisplayValue: '45%',
-    benchmarkComparison: 'bottom 20% of the comparison group',
-    benchmarkPercentile: 20,
+    benchmarkValue: 55,
+    benchmarkDisplayValue: '55%',
+    benchmarkComparison: 'bottom 5% of the comparison group',
+    benchmarkPercentile: 5,
     trend: 'stable',
-    higherIsBetter: true,
+    higherIsBetter: false,
     trendData: [
-      { period: '2024-03', value: 6, benchmarkValue: 45 },
-      { period: '2024-04', value: 5, benchmarkValue: 45 },
-      { period: '2024-05', value: 6, benchmarkValue: 45 },
-      { period: '2024-06', value: 5, benchmarkValue: 45 },
-      { period: '2024-07', value: 6, benchmarkValue: 45 },
-      { period: '2024-08', value: 5, benchmarkValue: 45 },
-      { period: '2024-09', value: 6, benchmarkValue: 45 },
-      { period: '2024-10', value: 5, benchmarkValue: 45 },
-      { period: '2024-11', value: 5, benchmarkValue: 45 },
+      { period: '2024-03', value: 94, benchmarkValue: 55 },
+      { period: '2024-04', value: 95, benchmarkValue: 55 },
+      { period: '2024-05', value: 94, benchmarkValue: 55 },
+      { period: '2024-06', value: 95, benchmarkValue: 55 },
+      { period: '2024-07', value: 94, benchmarkValue: 55 },
+      { period: '2024-08', value: 95, benchmarkValue: 55 },
+      { period: '2024-09', value: 94, benchmarkValue: 55 },
+      { period: '2024-10', value: 95, benchmarkValue: 55 },
+      { period: '2024-11', value: 95, benchmarkValue: 55 },
     ],
-    distribution: { min: 2, max: 68, otherTeamValues: [8, 15, 22, 31, 38, 45, 52, 58, 62] },
+    distribution: { min: 15, max: 95, otherTeamValues: [20, 30, 40, 50, 55, 62, 70, 78, 85] },
+    appliesTo: ['Story', 'Bug'],
   },
   {
     id: 'linksToIssues',
-    name: 'What % of issues link to related issues?',
-    description: 'Percentage of in-progress issues that have links to other issues (blockers, dependencies, related work). Links help teams understand work context and dependencies.',
+    name: 'What % of issues have NO links to related issues?',
+    description: 'Connects related issues through dependency, blocking, or relates-to relationships. Surfaces hidden dependencies across the board.',
     whyItMatters: 'Unlinked issues hide dependencies—teams don\'t see blockers or related work until it\'s too late.',
-    value: 10,
-    displayValue: '10%',
+    value: 90,
+    displayValue: '90%',
     unit: '%',
-    benchmarkValue: 8,
-    benchmarkDisplayValue: '8%',
-    benchmarkComparison: 'top 20% of the comparison group',
-    benchmarkPercentile: 80,
-    trend: 'improving',
-    higherIsBetter: true,
+    benchmarkValue: 50,
+    benchmarkDisplayValue: '50%',
+    benchmarkComparison: 'bottom 5% of the comparison group',
+    benchmarkPercentile: 5,
+    trend: 'declining',
+    higherIsBetter: false,
     trendData: [
-      { period: '2024-03', value: 4, benchmarkValue: 8 },
-      { period: '2024-04', value: 5, benchmarkValue: 8 },
-      { period: '2024-05', value: 5, benchmarkValue: 8 },
-      { period: '2024-06', value: 6, benchmarkValue: 8 },
-      { period: '2024-07', value: 7, benchmarkValue: 8 },
-      { period: '2024-08', value: 8, benchmarkValue: 8 },
-      { period: '2024-09', value: 8, benchmarkValue: 8 },
-      { period: '2024-10', value: 9, benchmarkValue: 8 },
-      { period: '2024-11', value: 10, benchmarkValue: 8 },
+      { period: '2024-03', value: 80, benchmarkValue: 50 },
+      { period: '2024-04', value: 82, benchmarkValue: 50 },
+      { period: '2024-05', value: 83, benchmarkValue: 50 },
+      { period: '2024-06', value: 84, benchmarkValue: 50 },
+      { period: '2024-07', value: 85, benchmarkValue: 50 },
+      { period: '2024-08', value: 87, benchmarkValue: 50 },
+      { period: '2024-09', value: 88, benchmarkValue: 50 },
+      { period: '2024-10', value: 89, benchmarkValue: 50 },
+      { period: '2024-11', value: 90, benchmarkValue: 50 },
     ],
-    distribution: { min: 2, max: 18, otherTeamValues: [3, 4, 5, 6, 7, 8, 9, 11, 14] },
+    distribution: { min: 15, max: 95, otherTeamValues: [20, 30, 38, 45, 50, 58, 65, 72, 82] },
+    appliesTo: ['Story', 'Bug', 'Task'],
   },
   {
     id: 'parentEpic',
     name: 'What % of issues have no parent epic?',
-    description: 'Percentage of in-progress issues that have no parent Epic associated. Epics provide strategic context and help track larger initiatives.',
+    description: 'Groups related stories under a strategic initiative. Provides context for why work exists and tracks progress toward goals.',
     whyItMatters: 'Orphaned issues lack strategic context—leadership can\'t see how day-to-day work connects to goals.',
     value: 50,
     displayValue: '50%',
     unit: '%',
     benchmarkValue: 20,
     benchmarkDisplayValue: '20%',
-    benchmarkComparison: 'bottom 20% of the comparison group',
-    benchmarkPercentile: 20,
+    benchmarkComparison: 'bottom 30% of the comparison group',
+    benchmarkPercentile: 30,
     trend: 'declining',
     higherIsBetter: false,
     trendData: [
@@ -1203,11 +1219,12 @@ const availabilityIndicators: IndicatorResult[] = [
       { period: '2024-11', value: 50, benchmarkValue: 20 },
     ],
     distribution: { min: 10, max: 72, otherTeamValues: [15, 20, 25, 32, 38, 45, 52, 58, 65] },
+    appliesTo: ['Story', 'Bug', 'Task'],
   },
   {
     id: 'estimates',
     name: 'What % of issues have no estimates?',
-    description: 'Percentage of in-progress issues that have no size estimate (story points, hours, or T-shirt size). Estimates enable planning and capacity management.',
+    description: 'Captures expected effort using story points, hours, or T-shirt sizes. Enables capacity planning and delivery forecasting.',
     whyItMatters: 'Unestimated work makes capacity planning impossible—you can\'t predict delivery or identify overcommitment.',
     value: 89,
     displayValue: '89%',
@@ -1230,19 +1247,20 @@ const availabilityIndicators: IndicatorResult[] = [
       { period: '2024-11', value: 89, benchmarkValue: 25 },
     ],
     distribution: { min: 12, max: 95, otherTeamValues: [18, 25, 32, 42, 55, 65, 75, 82, 90] },
+    appliesTo: ['Story'],
   },
   {
     id: 'assignee',
     name: 'What % of issues have no assignee?',
-    description: 'Percentage of in-progress issues that have no one assigned to them. Unassigned work creates accountability gaps.',
+    description: 'Identifies the team member responsible for completing the work. Establishes accountability and workload visibility.',
     whyItMatters: 'No owner means no accountability—work sits idle or gets duplicated because nobody feels responsible.',
     value: 15,
     displayValue: '15%',
     unit: '%',
     benchmarkValue: 5,
     benchmarkDisplayValue: '5%',
-    benchmarkComparison: 'bottom 10% of the comparison group',
-    benchmarkPercentile: 10,
+    benchmarkComparison: 'bottom 35% of the comparison group',
+    benchmarkPercentile: 35,
     trend: 'stable',
     higherIsBetter: false,
     trendData: [
@@ -1257,11 +1275,12 @@ const availabilityIndicators: IndicatorResult[] = [
       { period: '2024-11', value: 15, benchmarkValue: 5 },
     ],
     distribution: { min: 2, max: 28, otherTeamValues: [3, 5, 7, 9, 11, 14, 18, 22, 25] },
+    appliesTo: ['Story', 'Bug', 'Task', 'Sub-task'],
   },
   {
     id: 'dueDate',
     name: 'What % of issues have no due date?',
-    description: 'Percentage of in-progress issues without a due date or target completion. Due dates help manage expectations and prioritisation.',
+    description: 'Sets a target completion date. Supports deadline tracking, prioritization, and external commitment management.',
     whyItMatters: 'Without due dates, everything feels equally urgent—prioritization becomes guesswork.',
     value: 68,
     displayValue: '68%',
@@ -1284,58 +1303,63 @@ const availabilityIndicators: IndicatorResult[] = [
       { period: '2024-11', value: 68, benchmarkValue: 30 },
     ],
     distribution: { min: 15, max: 85, otherTeamValues: [20, 28, 35, 42, 50, 58, 65, 72, 78] },
+    appliesTo: ['Story', 'Bug', 'Task'],
   },
   {
     id: 'subTasks',
-    name: 'What % of large issues are broken into sub-tasks?',
-    description: 'Percentage of larger work items (Stories, Tasks) that have been broken down into sub-tasks. Sub-tasks help track progress within larger items.',
-    value: 10,
-    displayValue: '10%',
+    name: 'What % of large issues have NO sub-task breakdown?',
+    description: 'Decomposes a larger work item into smaller trackable units. Makes progress visible and surfaces hidden complexity.',
+    whyItMatters: 'Large issues without breakdown are hard to track and often hide complexity that derails sprints.',
+    value: 90,
+    displayValue: '90%',
     unit: '%',
-    benchmarkValue: 35,
-    benchmarkDisplayValue: '35%',
-    benchmarkComparison: 'bottom 20% of the comparison group',
-    benchmarkPercentile: 20,
+    benchmarkValue: 65,
+    benchmarkDisplayValue: '65%',
+    benchmarkComparison: 'bottom 10% of the comparison group',
+    benchmarkPercentile: 10,
     trend: 'stable',
-    higherIsBetter: true,
+    higherIsBetter: false,
     trendData: [
-      { period: '2024-03', value: 12, benchmarkValue: 35 },
-      { period: '2024-04', value: 11, benchmarkValue: 35 },
-      { period: '2024-05', value: 11, benchmarkValue: 35 },
-      { period: '2024-06', value: 10, benchmarkValue: 35 },
-      { period: '2024-07', value: 11, benchmarkValue: 35 },
-      { period: '2024-08', value: 10, benchmarkValue: 35 },
-      { period: '2024-09', value: 11, benchmarkValue: 35 },
-      { period: '2024-10', value: 10, benchmarkValue: 35 },
-      { period: '2024-11', value: 10, benchmarkValue: 35 },
+      { period: '2024-03', value: 88, benchmarkValue: 65 },
+      { period: '2024-04', value: 89, benchmarkValue: 65 },
+      { period: '2024-05', value: 89, benchmarkValue: 65 },
+      { period: '2024-06', value: 90, benchmarkValue: 65 },
+      { period: '2024-07', value: 89, benchmarkValue: 65 },
+      { period: '2024-08', value: 90, benchmarkValue: 65 },
+      { period: '2024-09', value: 89, benchmarkValue: 65 },
+      { period: '2024-10', value: 90, benchmarkValue: 65 },
+      { period: '2024-11', value: 90, benchmarkValue: 65 },
     ],
-    distribution: { min: 5, max: 55, otherTeamValues: [8, 15, 22, 28, 35, 40, 45, 48, 52] },
+    distribution: { min: 45, max: 95, otherTeamValues: [48, 52, 55, 60, 65, 72, 78, 85, 92] },
+    appliesTo: ['Story', 'Task'],
   },
   {
     id: 'prioritySet',
-    name: 'What % of issues have a meaningful priority set?',
-    description: 'Percentage of work items with an explicit priority set (not defaulting to "Normal"). Meaningful priority helps teams focus on what matters most.',
-    value: 10,
-    displayValue: '10%',
+    name: 'What % of issues have NO meaningful priority?',
+    description: 'Indicates relative importance and urgency. A meaningful priority (not the Jira default) enables effective triage.',
+    whyItMatters: 'Without priority, teams can\'t effectively triage work or make trade-off decisions.',
+    value: 90,
+    displayValue: '90%',
     unit: '%',
-    benchmarkValue: 45,
-    benchmarkDisplayValue: '45%',
-    benchmarkComparison: 'bottom 85% of the comparison group',
-    benchmarkPercentile: 15,
+    benchmarkValue: 55,
+    benchmarkDisplayValue: '55%',
+    benchmarkComparison: 'bottom 5% of the comparison group',
+    benchmarkPercentile: 5,
     trend: 'stable',
-    higherIsBetter: true,
+    higherIsBetter: false,
     trendData: [
-      { period: '2024-03', value: 12, benchmarkValue: 45 },
-      { period: '2024-04', value: 11, benchmarkValue: 45 },
-      { period: '2024-05', value: 12, benchmarkValue: 45 },
-      { period: '2024-06', value: 11, benchmarkValue: 45 },
-      { period: '2024-07', value: 10, benchmarkValue: 45 },
-      { period: '2024-08', value: 11, benchmarkValue: 45 },
-      { period: '2024-09', value: 12, benchmarkValue: 45 },
-      { period: '2024-10', value: 11, benchmarkValue: 45 },
-      { period: '2024-11', value: 10, benchmarkValue: 45 },
+      { period: '2024-03', value: 88, benchmarkValue: 55 },
+      { period: '2024-04', value: 89, benchmarkValue: 55 },
+      { period: '2024-05', value: 88, benchmarkValue: 55 },
+      { period: '2024-06', value: 89, benchmarkValue: 55 },
+      { period: '2024-07', value: 90, benchmarkValue: 55 },
+      { period: '2024-08', value: 89, benchmarkValue: 55 },
+      { period: '2024-09', value: 88, benchmarkValue: 55 },
+      { period: '2024-10', value: 89, benchmarkValue: 55 },
+      { period: '2024-11', value: 90, benchmarkValue: 55 },
     ],
-    distribution: { min: 5, max: 62, otherTeamValues: [12, 18, 25, 32, 38, 45, 50, 55, 58] },
+    distribution: { min: 38, max: 95, otherTeamValues: [42, 45, 50, 55, 62, 68, 75, 82, 88] },
+    appliesTo: ['Story', 'Bug', 'Task'],
   },
 ];
 
@@ -1352,7 +1376,7 @@ const availabilityCategory: IndicatorCategory = {
 };
 
 // Category 2.b: Quality of Readiness/Refinement
-const readinessIndicators: IndicatorResult[] = [
+export const readinessIndicators: IndicatorResult[] = [
   {
     id: 'infoAddedAfterCommitment',
     name: 'How often is key info added after commitment?',
@@ -1378,6 +1402,7 @@ const readinessIndicators: IndicatorResult[] = [
       { period: '2024-11', value: 12, benchmarkValue: 25 },
     ],
     distribution: { min: 5, max: 48, otherTeamValues: [8, 15, 20, 25, 30, 35, 38, 42, 45] },
+    appliesTo: ['Story', 'Bug'],
   },
   {
     id: 'midSprintMissingFields',
@@ -1404,6 +1429,7 @@ const readinessIndicators: IndicatorResult[] = [
       { period: '2024-11', value: 60, benchmarkValue: 25 },
     ],
     distribution: { min: 10, max: 78, otherTeamValues: [15, 20, 25, 32, 40, 48, 55, 65, 72] },
+    appliesTo: ['Story', 'Bug', 'Task'],
   },
   {
     id: 'staleWorkItems',
@@ -1431,6 +1457,7 @@ const readinessIndicators: IndicatorResult[] = [
       { period: '2024-11', value: 58, benchmarkValue: 25 },
     ],
     distribution: { min: 10, max: 72, otherTeamValues: [15, 22, 28, 35, 42, 50, 58, 65, 70] },
+    appliesTo: ['Story', 'Bug', 'Task', 'Sub-task'],
   },
   {
     id: 'bulkChanges',
@@ -1458,6 +1485,7 @@ const readinessIndicators: IndicatorResult[] = [
       { period: '2024-11', value: 20, benchmarkValue: 5 },
     ],
     distribution: { min: 2, max: 35, otherTeamValues: [3, 5, 8, 12, 16, 20, 25, 30] },
+    appliesTo: ['Story', 'Bug', 'Task', 'Sub-task'],
   },
   {
     id: 'jiraUpdateFrequency',
@@ -1485,6 +1513,7 @@ const readinessIndicators: IndicatorResult[] = [
       { period: '2024-11', value: 0.5, benchmarkValue: 3 },
     ],
     distribution: { min: 0.2, max: 5.5, otherTeamValues: [0.8, 1.5, 2.2, 2.8, 3.4, 4.0, 4.6, 5.2] },
+    appliesTo: ['Story', 'Bug', 'Task', 'Sub-task'],
   },
   {
     id: 'fieldUpdateLag',
@@ -1512,6 +1541,7 @@ const readinessIndicators: IndicatorResult[] = [
       { period: '2024-11', value: 5.2, benchmarkValue: 1.5 },
     ],
     distribution: { min: 0.5, max: 10, otherTeamValues: [0.8, 1.2, 2.0, 3.0, 4.0, 5.5, 7.0, 8.5, 9.5] },
+    appliesTo: ['Story', 'Bug', 'Task'],
   },
   {
     id: 'descriptionEditFrequency',
@@ -1539,6 +1569,7 @@ const readinessIndicators: IndicatorResult[] = [
       { period: '2024-11', value: 15, benchmarkValue: 45 },
     ],
     distribution: { min: 8, max: 70, otherTeamValues: [12, 20, 30, 38, 45, 52, 58, 62, 68] },
+    appliesTo: ['Story', 'Bug', 'Task'],
   },
   {
     id: 'timeToStability',
@@ -1566,10 +1597,11 @@ const readinessIndicators: IndicatorResult[] = [
       { period: '2024-11', value: 9, benchmarkValue: 3 },
     ],
     distribution: { min: 1, max: 15, otherTeamValues: [2, 3, 4, 5, 6, 7, 10, 12, 14] },
+    appliesTo: ['Story', 'Bug'],
   },
 ];
 
-const readinessCategory: IndicatorCategory = {
+export const readinessCategory: IndicatorCategory = {
   id: 'readiness',
   name: 'Quality of readiness and refinement process',
   shortName: 'Insights',
@@ -1652,7 +1684,7 @@ export const mockDimension2Result: DimensionResult = {
     { period: '2024-10', value: 28, benchmarkValue: 50 },
     { period: '2024-11', value: 28, benchmarkValue: 50 },
   ],
-  categories: [availabilityCategory, readinessCategory],
+  categories: [availabilityCategory],
   whyItMatters: 'Incomplete tickets lead to assumptions, rework, and unpredictable delivery.',
   whyItMattersPoints: [
     'Missing acceptance criteria leads to work being done incorrectly',
@@ -4837,6 +4869,7 @@ export interface AssessmentScenario {
   targetPercentile: number;
   percentileVariance: number;
   trendBias: TrendBias;
+  assessmentTeams?: { id: string; name: string }[];
 }
 
 // All 14 base dimensions for transformation (Dim 13 was merged into Dim 10, Dim 15 and 17 removed)
@@ -5090,16 +5123,27 @@ export function generateScenarioAssessment(
     ? (ticketReadinessDim.healthScore ?? Math.round(ticketReadinessDim.overallPercentile))
     : scenario.targetPercentile;
 
+  // Multi-team assessment: comparison group is the other teams in the assessment
+  const isMultiTeam = scenario.assessmentTeams && scenario.assessmentTeams.length > 1;
+  const comparisonTeams = isMultiTeam
+    ? scenario.assessmentTeams!.filter(t => t.id !== scenario.teamId)
+    : [];
+  const comparisonTeamCount = comparisonTeams.length;
+  const comparisonCriteria: string[] = [];
+  const comparisonGroupDescription = isMultiTeam
+    ? `Assessment includes ${scenario.assessmentTeams!.length} teams`
+    : 'Single-team assessment';
+
   return {
     teamId: scenario.teamId,
     teamName: scenario.teamName,
     generatedAt: new Date().toISOString(),
     dateRange,
     dataGrouping: baseState.step1.dataGrouping,
-    comparisonTeamCount: 47,
-    comparisonTeams: mockComparisonTeams,
-    comparisonCriteria: ['Team Size: Medium (6-15 members)', 'Tenure: Established (6-18 months)', 'Process: Scrum'],
-    comparisonGroupDescription: 'Comparing against 47 teams (Team Size: Medium, Tenure: Established, Process: Scrum)',
+    comparisonTeamCount,
+    comparisonTeams,
+    comparisonCriteria,
+    comparisonGroupDescription,
     dimensions,
     lensResults: generateMockPatternResults(scenarioCoverageScore),
   };
@@ -5115,14 +5159,16 @@ export const SCENARIO_HIGH_PERFORMING: AssessmentScenario = {
   targetPercentile: 88,
   percentileVariance: 7,
   trendBias: 'stable',
+  assessmentTeams: TEAMS_HIGH,
 };
 
 export const SCENARIO_SOLID_TEAM: AssessmentScenario = {
-  teamId: 'team-solid',
-  teamName: 'Platform Core',
+  teamId: 'team-1',
+  teamName: 'Platform Team',
   targetPercentile: 72,
   percentileVariance: 10,
   trendBias: 'improving',
+  assessmentTeams: TEAMS_SOLID,
 };
 
 export const SCENARIO_AVERAGE_TEAM: AssessmentScenario = {
@@ -5131,14 +5177,16 @@ export const SCENARIO_AVERAGE_TEAM: AssessmentScenario = {
   targetPercentile: 52,
   percentileVariance: 8,
   trendBias: 'stable',
+  assessmentTeams: TEAMS_AVERAGE,
 };
 
 export const SCENARIO_MIXED_RESULTS: AssessmentScenario = {
-  teamId: 'team-mixed',
-  teamName: 'Growth Squad',
+  teamId: 'team-5',
+  teamName: 'Data Team',
   targetPercentile: 50,
   percentileVariance: 35,
   trendBias: 'mixed',
+  assessmentTeams: TEAMS_MIXED,
 };
 
 export const SCENARIO_IMPROVING_TEAM: AssessmentScenario = {
@@ -5147,14 +5195,16 @@ export const SCENARIO_IMPROVING_TEAM: AssessmentScenario = {
   targetPercentile: 35,
   percentileVariance: 10,
   trendBias: 'improving',
+  assessmentTeams: TEAMS_IMPROVING,
 };
 
 export const SCENARIO_DECLINING_TEAM: AssessmentScenario = {
-  teamId: 'team-declining',
+  teamId: 'team-7',
   teamName: 'Legacy Crew',
   targetPercentile: 68,
   percentileVariance: 12,
   trendBias: 'declining',
+  assessmentTeams: TEAMS_DECLINING,
 };
 
 // ============================================

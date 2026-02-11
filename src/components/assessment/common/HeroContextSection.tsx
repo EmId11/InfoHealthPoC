@@ -1,32 +1,10 @@
 import React, { useState } from 'react';
-import { DimensionResult, TrendAggregation } from '../../../types/assessment';
+import { DimensionResult, TrendAggregation, ComparisonTeam } from '../../../types/assessment';
 import { INDICATOR_TIERS, getTierDistribution } from '../../../types/indicatorTiers';
 import { aggregateDimensionTrends } from '../../../utils/trendCalculations';
 import CrossIcon from '@atlaskit/icon/glyph/cross';
 import IndicatorTrendsChart from './IndicatorTrendsChart';
 import ComparisonGroupModal from './ComparisonGroupModal';
-
-// Mock comparison teams data (same as used in AssessmentResultsLayout)
-const MOCK_COMPARISON_TEAMS = [
-  { id: '1', name: 'Platform Core' },
-  { id: '2', name: 'Checkout Experience' },
-  { id: '3', name: 'Search & Discovery' },
-  { id: '4', name: 'Payments Integration' },
-  { id: '5', name: 'User Authentication' },
-  { id: '6', name: 'Mobile iOS' },
-  { id: '7', name: 'Mobile Android' },
-  { id: '8', name: 'Data Pipeline' },
-  { id: '9', name: 'ML Platform' },
-  { id: '10', name: 'DevOps Enablement' },
-  { id: '11', name: 'Customer Support Tools' },
-  { id: '12', name: 'Inventory Management' },
-  { id: '13', name: 'Shipping & Logistics' },
-  { id: '14', name: 'Vendor Portal' },
-  { id: '15', name: 'Analytics Dashboard' },
-  { id: '16', name: 'Notification Services' },
-];
-
-const MOCK_CRITERIA = ['Team Size: Medium (6-15 members)', 'Tenure: Established (6-18 months)', 'Process: Scrum'];
 
 interface HeroContextSectionProps {
   dimension: DimensionResult;
@@ -34,12 +12,16 @@ interface HeroContextSectionProps {
   flaggedIndicators: number;
   similarTeamsCount?: number;
   onViewSimilarTeams?: () => void;
+  comparisonTeams?: ComparisonTeam[];
+  comparisonCriteria?: string[];
 }
 
 const HeroContextSection: React.FC<HeroContextSectionProps> = ({
   dimension,
   totalIndicators,
-  similarTeamsCount = 47,
+  similarTeamsCount = 0,
+  comparisonTeams = [],
+  comparisonCriteria = [],
 }) => {
   const [showIndicatorTrends, setShowIndicatorTrends] = useState(false);
   const [showSimilarTeamsModal, setShowSimilarTeamsModal] = useState(false);
@@ -77,15 +59,18 @@ const HeroContextSection: React.FC<HeroContextSectionProps> = ({
         <div style={styles.heroHeader}>
           <div style={styles.headerLeft}>
             <h3 style={styles.heroTitle}>Indicator Health Summary</h3>
-            <span style={styles.heroSubtitle}>
-              Compared against{' '}
-              <button
-                style={styles.similarTeamsLink}
-                onClick={() => setShowSimilarTeamsModal(true)}
-              >
-                {similarTeamsCount} similar teams
-              </button>
-            </span>
+            {similarTeamsCount > 0 && (
+              <span style={styles.heroSubtitle}>
+                Viewing alongside{' '}
+                <button
+                  style={styles.similarTeamsLink}
+                  onClick={() => setShowSimilarTeamsModal(true)}
+                >
+                  {similarTeamsCount} other team{similarTeamsCount !== 1 ? 's' : ''}
+                </button>
+                {' '}in this assessment
+              </span>
+            )}
           </div>
           <div style={styles.headerRight}>
             <span style={styles.totalCount}>{totalIndicators}</span>
@@ -199,8 +184,8 @@ const HeroContextSection: React.FC<HeroContextSectionProps> = ({
       <ComparisonGroupModal
         isOpen={showSimilarTeamsModal}
         onClose={() => setShowSimilarTeamsModal(false)}
-        teams={MOCK_COMPARISON_TEAMS}
-        criteria={MOCK_CRITERIA}
+        teams={comparisonTeams}
+        criteria={comparisonCriteria}
         teamCount={similarTeamsCount}
       />
     </div>

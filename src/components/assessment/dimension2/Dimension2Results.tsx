@@ -9,6 +9,7 @@ interface Dimension2ResultsProps {
   teamId: string;
   dateRange: { startDate: string; endDate: string };
   similarTeamsCount: number;
+  comparisonTeamNames?: string[];
   onViewSimilarTeams: () => void;
   dimensionIndex?: number;
   onIndicatorDrillDown?: (state: IndicatorDrillDownState) => void;
@@ -16,6 +17,8 @@ interface Dimension2ResultsProps {
 
 const Dimension2Results: React.FC<Dimension2ResultsProps> = ({
   dimension,
+  similarTeamsCount,
+  comparisonTeamNames,
   dimensionIndex = 1,
   onIndicatorDrillDown,
 }) => {
@@ -25,6 +28,8 @@ const Dimension2Results: React.FC<Dimension2ResultsProps> = ({
         dimension={dimension}
         dimensionIndex={dimensionIndex}
         onIndicatorDrillDown={onIndicatorDrillDown}
+        comparisonTeamCount={similarTeamsCount}
+        comparisonTeamNames={comparisonTeamNames}
       />
     </div>
   );

@@ -478,7 +478,21 @@ const CreatorHome: React.FC<CreatorHomeProps> = ({
                               />
                               <div>
                                 <div style={styles.assessmentName}>{assessment.name}</div>
-                                <div style={styles.teamName}>{assessment.teamName}</div>
+                                {assessment.teamIds && assessment.teamIds.length > 1 ? (
+                                  <span
+                                    style={styles.multiTeamBadge}
+                                    title={assessment.teamNames?.join(', ')}
+                                  >
+                                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ flexShrink: 0 }}>
+                                      <path d="M8 10v-1a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v1" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+                                      <circle cx="5" cy="4" r="1.5" stroke="currentColor" strokeWidth="1.2"/>
+                                      <path d="M10.5 10v-1a2 2 0 0 0-1.5-1.93M7.5 2.07a2 2 0 0 1 0 3.86" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+                                    </svg>
+                                    {assessment.teamIds.length} teams
+                                  </span>
+                                ) : (
+                                  <div style={styles.teamName}>{assessment.teamName}</div>
+                                )}
                               </div>
                             </div>
                           </td>
@@ -695,7 +709,21 @@ const CreatorHome: React.FC<CreatorHomeProps> = ({
                               />
                               <div>
                                 <div style={styles.assessmentName}>{assessment.name}</div>
-                                <div style={styles.teamName}>{assessment.teamName}</div>
+                                {assessment.teamIds && assessment.teamIds.length > 1 ? (
+                                  <span
+                                    style={styles.multiTeamBadge}
+                                    title={assessment.teamNames?.join(', ')}
+                                  >
+                                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ flexShrink: 0 }}>
+                                      <path d="M8 10v-1a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v1" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+                                      <circle cx="5" cy="4" r="1.5" stroke="currentColor" strokeWidth="1.2"/>
+                                      <path d="M10.5 10v-1a2 2 0 0 0-1.5-1.93M7.5 2.07a2 2 0 0 1 0 3.86" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+                                    </svg>
+                                    {assessment.teamIds.length} teams
+                                  </span>
+                                ) : (
+                                  <div style={styles.teamName}>{assessment.teamName}</div>
+                                )}
                               </div>
                             </div>
                           </td>
@@ -1246,6 +1274,18 @@ const styles: Record<string, React.CSSProperties> = {
   teamName: {
     fontSize: '12px',
     color: '#6B778C',
+  },
+  multiTeamBadge: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '4px',
+    padding: '1px 8px 1px 5px',
+    backgroundColor: '#F4F5F7',
+    borderRadius: '10px',
+    fontSize: '11px',
+    fontWeight: 500,
+    color: '#5E6C84',
+    whiteSpace: 'nowrap',
   },
   statusBadge: {
     display: 'inline-flex',

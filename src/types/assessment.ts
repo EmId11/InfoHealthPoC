@@ -94,6 +94,7 @@ export interface IndicatorResult {
   configSource?: 'standard' | 'custom'; // Source of the indicator configuration
   jiraFieldId?: string;     // Jira field ID for field health indicators
   distribution?: IndicatorDistribution; // Optional distribution data for enhanced spectrum
+  appliesTo?: string[];  // Issue types this indicator is analyzed for (e.g., ['Story', 'Bug'])
 }
 
 export interface IndicatorCategory {

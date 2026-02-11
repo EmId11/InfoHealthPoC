@@ -10,6 +10,7 @@ import {
   Line,
 } from 'recharts';
 import { TrendDataPoint } from '../../../types/assessment';
+import { INDICATOR_TIERS, getIndicatorTier } from '../../../types/indicatorTiers';
 
 interface TrendChartProps {
   data: TrendDataPoint[];
@@ -188,11 +189,10 @@ const TrendChart: React.FC<TrendChartProps> = ({
     );
   }
 
-  // Get risk zone info based on percentile (higher percentile = better)
+  // Get risk zone info based on percentile using the actual 5-tier system
   const getRiskZone = (percentile: number): { label: string; color: string } => {
-    if (percentile <= 25) return { label: 'High Risk', color: '#DE350B' };
-    if (percentile <= 75) return { label: 'Moderate Risk', color: '#FF8B00' };
-    return { label: 'Low Risk', color: '#36B37E' };
+    const tier = getIndicatorTier(percentile);
+    return { label: tier.name, color: tier.color };
   };
 
   // Calculate rank from percentile (lower percentile = higher rank number = worse)
@@ -235,51 +235,34 @@ const TrendChart: React.FC<TrendChartProps> = ({
     return null;
   };
 
-  // Custom Y-axis tick component for multi-line labels
-  // Y-axis is inverted: 100 at bottom (low risk), 0 at top (high risk)
+  // Custom Y-axis tick component — show tier names at midpoints
+  // Y-axis is inverted: 100 at bottom (best), 0 at top (worst)
+  // Tier midpoints: Critical=12.5, At Risk=38, Fair=63, Healthy=83, Optimal=95.5
+  const tierMidpoints: Record<number, { name: string; color: string }> = {
+    12: { name: INDICATOR_TIERS[0].name, color: INDICATOR_TIERS[0].color },
+    38: { name: INDICATOR_TIERS[1].name, color: INDICATOR_TIERS[1].color },
+    63: { name: INDICATOR_TIERS[2].name, color: INDICATOR_TIERS[2].color },
+    83: { name: INDICATOR_TIERS[3].name, color: INDICATOR_TIERS[3].color },
+    96: { name: INDICATOR_TIERS[4].name, color: INDICATOR_TIERS[4].color },
+  };
+
   const CustomYAxisTick = ({ x, y, payload }: any) => {
-    const value = payload.value;
-    let line1 = '';
-    let line2 = '';
-
-    // With inverted axis: 16 is near top (high risk), 83 is near bottom (low risk)
-    if (value === 16) {
-      line1 = 'High risk of';
-      line2 = dimensionName ? dimensionName.toLowerCase() : '';
-    } else if (value === 50) {
-      line1 = 'Moderate risk of';
-      line2 = dimensionName ? dimensionName.toLowerCase() : '';
-    } else if (value === 83) {
-      line1 = 'Low risk of';
-      line2 = dimensionName ? dimensionName.toLowerCase() : '';
-    }
-
-    if (!line1) return null;
+    const info = tierMidpoints[payload.value];
+    if (!info) return null;
 
     return (
       <g transform={`translate(${x},${y})`}>
         <text
           x={0}
           y={0}
-          dy={-6}
+          dy={4}
           textAnchor="end"
-          fill="#6B778C"
+          fill={info.color}
           fontSize={9}
+          fontWeight={600}
         >
-          {line1}
+          {info.name}
         </text>
-        {line2 && (
-          <text
-            x={0}
-            y={0}
-            dy={6}
-            textAnchor="end"
-            fill="#6B778C"
-            fontSize={9}
-          >
-            {line2}
-          </text>
-        )}
       </g>
     );
   };
@@ -294,10 +277,12 @@ const TrendChart: React.FC<TrendChartProps> = ({
           data={processedData}
           margin={{ top: 10, right: 20, left: 10, bottom: 10 }}
         >
-          {/* Health score zone background bands - inverted: high risk (red) at top, low risk (green) at bottom */}
-          <ReferenceArea y1={0} y2={25} fill="#FFEDEB" fillOpacity={1} />
-          <ReferenceArea y1={25} y2={75} fill="#FFF4E5" fillOpacity={1} />
-          <ReferenceArea y1={75} y2={100} fill="#DCFFF1" fillOpacity={1} />
+          {/* Health score zone background bands — 5 tiers matching INDICATOR_TIERS */}
+          <ReferenceArea y1={0} y2={25} fill={INDICATOR_TIERS[0].bgColor} fillOpacity={1} />
+          <ReferenceArea y1={25} y2={50} fill={INDICATOR_TIERS[1].bgColor} fillOpacity={1} />
+          <ReferenceArea y1={50} y2={75} fill={INDICATOR_TIERS[2].bgColor} fillOpacity={1} />
+          <ReferenceArea y1={75} y2={90} fill={INDICATOR_TIERS[3].bgColor} fillOpacity={1} />
+          <ReferenceArea y1={90} y2={100} fill={INDICATOR_TIERS[4].bgColor} fillOpacity={1} />
 
           <XAxis
             dataKey="period"
@@ -308,11 +293,11 @@ const TrendChart: React.FC<TrendChartProps> = ({
           />
           <YAxis
             domain={[0, 100]}
-            ticks={[16, 50, 83]}
+            ticks={[12, 38, 63, 83, 96]}
             tick={<CustomYAxisTick />}
             axisLine={{ stroke: '#DFE1E6' }}
             tickLine={false}
-            width={dimensionName ? 100 : 70}
+            width={70}
             reversed={true}
           />
           <Tooltip content={<CustomTooltip />} />
