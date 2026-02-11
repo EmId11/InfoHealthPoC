@@ -1,18 +1,15 @@
 import React, { useState } from 'react';
-import { SavedAssessment, AppUser, getStatusLabel, SavedMultiTeamAssessment } from '../../types/home';
+import { SavedAssessment, AppUser, getStatusLabel } from '../../types/home';
 import { PersonaSwitcher } from '../persona';
 
 interface CreatorHomeProps {
   currentUser: AppUser;
   myAssessments: SavedAssessment[];
   sharedWithMe: SavedAssessment[];
-  myMultiTeamAssessments?: SavedMultiTeamAssessment[];
-  activeTab: 'my' | 'shared' | 'portfolio';
-  onTabChange: (tab: 'my' | 'shared' | 'portfolio') => void;
+  activeTab: 'my' | 'shared';
+  onTabChange: (tab: 'my' | 'shared') => void;
   onCreateAssessment: () => void;
-  onCreateMultiTeamAssessment?: () => void;
   onViewAssessment: (assessment: SavedAssessment) => void;
-  onViewMultiTeamAssessment?: (assessment: SavedMultiTeamAssessment) => void;
   onEditAssessment: (assessment: SavedAssessment) => void;
   onShareAssessment: (assessment: SavedAssessment) => void;
   onDeleteAssessment: (assessment: SavedAssessment) => void;
@@ -25,13 +22,10 @@ const CreatorHome: React.FC<CreatorHomeProps> = ({
   currentUser,
   myAssessments,
   sharedWithMe,
-  myMultiTeamAssessments = [],
   activeTab,
   onTabChange,
   onCreateAssessment,
-  onCreateMultiTeamAssessment,
   onViewAssessment,
-  onViewMultiTeamAssessment,
   onEditAssessment,
   onShareAssessment,
   onDeleteAssessment,
@@ -262,14 +256,6 @@ const CreatorHome: React.FC<CreatorHomeProps> = ({
                 </svg>
                 New Assessment
               </button>
-              {onCreateMultiTeamAssessment && (
-                <button style={styles.heroButtonSecondary} onClick={onCreateMultiTeamAssessment}>
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                    <path d="M14 4v12M6 4v12M4 8h12M4 12h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                  </svg>
-                  Portfolio Assessment
-                </button>
-              )}
             </div>
           </div>
 
@@ -355,24 +341,6 @@ const CreatorHome: React.FC<CreatorHomeProps> = ({
                 Shared With Me
                 {sharedWithMe.length > 0 && (
                   <span style={styles.tabBadge}>{sharedWithMe.length}</span>
-                )}
-              </button>
-              <button
-                style={{
-                  ...styles.tab,
-                  ...(activeTab === 'portfolio' ? styles.tabActive : {}),
-                }}
-                onClick={() => onTabChange('portfolio')}
-              >
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ marginRight: '8px' }}>
-                  <rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.5"/>
-                  <rect x="11" y="2" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.5"/>
-                  <rect x="2" y="11" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.5"/>
-                  <rect x="11" y="11" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.5"/>
-                </svg>
-                Portfolios
-                {myMultiTeamAssessments.length > 0 && (
-                  <span style={styles.tabBadge}>{myMultiTeamAssessments.length}</span>
                 )}
               </button>
             </div>
@@ -777,144 +745,7 @@ const CreatorHome: React.FC<CreatorHomeProps> = ({
                 </table>
               </div>
             )
-          ) : (
-            myMultiTeamAssessments.length === 0 ? (
-              <div style={styles.emptyState}>
-                <div style={styles.emptyIllustration}>
-                  <svg width="120" height="120" viewBox="0 0 120 120" fill="none">
-                    <circle cx="60" cy="60" r="50" fill="#F4F5F7"/>
-                    <rect x="25" y="35" width="25" height="25" rx="3" stroke="#DFE1E6" strokeWidth="2" fill="white"/>
-                    <rect x="70" y="35" width="25" height="25" rx="3" stroke="#DFE1E6" strokeWidth="2" fill="white"/>
-                    <rect x="25" y="70" width="25" height="25" rx="3" stroke="#DFE1E6" strokeWidth="2" fill="white"/>
-                    <rect x="70" y="70" width="25" height="25" rx="3" stroke="#DFE1E6" strokeWidth="2" fill="white"/>
-                  </svg>
-                </div>
-                <h3 style={styles.emptyTitle}>No portfolio assessments yet</h3>
-                <p style={styles.emptyText}>
-                  Create a portfolio assessment to analyze multiple teams at once and get cross-team insights.
-                </p>
-                {onCreateMultiTeamAssessment && (
-                  <button style={styles.emptyButton} onClick={onCreateMultiTeamAssessment}>
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                      <path d="M10 4v12M4 10h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                    </svg>
-                    Create Portfolio Assessment
-                  </button>
-                )}
-              </div>
-            ) : (
-              <div style={styles.tableContainer}>
-                <table style={styles.table}>
-                  <thead>
-                    <tr style={styles.tableHeaderRow}>
-                      <th style={{ ...styles.tableHeader, width: '4%' }}></th>
-                      <th style={{ ...styles.tableHeader, width: '28%' }}>Portfolio</th>
-                      <th style={{ ...styles.tableHeader, width: '12%' }}>Teams</th>
-                      <th style={{ ...styles.tableHeader, width: '12%' }}>Scope</th>
-                      <th style={{ ...styles.tableHeader, width: '11%' }}>Status</th>
-                      <th style={{ ...styles.tableHeader, width: '13%' }}>Created</th>
-                      <th style={{ ...styles.tableHeader, width: '20%', textAlign: 'right' }}></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {myMultiTeamAssessments.map((assessment) => {
-                      const isCompleted = assessment.status === 'completed';
-                      const scopeLabel = assessment.scopeType === 'portfolio' ? 'Portfolio' :
-                        assessment.scopeType === 'team-of-teams' ? 'Team of Teams' : 'Custom';
-
-                      return (
-                        <tr
-                          key={assessment.id}
-                          style={{
-                            ...styles.tableRow,
-                            ...(hoveredRow === assessment.id ? styles.tableRowHover : {}),
-                          }}
-                          onMouseEnter={() => setHoveredRow(assessment.id)}
-                          onMouseLeave={() => setHoveredRow(null)}
-                        >
-                          <td style={styles.tableCell}>
-                            <button
-                              style={{
-                                ...styles.starButton,
-                                color: starredAssessments[assessment.id] ? '#FFAB00' : '#C1C7D0',
-                              }}
-                              onClick={() => toggleStar(assessment.id)}
-                            >
-                              {starredAssessments[assessment.id] ? '★' : '☆'}
-                            </button>
-                          </td>
-                          <td style={styles.tableCell}>
-                            <div style={styles.assessmentInfo}>
-                              <div style={styles.portfolioIcon}>
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                                  <rect x="2" y="2" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1.5"/>
-                                  <rect x="12" y="2" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1.5"/>
-                                  <rect x="2" y="12" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1.5"/>
-                                  <rect x="12" y="12" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1.5"/>
-                                </svg>
-                              </div>
-                              <div>
-                                <div style={styles.assessmentName}>{assessment.name}</div>
-                                <div style={styles.teamNameList}>
-                                  {assessment.teamNames.slice(0, 3).join(', ')}
-                                  {assessment.teamNames.length > 3 && ` +${assessment.teamNames.length - 3} more`}
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-                          <td style={styles.tableCell}>
-                            <span style={styles.teamCountBadge}>
-                              {assessment.teamCount} teams
-                            </span>
-                          </td>
-                          <td style={styles.tableCell}>
-                            <span style={styles.scopeBadge}>
-                              {scopeLabel}
-                            </span>
-                          </td>
-                          <td style={styles.tableCell}>
-                            <span
-                              style={{
-                                ...styles.statusBadge,
-                                backgroundColor: isCompleted ? '#E3FCEF' : '#F4F5F7',
-                                color: isCompleted ? '#006644' : '#6B778C',
-                              }}
-                            >
-                              {getStatusLabel(assessment.status)}
-                            </span>
-                          </td>
-                          <td style={styles.tableCell}>
-                            <span style={styles.timeText}>
-                              {formatDate(assessment.createdAt)}
-                            </span>
-                          </td>
-                          <td style={{ ...styles.tableCell, textAlign: 'right' }}>
-                            <div style={styles.actionsCell}>
-                              {isCompleted && onViewMultiTeamAssessment ? (
-                                <button
-                                  style={styles.viewButton}
-                                  onClick={() => onViewMultiTeamAssessment(assessment)}
-                                >
-                                  View Dashboard
-                                </button>
-                              ) : (
-                                <button
-                                  style={styles.continueButton}
-                                  onClick={() => onViewMultiTeamAssessment?.(assessment)}
-                                >
-                                  Continue
-                                </button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )
-          )}
+          ) : null}
         </div>
       </main>
     </div>

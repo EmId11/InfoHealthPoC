@@ -554,6 +554,73 @@ export const estimationSystems: EstimationSystemOption[] = [
 ];
 
 // ============================================
+// Mock Jira Fields Per Issue Type (for Field Selection step)
+// ============================================
+
+export interface JiraFieldForIssueType {
+  id: string;
+  name: string;
+  type: 'text' | 'number' | 'date' | 'select' | 'user' | 'multi-select' | 'link';
+  isCustom: boolean;
+  applicableIssueTypes: string[]; // which issue type keys this field applies to
+}
+
+export const MOCK_JIRA_FIELDS_BY_ISSUE_TYPE: JiraFieldForIssueType[] = [
+  // Standard fields
+  { id: 'assignee', name: 'Assignee', type: 'user', isCustom: false, applicableIssueTypes: ['story', 'bug', 'task', 'epic', 'subtask'] },
+  { id: 'reporter', name: 'Reporter', type: 'user', isCustom: false, applicableIssueTypes: ['story', 'bug', 'task', 'epic', 'subtask'] },
+  { id: 'priority', name: 'Priority', type: 'select', isCustom: false, applicableIssueTypes: ['story', 'bug', 'task', 'epic', 'subtask'] },
+  { id: 'duedate', name: 'Due Date', type: 'date', isCustom: false, applicableIssueTypes: ['story', 'bug', 'task', 'epic'] },
+  { id: 'labels', name: 'Labels', type: 'multi-select', isCustom: false, applicableIssueTypes: ['story', 'bug', 'task', 'epic', 'subtask'] },
+  { id: 'components', name: 'Components', type: 'multi-select', isCustom: false, applicableIssueTypes: ['story', 'bug', 'task', 'epic'] },
+  { id: 'fixVersions', name: 'Fix Version', type: 'select', isCustom: false, applicableIssueTypes: ['story', 'bug', 'task'] },
+  { id: 'description', name: 'Description', type: 'text', isCustom: false, applicableIssueTypes: ['story', 'bug', 'task', 'epic', 'subtask'] },
+  // Custom fields
+  { id: 'customfield_10001', name: 'Acceptance Criteria', type: 'text', isCustom: true, applicableIssueTypes: ['story', 'bug'] },
+  { id: 'customfield_10002', name: 'Story Points', type: 'number', isCustom: true, applicableIssueTypes: ['story', 'bug', 'task'] },
+  { id: 'customfield_10003', name: 'Epic Link', type: 'link', isCustom: true, applicableIssueTypes: ['story', 'bug', 'task'] },
+  { id: 'customfield_10004', name: 'Sprint', type: 'select', isCustom: true, applicableIssueTypes: ['story', 'bug', 'task', 'subtask'] },
+  { id: 'customfield_10015', name: 'Target Date', type: 'date', isCustom: true, applicableIssueTypes: ['epic'] },
+  { id: 'customfield_10017', name: 'Business Priority', type: 'select', isCustom: true, applicableIssueTypes: ['story', 'epic'] },
+  { id: 'customfield_10019', name: 'Release', type: 'select', isCustom: true, applicableIssueTypes: ['story', 'bug'] },
+  { id: 'customfield_10020', name: 'T-Shirt Size', type: 'select', isCustom: true, applicableIssueTypes: ['story', 'epic'] },
+  { id: 'customfield_10021', name: 'Business Value', type: 'number', isCustom: true, applicableIssueTypes: ['story', 'epic'] },
+  { id: 'customfield_10022', name: 'Environment', type: 'select', isCustom: true, applicableIssueTypes: ['bug'] },
+  { id: 'customfield_10023', name: 'Steps to Reproduce', type: 'text', isCustom: true, applicableIssueTypes: ['bug'] },
+];
+
+/** Simulates teams having different custom fields available */
+export const MOCK_FIELD_AVAILABILITY_BY_TEAM: Record<string, string[]> = {
+  platform: [
+    'assignee', 'reporter', 'priority', 'duedate', 'labels', 'components', 'fixVersions', 'description',
+    'customfield_10001', 'customfield_10002', 'customfield_10003', 'customfield_10004',
+    'customfield_10017', 'customfield_10020', 'customfield_10021',
+  ],
+  mobile: [
+    'assignee', 'reporter', 'priority', 'duedate', 'labels', 'components', 'fixVersions', 'description',
+    'customfield_10001', 'customfield_10002', 'customfield_10003', 'customfield_10004',
+    'customfield_10019', 'customfield_10022', 'customfield_10023',
+  ],
+  api: [
+    'assignee', 'reporter', 'priority', 'duedate', 'labels', 'components', 'description',
+    'customfield_10002', 'customfield_10003', 'customfield_10004',
+  ],
+  frontend: [
+    'assignee', 'reporter', 'priority', 'duedate', 'labels', 'components', 'fixVersions', 'description',
+    'customfield_10001', 'customfield_10002', 'customfield_10003', 'customfield_10004',
+    'customfield_10015', 'customfield_10020',
+  ],
+  data: [
+    'assignee', 'reporter', 'priority', 'duedate', 'labels', 'description',
+    'customfield_10002', 'customfield_10004', 'customfield_10017',
+  ],
+  devops: [
+    'assignee', 'reporter', 'priority', 'duedate', 'labels', 'components', 'description',
+    'customfield_10003', 'customfield_10004', 'customfield_10022',
+  ],
+};
+
+// ============================================
 // Comparison Criteria Labels
 // ============================================
 

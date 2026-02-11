@@ -13,27 +13,13 @@ interface WizardLayoutProps {
   onExit?: () => void;
   teamName: string;
   children: React.ReactNode;
-  isMultiTeam?: boolean;
   stepLabels?: string[]; // Optional custom step labels (for dynamic steps)
 }
 
 const defaultStepLabels = [
   'Basics',
-  'Team Profile',  // Renamed from 'Comparisons'
   'Issue Types',
-  'Sprint Cadence',
-  'Stale Thresholds',
-  'Report Options',
-  'Review',
-];
-
-const multiTeamStepLabels = [
-  'Scope Selection',
-  'Team Review',
-  'Configuration',
-  'Issue Types',
-  'Sprint Cadence',
-  'Report Options',
+  'Field Selection',
   'Review',
 ];
 
@@ -48,18 +34,14 @@ const WizardLayout: React.FC<WizardLayoutProps> = ({
   onExit,
   teamName,
   children,
-  isMultiTeam = false,
   stepLabels,
 }) => {
-  // For single-team, step 0 is welcome screen. For multi-team, step 0 is actual first step.
-  const isWelcome = !isMultiTeam && currentStep === 0;
-  const displayStep = isMultiTeam ? currentStep + 1 : currentStep; // 1-based for display
-  const isLastStep = isMultiTeam ? currentStep === totalSteps : displayStep === totalSteps;
-  const maxSteps = isMultiTeam ? totalSteps + 1 : totalSteps;
-  const progress = isWelcome ? 0 : ((displayStep - 1) / (maxSteps - 1)) * 100;
-  // Use custom stepLabels if provided, otherwise use defaults
-  const labels = isMultiTeam ? multiTeamStepLabels : (stepLabels || defaultStepLabels);
-  const headerTitle = isMultiTeam ? 'Portfolio Health Assessment' : 'Team Health Assessment';
+  const isWelcome = currentStep === 0;
+  const displayStep = currentStep; // 1-based for display
+  const isLastStep = displayStep === totalSteps;
+  const progress = isWelcome ? 0 : ((displayStep - 1) / (totalSteps - 1)) * 100;
+  const labels = stepLabels || defaultStepLabels;
+  const headerTitle = 'TicketReady Assessment';
 
   return (
     <div style={styles.container}>
@@ -115,10 +97,9 @@ const WizardLayout: React.FC<WizardLayoutProps> = ({
                   const isCurrent = stepNum === displayStep;
                   const isUpcoming = stepNum > displayStep;
                   const isClickable = stepNum <= displayStep;
-                  // For multi-team, step change needs to map back to 0-based index
                   const handleStepClick = () => {
                     if (isClickable) {
-                      onStepChange(isMultiTeam ? index : stepNum);
+                      onStepChange(stepNum);
                     }
                   };
 

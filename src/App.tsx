@@ -3,41 +3,23 @@ import {
   WizardState,
   initialWizardState,
   Step1Data,
-  Step2Data,
   Step3Data,
-  Step4Data,
-  Step5Data,
-  Step6Data,
+  FieldSelectionData,
   getSelectedIssueTypes,
-  MultiTeamWizardState,
-  MultiTeamStep1Data,
-  ScopeSelection,
-  ConfigurationStrategy,
-  initialMultiTeamStep1Data,
-  initialScopeSelection,
-  initialStep3Data,
-  initialStep4Data,
-  initialStep5Data,
-  initialStep6Data,
 } from './types/wizard';
-import {
-  MultiTeamAssessmentResult,
-} from './types/multiTeamAssessment';
 import { AssessmentResult, IndicatorDrillDownState } from './types/assessment';
 import { OutcomeAreaId } from './types/outcomeConfidence';
 import { PersonaType, AppView as PersonaAppView } from './types/persona';
-import { SavedAssessment, ShareRecord, SavedMultiTeamAssessment, AnySavedAssessment, isMultiTeamAssessment } from './types/home';
+import { SavedAssessment, ShareRecord } from './types/home';
 import { AdminState, AdminSection, OrganizationDefaults, ManagedUser, UserGroup, TeamAttributeConfig, OrgStructureSettings, AccessRequest, GroupAccessRule, UserGroupAccessRule } from './types/admin';
 import { SetupType, isAllSetupComplete } from './types/adminSetup';
 import { SavedReport, generateShareToken } from './types/reports';
 import { generateMockAssessmentResultWithDim3 } from './constants/mockAssessmentData';
-import { generateMultiTeamAssessmentResult } from './utils/portfolioAggregation';
 import { initializeMockHistory } from './utils/historicalDataStorage';
 import {
   CURRENT_USER,
   MOCK_MY_ASSESSMENTS,
   MOCK_SHARED_WITH_ME,
-  MOCK_MY_PORTFOLIO_ASSESSMENTS,
 } from './constants/mockHomeData';
 import { INITIAL_ADMIN_STATE } from './constants/mockAdminData';
 import { PersonaProvider } from './components/persona';
@@ -50,11 +32,8 @@ import { CreatorHome, ViewerHome, ShareModal } from './components/home';
 import { AdminHome } from './components/admin';
 import Step0Welcome from './components/pages/Step0Welcome';
 import Step1Basics from './components/pages/Step1Basics';
-import Step2Comparison from './components/pages/Step2Comparison';
 import Step4IssueTypes from './components/pages/Step4IssueTypes';
-import Step6SprintCadence from './components/pages/Step6SprintCadence';
-import Step8StaleThresholds from './components/pages/Step8StaleThresholds';
-import Step6ReportOptions from './components/pages/Step6ReportOptions';
+import StepFieldSelection from './components/pages/StepFieldSelection';
 import Step7Review from './components/pages/Step7Review';
 import { IndicatorDrillDownPage } from './components/assessment/drilldown';
 import OutcomeDetailPage from './components/assessment/ExecutiveSummary/OutcomeDetailPage';
@@ -65,8 +44,6 @@ import TeamAttributesWizard from './components/admin/wizards/TeamAttributesWizar
 import UnifiedSetupWizard from './components/admin/wizards/UnifiedSetupWizard';
 import SetupRequiredScreen from './components/SetupRequiredScreen';
 import SetupCompleteScreen from './components/SetupCompleteScreen';
-import { Step1ScopeSelection, Step2TeamReview, Step3ConfigStrategy } from './components/pages/multiTeam';
-import { PortfolioDashboard } from './components/assessment/portfolio';
 import { ImprovementPlanWizardPage, PlanDetailPage } from './components/plans';
 import { ImprovementPlan, PlayStatus } from './types/improvementPlan';
 import { savePlanToStorage, loadPlanFromStorage, updatePlayStatus } from './utils/improvementPlanUtils';
@@ -76,9 +53,7 @@ type AppView =
   | 'viewer-home'
   | 'admin-home'
   | 'wizard'
-  | 'multi-team-wizard'
   | 'assessment-results'
-  | 'portfolio-results'
   | 'edit-settings'
   | 'indicator-drilldown'
   | 'outcome-detail'
@@ -105,73 +80,31 @@ const getInitialAppView = (): AppView => {
   return 'creator-home'; // Default for creator
 };
 
-// Initial multi-team wizard state
-const initialMultiTeamWizardState: MultiTeamWizardState = {
-  currentStep: 0,
-  step1: initialMultiTeamStep1Data,
-  excludedTeams: [],
-  configurationStrategy: 'uniform',
-  sharedSettings: {
-    step3: initialStep3Data,
-    step4: initialStep4Data,
-    step5: initialStep5Data,
-  },
-  teamOverrides: [],
-  step6: initialStep6Data,
-};
-
-// Step configuration for dynamic wizard steps
+// Step configuration for the wizard (4 fixed steps)
 export interface WizardStepConfig {
   id: string;
   label: string;
-  type: 'basics' | 'teamProfile' | 'issueTypes' | 'sprintCadence' | 'staleThresholds' | 'reportOptions' | 'review';
+  type: 'basics' | 'issueTypes' | 'fieldSelection' | 'review';
 }
 
-// Compute which wizard steps should be visible based on admin configuration
-const getVisibleSteps = (defaults: OrganizationDefaults): WizardStepConfig[] => {
-  const steps: WizardStepConfig[] = [
-    { id: 'basics', label: 'Basics', type: 'basics' },
-    { id: 'teamProfile', label: 'Team Profile', type: 'teamProfile' },
-  ];
-
-  // Only show Issue Types step if admin set it to 'team-decides'
-  if (defaults.issueTypes.mode === 'team-decides') {
-    steps.push({ id: 'issueTypes', label: 'Issue Types', type: 'issueTypes' });
-  }
-
-  // Only show Sprint Cadence step if admin set it to 'team-decides'
-  if (defaults.sprintCadence.mode === 'team-decides') {
-    steps.push({ id: 'sprintCadence', label: 'Sprint Cadence', type: 'sprintCadence' });
-  }
-
-  // Only show Stale Thresholds step if admin set it to 'team-decides'
-  if (defaults.staleThresholds.mode === 'team-decides') {
-    steps.push({ id: 'staleThresholds', label: 'Stale Thresholds', type: 'staleThresholds' });
-  }
-
-  // Always show Report Options and Review
-  steps.push({ id: 'reportOptions', label: 'Report Options', type: 'reportOptions' });
-  steps.push({ id: 'review', label: 'Review', type: 'review' });
-
-  return steps;
-};
+const getVisibleSteps = (): WizardStepConfig[] => [
+  { id: 'basics', label: 'Basics', type: 'basics' },
+  { id: 'issueTypes', label: 'Issue Types', type: 'issueTypes' },
+  { id: 'fieldSelection', label: 'Field Selection', type: 'fieldSelection' },
+  { id: 'review', label: 'Review', type: 'review' },
+];
 
 const App: React.FC = () => {
   const [wizardState, setWizardState] = useState<WizardState>(initialWizardState);
   const [appView, setAppView] = useState<AppView>(getInitialAppView);
   const [assessmentResult, setAssessmentResult] = useState<AssessmentResult | null>(null);
 
-  // Multi-team state
-  const [multiTeamWizardState, setMultiTeamWizardState] = useState<MultiTeamWizardState>(initialMultiTeamWizardState);
-  const [multiTeamResult, setMultiTeamResult] = useState<MultiTeamAssessmentResult | null>(null);
-
   // Home page state
   const [myAssessments, setMyAssessments] = useState<SavedAssessment[]>(MOCK_MY_ASSESSMENTS);
-  const [myMultiTeamAssessments, setMyMultiTeamAssessments] = useState<SavedMultiTeamAssessment[]>(MOCK_MY_PORTFOLIO_ASSESSMENTS);
   const [sharedWithMe] = useState<SavedAssessment[]>(MOCK_SHARED_WITH_ME);
   const [currentAssessmentId, setCurrentAssessmentId] = useState<string | null>(null);
   const [shareModalAssessment, setShareModalAssessment] = useState<SavedAssessment | null>(null);
-  const [homeActiveTab, setHomeActiveTab] = useState<'my' | 'shared' | 'portfolio'>('my');
+  const [homeActiveTab, setHomeActiveTab] = useState<'my' | 'shared'>('my');
 
   // Drill-down state
   const [drillDownState, setDrillDownState] = useState<IndicatorDrillDownState | null>(null);
@@ -197,10 +130,10 @@ const App: React.FC = () => {
   // Admin wizard state for tracking initial step when resuming
   const [adminWizardInitialStep, setAdminWizardInitialStep] = useState(0);
 
-  // Compute visible wizard steps based on admin config
+  // Compute visible wizard steps (fixed 4-step flow)
   const visibleSteps = useMemo(() => {
-    return getVisibleSteps(adminState.organizationDefaults);
-  }, [adminState.organizationDefaults]);
+    return getVisibleSteps();
+  }, []);
 
   // Access requests handler - create a new access request
   const handleRequestCreatorAccess = (reason: string) => {
@@ -351,79 +284,11 @@ const App: React.FC = () => {
     }));
   };
 
-  // Multi-team wizard navigation - 7 steps (0-6)
-  const handleMultiTeamNext = () => {
-    setMultiTeamWizardState((prev) => ({
-      ...prev,
-      currentStep: Math.min(prev.currentStep + 1, 6),
-    }));
-  };
-
-  const handleMultiTeamBack = () => {
-    setMultiTeamWizardState((prev) => ({
-      ...prev,
-      currentStep: Math.max(prev.currentStep - 1, 0),
-    }));
-  };
-
-  const handleMultiTeamStepChange = (step: number) => {
-    setMultiTeamWizardState((prev) => ({
-      ...prev,
-      currentStep: step,
-    }));
-  };
-
-  // Multi-team step data update handlers
-  const updateMultiTeamStep1Data = (data: Partial<MultiTeamStep1Data>) => {
-    setMultiTeamWizardState((prev) => ({
-      ...prev,
-      step1: { ...prev.step1, ...data },
-    }));
-  };
-
-  const updateMultiTeamScope = (scope: Partial<ScopeSelection>) => {
-    setMultiTeamWizardState((prev) => ({
-      ...prev,
-      step1: {
-        ...prev.step1,
-        scope: { ...prev.step1.scope, ...scope },
-      },
-    }));
-  };
-
-  const updateConfigurationStrategy = (strategy: ConfigurationStrategy) => {
-    setMultiTeamWizardState((prev) => ({
-      ...prev,
-      configurationStrategy: strategy,
-    }));
-  };
-
-  const updateMultiTeamSharedSettings = (settings: Partial<MultiTeamWizardState['sharedSettings']>) => {
-    setMultiTeamWizardState((prev) => ({
-      ...prev,
-      sharedSettings: { ...prev.sharedSettings, ...settings },
-    }));
-  };
-
-  const updateMultiTeamStep6Data = (data: Partial<Step6Data>) => {
-    setMultiTeamWizardState((prev) => ({
-      ...prev,
-      step6: { ...prev.step6, ...data },
-    }));
-  };
-
   // Step data update handlers
   const updateStep1Data = (data: Partial<Step1Data>) => {
     setWizardState((prev) => ({
       ...prev,
       step1: { ...prev.step1, ...data },
-    }));
-  };
-
-  const updateStep2Data = (data: Partial<Step2Data>) => {
-    setWizardState((prev) => ({
-      ...prev,
-      step2: { ...prev.step2, ...data },
     }));
   };
 
@@ -434,24 +299,10 @@ const App: React.FC = () => {
     }));
   };
 
-  const updateStep4Data = (data: Partial<Step4Data>) => {
+  const updateFieldSelectionData = (data: Partial<FieldSelectionData>) => {
     setWizardState((prev) => ({
       ...prev,
-      step4: { ...prev.step4, ...data },
-    }));
-  };
-
-  const updateStep5Data = (data: Partial<Step5Data>) => {
-    setWizardState((prev) => ({
-      ...prev,
-      step5: { ...prev.step5, ...data },
-    }));
-  };
-
-  const updateStep6Data = (data: Partial<Step6Data>) => {
-    setWizardState((prev) => ({
-      ...prev,
-      step6: { ...prev.step6, ...data },
+      fieldSelection: { ...prev.fieldSelection, ...data },
     }));
   };
 
@@ -466,72 +317,6 @@ const App: React.FC = () => {
     setAppView('assessment-results');
   };
 
-  // Handle multi-team wizard completion
-  const handleMultiTeamFinish = () => {
-    // Generate results for each team then aggregate
-    const teamResults = multiTeamWizardState.step1.scope.resolvedTeamIds.map((teamId, index) => {
-      // Create a wizard state for this team
-      const teamWizardState: WizardState = {
-        ...wizardState,
-        step1: {
-          ...wizardState.step1,
-          teamId,
-          teamName: `Team ${index + 1}`,
-        },
-        step3: multiTeamWizardState.sharedSettings.step3,
-        step4: multiTeamWizardState.sharedSettings.step4,
-        step5: multiTeamWizardState.sharedSettings.step5,
-      };
-      return generateMockAssessmentResultWithDim3(teamWizardState);
-    });
-
-    const result = generateMultiTeamAssessmentResult(
-      `portfolio-${Date.now()}`, // id
-      multiTeamWizardState.step1.displayName || 'Portfolio Assessment', // name
-      multiTeamWizardState.step1.scope, // scope
-      teamResults, // teamResults
-      {
-        startDate: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        endDate: new Date().toISOString().split('T')[0],
-      }, // dateRange
-      multiTeamWizardState.configurationStrategy, // configurationStrategy
-      {
-        step3: multiTeamWizardState.sharedSettings.step3,
-        step4: multiTeamWizardState.sharedSettings.step4,
-        step5: multiTeamWizardState.sharedSettings.step5,
-        step6: multiTeamWizardState.step6,
-      } // sharedSettings
-    );
-    setMultiTeamResult(result);
-    setAppView('portfolio-results');
-  };
-
-  // Portfolio dashboard navigation handlers
-  const handleTeamDrillDown = (teamId: string) => {
-    // Find the team result and show individual assessment
-    if (multiTeamResult) {
-      const teamRollup = multiTeamResult.teamResults.find(t => t.teamId === teamId);
-      if (teamRollup) {
-        setAssessmentResult(teamRollup.assessmentResult);
-        setAppView('assessment-results');
-      }
-    }
-  };
-
-  const handleDimensionDrillDown = (dimensionKey: string) => {
-    // For now, just log - could navigate to dimension cross-team view
-    console.log('Dimension drill-down:', dimensionKey);
-  };
-
-  const handleBackFromPortfolio = () => {
-    // Go back to appropriate home based on current persona
-    const storedPersona = localStorage.getItem('invisible-work-persona');
-    if (storedPersona === 'admin') {
-      setAppView('admin-home');
-    } else {
-      setAppView('creator-home');
-    }
-  };
 
   const handleBackToSetup = () => {
     setAppView('wizard');
@@ -652,26 +437,6 @@ const App: React.FC = () => {
     setAssessmentResult(null);
     setCurrentAssessmentId(null);
     setAppView('wizard');
-  };
-
-  // Multi-team assessment handlers
-  const handleCreateMultiTeamAssessment = () => {
-    // Reset multi-team wizard state for new assessment
-    setMultiTeamWizardState(initialMultiTeamWizardState);
-    setMultiTeamResult(null);
-    setCurrentAssessmentId(null);
-    setAppView('multi-team-wizard');
-  };
-
-  const handleViewMultiTeamAssessment = (assessment: SavedMultiTeamAssessment) => {
-    setCurrentAssessmentId(assessment.id);
-    setMultiTeamWizardState(assessment.wizardStateSnapshot);
-    if (assessment.result) {
-      setMultiTeamResult(assessment.result);
-      setAppView('portfolio-results');
-    } else {
-      setAppView('multi-team-wizard');
-    }
   };
 
   const handleViewAssessment = (assessment: SavedAssessment) => {
@@ -1015,7 +780,6 @@ const App: React.FC = () => {
     setAppView('creator-home');
   };
 
-  // Get selected issue types for stale thresholds step
   const selectedIssueTypes = getSelectedIssueTypes(wizardState.step3);
 
   const renderCurrentStep = () => {
@@ -1036,17 +800,6 @@ const App: React.FC = () => {
     switch (currentStepConfig.type) {
       case 'basics':
         return <Step1Basics data={wizardState.step1} onUpdate={updateStep1Data} />;
-      case 'teamProfile':
-        return (
-          <Step2Comparison
-            data={wizardState.step2}
-            onUpdate={updateStep2Data}
-            teamCategorization={adminState.teamAttributes}
-            currentTeamId={wizardState.step1.teamId}
-            orgStructureSettings={adminState.orgStructureSettings}
-            organizationDefaults={adminState.organizationDefaults}
-          />
-        );
       case 'issueTypes':
         return (
           <Step4IssueTypes
@@ -1054,23 +807,21 @@ const App: React.FC = () => {
             onUpdate={updateStep3Data}
           />
         );
-      case 'sprintCadence':
-        return <Step6SprintCadence data={wizardState.step4} onUpdate={updateStep4Data} />;
-      case 'staleThresholds':
+      case 'fieldSelection':
         return (
-          <Step8StaleThresholds
-            data={{ staleThresholds: wizardState.step5.staleThresholds }}
+          <StepFieldSelection
+            data={wizardState.fieldSelection}
+            onUpdate={updateFieldSelectionData}
             selectedIssueTypes={selectedIssueTypes}
-            onUpdate={(data) => updateStep5Data({ staleThresholds: data.staleThresholds })}
+            selectedTeamIds={wizardState.step1.teamIds}
+            selectedTeamNames={wizardState.step1.teamNames}
           />
         );
-      case 'reportOptions':
-        return <Step6ReportOptions data={wizardState.step6} onUpdate={updateStep6Data} />;
       case 'review':
         return (
           <Step7Review
             wizardState={wizardState}
-            organizationDefaults={adminState.organizationDefaults}
+            onStepChange={handleStepChange}
           />
         );
       default:
@@ -1176,13 +927,10 @@ const App: React.FC = () => {
             currentUser={CURRENT_USER}
             myAssessments={myAssessments}
             sharedWithMe={sharedWithMe}
-            myMultiTeamAssessments={myMultiTeamAssessments}
             activeTab={homeActiveTab}
             onTabChange={setHomeActiveTab}
             onCreateAssessment={handleCreateAssessment}
-            onCreateMultiTeamAssessment={handleCreateMultiTeamAssessment}
             onViewAssessment={handleViewAssessment}
-            onViewMultiTeamAssessment={handleViewMultiTeamAssessment}
             onEditAssessment={handleEditAssessment}
             onShareAssessment={handleShareAssessment}
             onDeleteAssessment={handleDeleteAssessment}
@@ -1428,94 +1176,6 @@ const App: React.FC = () => {
             />
           )}
         </>
-      );
-    }
-
-    // Portfolio results view
-    if (appView === 'portfolio-results' && multiTeamResult) {
-      return (
-        <PortfolioDashboard
-          result={multiTeamResult}
-          onTeamClick={handleTeamDrillDown}
-          onDimensionClick={handleDimensionDrillDown}
-          onBack={handleBackFromPortfolio}
-        />
-      );
-    }
-
-    // Multi-team wizard view
-    if (appView === 'multi-team-wizard') {
-      const renderMultiTeamStep = () => {
-        switch (multiTeamWizardState.currentStep) {
-          case 0:
-            return (
-              <Step1ScopeSelection
-                data={multiTeamWizardState.step1}
-                onUpdate={updateMultiTeamStep1Data}
-                teamAttributes={adminState.teamAttributes}
-              />
-            );
-          case 1:
-            return (
-              <Step2TeamReview
-                scope={multiTeamWizardState.step1.scope}
-                teamAttributes={adminState.teamAttributes}
-                onUpdateExclusions={(exclusions) =>
-                  setMultiTeamWizardState((prev) => ({ ...prev, excludedTeams: exclusions }))
-                }
-                excludedTeams={multiTeamWizardState.excludedTeams}
-              />
-            );
-          case 2:
-            return (
-              <Step3ConfigStrategy
-                strategy={multiTeamWizardState.configurationStrategy}
-                onUpdate={updateConfigurationStrategy}
-                teamCount={multiTeamWizardState.step1.scope.resolvedTeamIds.length}
-              />
-            );
-          case 3:
-            return (
-              <Step4IssueTypes
-                data={multiTeamWizardState.sharedSettings.step3}
-                onUpdate={(data) => updateMultiTeamSharedSettings({ step3: { ...multiTeamWizardState.sharedSettings.step3, ...data } })}
-              />
-            );
-          case 4:
-            return (
-              <Step6SprintCadence
-                data={multiTeamWizardState.sharedSettings.step4}
-                onUpdate={(data) => updateMultiTeamSharedSettings({ step4: { ...multiTeamWizardState.sharedSettings.step4, ...data } })}
-              />
-            );
-          case 5:
-            return (
-              <Step6ReportOptions
-                data={multiTeamWizardState.step6}
-                onUpdate={updateMultiTeamStep6Data}
-              />
-            );
-          case 6:
-            return <Step7Review wizardState={wizardState} isMultiTeam multiTeamState={multiTeamWizardState} />;
-          default:
-            return null;
-        }
-      };
-
-      return (
-        <WizardLayout
-          currentStep={multiTeamWizardState.currentStep}
-          totalSteps={6}
-          onNext={handleMultiTeamNext}
-          onBack={handleMultiTeamBack}
-          onStepChange={handleMultiTeamStepChange}
-          onFinish={handleMultiTeamFinish}
-          onSaveDraft={handleSaveDraft}
-          teamName={multiTeamWizardState.step1.displayName || 'Portfolio Assessment'}
-          isMultiTeam
-        >
-          {renderMultiTeamStep()}
-        </WizardLayout>
       );
     }
 

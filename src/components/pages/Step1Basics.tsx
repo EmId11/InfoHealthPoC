@@ -1,8 +1,8 @@
-import React from 'react';
-import Select, { components, OptionProps, SingleValueProps } from '@atlaskit/select';
+import React, { useState, useRef, useEffect } from 'react';
+import Select from '@atlaskit/select';
 import { DatePicker } from '@atlaskit/datetime-picker';
 import Textfield from '@atlaskit/textfield';
-import { Step1Data, DataGrouping, DateRangePresetId, SettingsChoice } from '../../types/wizard';
+import { Step1Data, DataGrouping, DateRangePresetId } from '../../types/wizard';
 import { mockTeams, dateRangePresets, TeamOption } from '../../constants/presets';
 import { generateDefaultAssessmentName } from '../../types/home';
 import StepHeader from '../shared/StepHeader';
@@ -24,89 +24,64 @@ const datePresetOptions = dateRangePresets.map((p) => ({
   value: p.id as DateRangePresetId,
 }));
 
-// Custom option component to show onboarding status
-const TeamOptionComponent = (props: OptionProps<TeamOption, false>) => {
-  const { data } = props;
-  return (
-    <components.Option {...props}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span>{data.label}</span>
-        {data.isOnboarded ? (
-          <span style={badgeStyles.configured}>Configured</span>
-        ) : (
-          <span style={badgeStyles.new}>New</span>
-        )}
-      </div>
-    </components.Option>
-  );
-};
-
-// Custom single value component to show selected team with badge
-const TeamSingleValue = (props: SingleValueProps<TeamOption, false>) => {
-  const { data } = props;
-  return (
-    <components.SingleValue {...props}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <span>{data.label}</span>
-        {data.isOnboarded ? (
-          <span style={badgeStyles.configuredSmall}>Configured</span>
-        ) : (
-          <span style={badgeStyles.newSmall}>New</span>
-        )}
-      </div>
-    </components.SingleValue>
-  );
-};
-
-const badgeStyles: { [key: string]: React.CSSProperties } = {
-  configured: {
-    padding: '2px 8px',
-    backgroundColor: '#E3FCEF',
-    color: '#006644',
-    fontSize: '11px',
-    fontWeight: 500,
-    borderRadius: '10px',
-  },
-  new: {
-    padding: '2px 8px',
-    backgroundColor: '#DEEBFF',
-    color: '#0747A6',
-    fontSize: '11px',
-    fontWeight: 500,
-    borderRadius: '10px',
-  },
-  configuredSmall: {
-    padding: '1px 6px',
-    backgroundColor: '#E3FCEF',
-    color: '#006644',
-    fontSize: '10px',
-    fontWeight: 500,
-    borderRadius: '8px',
-  },
-  newSmall: {
-    padding: '1px 6px',
-    backgroundColor: '#DEEBFF',
-    color: '#0747A6',
-    fontSize: '10px',
-    fontWeight: 500,
-    borderRadius: '8px',
-  },
-};
-
 const Step1Basics: React.FC<Step1Props> = ({ data, onUpdate }) => {
-  const handleTeamChange = (option: TeamOption | null) => {
-    if (option) {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsSearchFocused(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const filteredTeams = mockTeams.filter(
+    (t) =>
+      !data.teamIds.includes(t.value) &&
+      t.label.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const handleAddTeam = (team: TeamOption) => {
+    const newTeamIds = [...data.teamIds, team.value];
+    const newTeamNames = [...data.teamNames, team.label];
+    onUpdate({
+      teamId: newTeamIds[0],
+      teamName: newTeamNames.join(', '),
+      teamIds: newTeamIds,
+      teamNames: newTeamNames,
+      assessmentName: data.assessmentName || generateDefaultAssessmentName(newTeamNames[0]),
+      isTeamOnboarded: mockTeams.find(t => t.value === newTeamIds[0])?.isOnboarded || false,
+      settingsChoice: null,
+    });
+    setSearchQuery('');
+    searchRef.current?.focus();
+  };
+
+  const handleRemoveTeam = (teamValue: string) => {
+    const newTeamIds = data.teamIds.filter(id => id !== teamValue);
+    const newTeamNames = data.teamNames.filter((_, i) => data.teamIds[i] !== teamValue);
+
+    if (newTeamIds.length > 0) {
       onUpdate({
-        teamId: option.value,
-        teamName: option.label,
-        assessmentName: data.assessmentName || generateDefaultAssessmentName(option.label),
-        isTeamOnboarded: option.isOnboarded,
-        settingsChoice: option.isOnboarded ? null : null, // Reset choice when team changes
+        teamId: newTeamIds[0],
+        teamName: newTeamNames.join(', '),
+        teamIds: newTeamIds,
+        teamNames: newTeamNames,
+        isTeamOnboarded: mockTeams.find(t => t.value === newTeamIds[0])?.isOnboarded || false,
+        settingsChoice: null,
       });
     } else {
       onUpdate({
         teamId: null,
         teamName: '',
+        teamIds: [],
+        teamNames: [],
         assessmentName: '',
         isTeamOnboarded: false,
         settingsChoice: null,
@@ -116,10 +91,6 @@ const Step1Basics: React.FC<Step1Props> = ({ data, onUpdate }) => {
 
   const handleAssessmentNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     onUpdate({ assessmentName: event.target.value });
-  };
-
-  const handleSettingsChoice = (choice: SettingsChoice) => {
-    onUpdate({ settingsChoice: choice });
   };
 
   const handleDatePresetChange = (
@@ -151,28 +122,25 @@ const Step1Basics: React.FC<Step1Props> = ({ data, onUpdate }) => {
     });
   };
 
-  const selectedTeam = mockTeams.find((t) => t.value === data.teamId) || null;
+  const selectedTeams = data.teamIds.length > 0
+    ? mockTeams.filter((t) => data.teamIds.includes(t.value))
+    : [];
   const selectedDatePreset = datePresetOptions.find(
     (p) => p.value === data.dateRangePreset
   );
 
-  const formatLastSetupDate = (dateStr: string | undefined) => {
-    if (!dateStr) return '';
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
-  };
+  const showDropdown = isSearchFocused && (filteredTeams.length > 0 || searchQuery.length > 0);
 
   return (
     <div style={styles.container}>
       <StepHeader
         icon={StepIcons.team()}
         title="Basic Details"
-        description="Select your team and the time period to analyse."
-        tourId={1}
+        description="Select the teams whose Jira data you want to assess."
         infoContent={
           <>
-            <p>Start by selecting your team and the time period for analysis.</p>
-            <p><strong>Team Selection:</strong> Choose the Jira board or project that represents your team's work. Teams marked as "Configured" have been assessed before and may have saved settings.</p>
+            <p>Start by selecting your teams and the time period for analysis.</p>
+            <p><strong>Team Selection:</strong> Search for and add the Jira boards or projects you want to assess. You can add multiple teams.</p>
             <p><strong>Date Range:</strong> Select how far back to analyze. Longer periods provide more data but may include outdated patterns. We recommend 3-6 months for most teams.</p>
             <p><strong>Data Grouping:</strong> Choose how to break down the analysis (weekly, fortnightly, or monthly) based on your sprint cadence.</p>
           </>
@@ -182,116 +150,81 @@ const Step1Basics: React.FC<Step1Props> = ({ data, onUpdate }) => {
       <div style={styles.form}>
         {/* Team Selection */}
         <div style={styles.field} data-tour="team-select">
-          <label style={styles.label}>Team</label>
+          <label style={styles.label}>Teams</label>
           <p style={styles.fieldDescription}>
-            Select the team whose Jira data you want to assess.
+            Search for teams to add. You can assess multiple teams together.
           </p>
-          <Select
-            inputId="team-select"
-            options={mockTeams}
-            value={selectedTeam}
-            onChange={handleTeamChange}
-            placeholder="Select a team..."
-            isClearable
-            components={{
-              Option: TeamOptionComponent,
-              SingleValue: TeamSingleValue,
-            }}
-          />
-        </div>
 
-        {/* Team Status Message */}
-        {selectedTeam && (
-          <div style={styles.teamStatusSection}>
-            {selectedTeam.isOnboarded ? (
-              <>
-                <div style={styles.onboardedBox}>
-                  <div style={styles.onboardedHeader}>
-                    <span style={styles.onboardedIcon}>✓</span>
-                    <span style={styles.onboardedTitle}>Team previously configured</span>
-                  </div>
-                  <p style={styles.onboardedText}>
-                    {selectedTeam.label} was last set up on {formatLastSetupDate(selectedTeam.setupInfo?.setupDate)}.
-                    You can use the previous settings or start fresh with a new configuration.
-                  </p>
-                </div>
+          {/* Selected team chips */}
+          {selectedTeams.length > 0 && (
+            <div style={styles.chipContainer}>
+              {selectedTeams.map((team) => (
+                <span key={team.value} style={styles.chip}>
+                  {team.label}
+                  <button
+                    style={styles.chipRemove}
+                    onClick={() => handleRemoveTeam(team.value)}
+                    aria-label={`Remove ${team.label}`}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                      <path d="M4 4l6 6M10 4l-6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                    </svg>
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
 
-                <div style={styles.settingsChoice}>
-                  <label style={styles.choiceLabel}>How would you like to proceed?</label>
-                  <div style={styles.choiceButtons}>
+          {/* Search input */}
+          <div style={styles.searchContainer} ref={containerRef}>
+            <div style={{
+              ...styles.searchInputWrapper,
+              ...(isSearchFocused ? styles.searchInputWrapperFocused : {}),
+            }}>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={styles.searchIcon}>
+                <circle cx="6.5" cy="6.5" r="5" stroke="#6B778C" strokeWidth="1.5"/>
+                <path d="M10.5 10.5L14 14" stroke="#6B778C" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+              <input
+                ref={searchRef}
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => setIsSearchFocused(true)}
+                placeholder={selectedTeams.length > 0 ? 'Add another team...' : 'Search for a team...'}
+                style={styles.searchInput}
+              />
+            </div>
+
+            {showDropdown && (
+              <div style={styles.searchDropdown}>
+                {filteredTeams.length > 0 ? (
+                  filteredTeams.map((team) => (
                     <button
-                      type="button"
-                      onClick={() => handleSettingsChoice('usePrevious')}
-                      style={{
-                        ...styles.choiceButton,
-                        ...(data.settingsChoice === 'usePrevious' ? styles.choiceButtonSelected : {}),
-                      }}
+                      key={team.value}
+                      style={styles.searchResult}
+                      onClick={() => handleAddTeam(team)}
+                      onMouseDown={(e) => e.preventDefault()}
                     >
-                      <span style={styles.choiceButtonTitle}>Use previous settings</span>
-                      <span style={styles.choiceButtonDesc}>
-                        Quick set-up using your existing configuration
-                      </span>
-                      <span style={styles.timeEstimate}>~1 min</span>
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <circle cx="8" cy="6" r="3" stroke="#6B778C" strokeWidth="1.25"/>
+                        <path d="M3 13.5c0-2.5 2.2-4.5 5-4.5s5 2 5 4.5" stroke="#6B778C" strokeWidth="1.25" strokeLinecap="round"/>
+                      </svg>
+                      <span>{team.label}</span>
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => handleSettingsChoice('startFresh')}
-                      style={{
-                        ...styles.choiceButton,
-                        ...(data.settingsChoice === 'startFresh' ? styles.choiceButtonSelected : {}),
-                      }}
-                    >
-                      <span style={styles.choiceButtonTitle}>Start fresh</span>
-                      <span style={styles.choiceButtonDesc}>
-                        Configure all settings from scratch
-                      </span>
-                      <span style={styles.timeEstimate}>~3 min</span>
-                    </button>
-                  </div>
-                </div>
-
-                {data.settingsChoice === 'usePrevious' && selectedTeam.setupInfo && (
-                  <div style={styles.setupDetailsBox}>
-                    <div style={styles.setupDetailsHeader}>Previous setup details</div>
-                    <div style={styles.setupDetailsGrid}>
-                      <div style={styles.setupDetailItem}>
-                        <span style={styles.setupDetailLabel}>Set up by</span>
-                        <span style={styles.setupDetailValue}>
-                          {selectedTeam.setupInfo.setupByName}
-                          {selectedTeam.setupInfo.setupByIsAdmin && (
-                            <span style={styles.adminBadge}>Admin</span>
-                          )}
-                        </span>
-                      </div>
-                      <div style={styles.setupDetailItem}>
-                        <span style={styles.setupDetailLabel}>Date</span>
-                        <span style={styles.setupDetailValue}>
-                          {formatLastSetupDate(selectedTeam.setupInfo.setupDate)}
-                        </span>
-                      </div>
-                    </div>
+                  ))
+                ) : (
+                  <div style={styles.noResults}>
+                    No teams matching "{searchQuery}"
                   </div>
                 )}
-              </>
-            ) : (
-              <div style={styles.newTeamBox}>
-                <div style={styles.newTeamHeader}>
-                  <span style={styles.newTeamIcon}>★</span>
-                  <span style={styles.newTeamTitle}>First-time set-up</span>
-                </div>
-                <p style={styles.newTeamText}>
-                  This is the first health assessment for {selectedTeam.label}. We'll guide you
-                  through configuring your Jira setup and team practices. This takes about
-                  2-3 minutes and only needs to be done once — future assessments will
-                  remember your settings.
-                </p>
               </div>
             )}
           </div>
-        )}
+        </div>
 
-        {/* Assessment Name - only show if team selected and (not onboarded OR has made a choice) */}
-        {selectedTeam && (!selectedTeam.isOnboarded || data.settingsChoice) && (
+        {/* Assessment Name - only show if team selected */}
+        {selectedTeams.length > 0 && (
           <div style={styles.field}>
             <label style={styles.label}>Assessment Name</label>
             <p style={styles.fieldDescription}>
@@ -305,8 +238,8 @@ const Step1Basics: React.FC<Step1Props> = ({ data, onUpdate }) => {
           </div>
         )}
 
-        {/* Date Range - only show if team selected and (not onboarded OR has made a choice) */}
-        {selectedTeam && (!selectedTeam.isOnboarded || data.settingsChoice) && (
+        {/* Date Range - only show if team selected */}
+        {selectedTeams.length > 0 && (
           <>
             <div style={styles.field} data-tour="date-range">
               <label style={styles.label}>Analysis period</label>
@@ -377,18 +310,6 @@ const styles: { [key: string]: React.CSSProperties } = {
   container: {
     maxWidth: '560px',
   },
-  title: {
-    margin: '0 0 8px 0',
-    fontSize: '20px',
-    fontWeight: 600,
-    color: '#172B4D',
-  },
-  description: {
-    margin: '0 0 32px 0',
-    fontSize: '14px',
-    color: '#5E6C84',
-    lineHeight: 1.5,
-  },
   form: {
     display: 'flex',
     flexDirection: 'column',
@@ -410,172 +331,100 @@ const styles: { [key: string]: React.CSSProperties } = {
     color: '#6B778C',
     lineHeight: 1.4,
   },
-  teamStatusSection: {
+  chipContainer: {
     display: 'flex',
-    flexDirection: 'column',
-    gap: '16px',
+    flexWrap: 'wrap',
+    gap: '6px',
   },
-  onboardedBox: {
-    padding: '16px',
-    backgroundColor: '#E3FCEF',
-    borderRadius: '8px',
-    border: '1px solid #ABF5D1',
+  chip: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '6px',
+    padding: '4px 8px 4px 12px',
+    backgroundColor: '#DEEBFF',
+    color: '#0747A6',
+    borderRadius: '16px',
+    fontSize: '13px',
+    fontWeight: 500,
   },
-  onboardedHeader: {
+  chipRemove: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '20px',
+    height: '20px',
+    padding: 0,
+    backgroundColor: 'transparent',
+    border: 'none',
+    borderRadius: '50%',
+    cursor: 'pointer',
+    color: '#0747A6',
+    transition: 'background-color 0.1s',
+  },
+  searchContainer: {
+    position: 'relative',
+  },
+  searchInputWrapper: {
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
-    marginBottom: '8px',
-  },
-  onboardedIcon: {
-    width: '20px',
-    height: '20px',
-    borderRadius: '50%',
-    backgroundColor: '#006644',
-    color: '#FFFFFF',
-    fontSize: '12px',
-    fontWeight: 600,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  onboardedTitle: {
-    fontSize: '14px',
-    fontWeight: 600,
-    color: '#006644',
-  },
-  onboardedText: {
-    margin: 0,
-    fontSize: '13px',
-    color: '#172B4D',
-    lineHeight: 1.5,
-  },
-  settingsChoice: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px',
-  },
-  choiceLabel: {
-    fontSize: '14px',
-    fontWeight: 600,
-    color: '#172B4D',
-  },
-  choiceButtons: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: '12px',
-  },
-  choiceButton: {
-    padding: '16px',
+    padding: '8px 12px',
     border: '2px solid #DFE1E6',
     borderRadius: '8px',
+    backgroundColor: '#FAFBFC',
+    transition: 'border-color 0.15s, background-color 0.15s',
+  },
+  searchInputWrapperFocused: {
+    borderColor: '#0052CC',
     backgroundColor: '#FFFFFF',
+  },
+  searchIcon: {
+    flexShrink: 0,
+  },
+  searchInput: {
+    flex: 1,
+    border: 'none',
+    outline: 'none',
+    backgroundColor: 'transparent',
+    fontSize: '14px',
+    color: '#172B4D',
+    fontFamily: 'inherit',
+  },
+  searchDropdown: {
+    position: 'absolute',
+    top: 'calc(100% + 4px)',
+    left: 0,
+    right: 0,
+    backgroundColor: '#FFFFFF',
+    border: '1px solid #DFE1E6',
+    borderRadius: '8px',
+    boxShadow: '0 4px 16px rgba(9, 30, 66, 0.15)',
+    zIndex: 100,
+    maxHeight: '200px',
+    overflowY: 'auto',
+    padding: '4px 0',
+  },
+  searchResult: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    width: '100%',
+    padding: '10px 14px',
+    backgroundColor: 'transparent',
+    border: 'none',
+    fontSize: '14px',
+    fontWeight: 500,
+    color: '#172B4D',
     cursor: 'pointer',
     textAlign: 'left',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '4px',
-    transition: 'all 0.15s ease',
+    fontFamily: 'inherit',
+    transition: 'background-color 0.1s',
   },
-  choiceButtonSelected: {
-    border: '2px solid #0052CC',
-    backgroundColor: '#F4F5F7',
-  },
-  choiceButtonTitle: {
-    fontSize: '14px',
-    fontWeight: 600,
-    color: '#172B4D',
-  },
-  choiceButtonDesc: {
-    fontSize: '12px',
-    color: '#6B778C',
-    lineHeight: 1.4,
-  },
-  timeEstimate: {
-    marginTop: '8px',
-    fontSize: '11px',
-    fontWeight: 500,
-    color: '#0052CC',
-  },
-  setupDetailsBox: {
-    padding: '16px',
-    backgroundColor: '#F4F5F7',
-    borderRadius: '8px',
-    border: '1px solid #DFE1E6',
-  },
-  setupDetailsHeader: {
-    fontSize: '12px',
-    fontWeight: 600,
-    color: '#5E6C84',
-    textTransform: 'uppercase',
-    letterSpacing: '0.02em',
-    marginBottom: '12px',
-  },
-  setupDetailsGrid: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: '12px',
-  },
-  setupDetailItem: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '2px',
-  },
-  setupDetailLabel: {
-    fontSize: '12px',
-    color: '#6B778C',
-  },
-  setupDetailValue: {
-    fontSize: '14px',
-    fontWeight: 500,
-    color: '#172B4D',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-  },
-  adminBadge: {
-    padding: '2px 6px',
-    backgroundColor: '#E3FCEF',
-    color: '#006644',
-    fontSize: '10px',
-    fontWeight: 600,
-    borderRadius: '8px',
-    textTransform: 'uppercase',
-  },
-  newTeamBox: {
-    padding: '16px',
-    backgroundColor: '#DEEBFF',
-    borderRadius: '8px',
-    border: '1px solid #B3D4FF',
-  },
-  newTeamHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    marginBottom: '8px',
-  },
-  newTeamIcon: {
-    width: '20px',
-    height: '20px',
-    borderRadius: '50%',
-    backgroundColor: '#0052CC',
-    color: '#FFFFFF',
-    fontSize: '10px',
-    fontWeight: 600,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  newTeamTitle: {
-    fontSize: '14px',
-    fontWeight: 600,
-    color: '#0747A6',
-  },
-  newTeamText: {
-    margin: 0,
+  noResults: {
+    padding: '12px 14px',
     fontSize: '13px',
-    color: '#172B4D',
-    lineHeight: 1.5,
+    color: '#6B778C',
+    fontStyle: 'italic',
   },
   datePickerRow: {
     display: 'flex',

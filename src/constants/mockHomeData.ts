@@ -1,11 +1,8 @@
 // Mock data for Home Pages - Users, Saved Assessments, Team Settings
 
-import { AppUser, SavedAssessment, TeamSettingsVersion, SavedMultiTeamAssessment } from '../types/home';
-import { initialStep2Data, initialStep3Data, initialStep4Data, initialStep5Data, initialStep6Data, initialWizardState, MultiTeamWizardState, initialMultiTeamStep1Data } from '../types/wizard';
-import { MultiTeamAssessmentResult } from '../types/multiTeamAssessment';
-import { generateMultiTeamAssessmentResult } from '../utils/portfolioAggregation';
+import { AppUser, SavedAssessment, TeamSettingsVersion } from '../types/home';
+import { initialWizardState } from '../types/wizard';
 import {
-  generateMockAssessmentResultWithDim3,
   generateHighPerformingTeamAssessment,
   generateSolidTeamAssessment,
   generateAverageTeamAssessment,
@@ -319,13 +316,6 @@ export const MOCK_TEAM_SETTINGS: TeamSettingsVersion[] = [
     teamId: 'team-1',
     teamName: 'Platform Team',
     createdAt: '2024-12-15T10:30:00Z',
-    settings: {
-      step2: initialStep2Data,
-      step3: initialStep3Data,
-      step4: initialStep4Data,
-      step5: initialStep5Data,
-      step6: initialStep6Data,
-    },
     sourceAssessmentId: 'assessment-1',
   },
   {
@@ -333,16 +323,6 @@ export const MOCK_TEAM_SETTINGS: TeamSettingsVersion[] = [
     teamId: 'team-2',
     teamName: 'Mobile Squad',
     createdAt: '2024-11-20T14:15:00Z',
-    settings: {
-      step2: initialStep2Data,
-      step3: initialStep3Data,
-      step4: {
-        ...initialStep4Data,
-        sprintCadence: 'weekly',
-      },
-      step5: initialStep5Data,
-      step6: initialStep6Data,
-    },
     sourceAssessmentId: 'assessment-2',
   },
 ];
@@ -412,166 +392,3 @@ export const formatDisplayDate = (dateString: string): string => {
   });
 };
 
-// ============================================
-// Mock Multi-Team (Portfolio) Assessments
-// ============================================
-
-// Generate portfolio result using existing team results
-const portfolioTeamResults = [
-  alphaSquadResult,       // High performer - 88th percentile
-  platformCoreResult,     // Solid - 72nd percentile
-  featureTeamBResult,     // Average - 52nd percentile
-  growthSquadResult,      // Mixed results
-  phoenixTeamResult,      // Improving - 35th percentile
-  legacyCrewResult,       // Declining - 68th percentile
-];
-
-export const MOCK_PORTFOLIO_RESULT: MultiTeamAssessmentResult = generateMultiTeamAssessmentResult(
-  'portfolio-1',
-  'Platform Infrastructure Portfolio',
-  {
-    scopeType: 'portfolio',
-    portfolioValueId: 'portfolio-platform',
-    resolvedTeamIds: ['team-alpha', 'team-platform', 'team-feature', 'team-growth', 'team-phoenix', 'team-legacy'],
-    resolvedTeamCount: 6,
-  },
-  portfolioTeamResults,
-  { startDate: '2024-10-01', endDate: '2025-01-05' },
-  'uniform',
-  {
-    step3: initialStep3Data,
-    step4: initialStep4Data,
-    step5: initialStep5Data,
-    step6: initialStep6Data,
-  }
-);
-
-// Second portfolio - smaller team of teams
-const totTeamResults = [
-  alphaSquadResult,
-  platformCoreResult,
-  featureTeamBResult,
-];
-
-export const MOCK_TOT_RESULT: MultiTeamAssessmentResult = generateMultiTeamAssessmentResult(
-  'portfolio-2',
-  'Mobile Tribe Assessment',
-  {
-    scopeType: 'team-of-teams',
-    teamOfTeamsValueId: 'tot-mobile',
-    resolvedTeamIds: ['team-alpha', 'team-platform', 'team-feature'],
-    resolvedTeamCount: 3,
-  },
-  totTeamResults,
-  { startDate: '2024-11-01', endDate: '2025-01-05' },
-  'uniform',
-  {
-    step3: initialStep3Data,
-    step4: initialStep4Data,
-    step5: initialStep5Data,
-    step6: initialStep6Data,
-  }
-);
-
-// Helper to create a MultiTeamWizardState snapshot
-const createMultiTeamWizardSnapshot = (
-  displayName: string,
-  scopeType: 'portfolio' | 'team-of-teams' | 'custom-selection',
-  resolvedTeamIds: string[],
-  portfolioValueId?: string,
-  teamOfTeamsValueId?: string
-): MultiTeamWizardState => ({
-  currentStep: 6, // Completed
-  step1: {
-    ...initialMultiTeamStep1Data,
-    isMultiTeam: true,
-    displayName,
-    scope: {
-      scopeType,
-      portfolioValueId,
-      teamOfTeamsValueId,
-      resolvedTeamIds,
-      resolvedTeamCount: resolvedTeamIds.length,
-    },
-  },
-  excludedTeams: [],
-  configurationStrategy: 'uniform',
-  sharedSettings: {
-    step3: initialStep3Data,
-    step4: initialStep4Data,
-    step5: initialStep5Data,
-  },
-  teamOverrides: [],
-  step6: initialStep6Data,
-});
-
-export const MOCK_MY_PORTFOLIO_ASSESSMENTS: SavedMultiTeamAssessment[] = [
-  {
-    id: 'portfolio-assessment-1',
-    name: 'Platform Infrastructure Portfolio',
-    createdAt: '2025-01-02T09:00:00Z',
-    lastRefreshed: '2025-01-05T14:30:00Z',
-    createdByUserId: 'user-1',
-    createdByUserName: 'Rachel Garcia',
-    dateRange: { startDate: '2024-10-01', endDate: '2025-01-05' },
-    status: 'completed',
-    isMultiTeam: true,
-    scope: {
-      scopeType: 'portfolio',
-      portfolioValueId: 'portfolio-platform',
-      resolvedTeamIds: ['team-alpha', 'team-platform', 'team-feature', 'team-growth', 'team-phoenix', 'team-legacy'],
-      resolvedTeamCount: 6,
-    },
-    scopeType: 'portfolio',
-    teamCount: 6,
-    teamNames: ['Alpha Squad', 'Platform Core', 'Feature Team B', 'Growth Squad', 'Phoenix Team', 'Legacy Crew'],
-    result: MOCK_PORTFOLIO_RESULT,
-    wizardStateSnapshot: createMultiTeamWizardSnapshot(
-      'Platform Infrastructure Portfolio',
-      'portfolio',
-      ['team-alpha', 'team-platform', 'team-feature', 'team-growth', 'team-phoenix', 'team-legacy'],
-      'portfolio-platform'
-    ),
-    shares: [],
-  },
-  {
-    id: 'portfolio-assessment-2',
-    name: 'Mobile Tribe Assessment',
-    createdAt: '2024-12-15T11:00:00Z',
-    lastRefreshed: '2025-01-03T16:00:00Z',
-    createdByUserId: 'user-1',
-    createdByUserName: 'Rachel Garcia',
-    dateRange: { startDate: '2024-11-01', endDate: '2025-01-05' },
-    status: 'completed',
-    isMultiTeam: true,
-    scope: {
-      scopeType: 'team-of-teams',
-      teamOfTeamsValueId: 'tot-mobile',
-      resolvedTeamIds: ['team-alpha', 'team-platform', 'team-feature'],
-      resolvedTeamCount: 3,
-    },
-    scopeType: 'team-of-teams',
-    teamCount: 3,
-    teamNames: ['Alpha Squad', 'Platform Core', 'Feature Team B'],
-    result: MOCK_TOT_RESULT,
-    wizardStateSnapshot: createMultiTeamWizardSnapshot(
-      'Mobile Tribe Assessment',
-      'team-of-teams',
-      ['team-alpha', 'team-platform', 'team-feature'],
-      undefined,
-      'tot-mobile'
-    ),
-    shares: [
-      {
-        id: 'share-portfolio-1',
-        sharedWithUserId: 'user-3',
-        sharedWithUserName: 'Tom Anderson',
-        sharedWithUserEmail: 'tom.anderson@company.com',
-        permission: 'read-only',
-        sharedAt: '2024-12-16T10:00:00Z',
-        sharedByUserId: 'user-1',
-        sharedByUserName: 'Rachel Garcia',
-      },
-    ],
-  },
-];

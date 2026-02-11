@@ -37,7 +37,6 @@ const Step4IssueTypes: React.FC<Step4Props> = ({ data, onUpdate }) => {
         icon={StepIcons.issueTypes()}
         title="Issue Types"
         description="Select which Jira issue types to include in the analysis."
-        tourId={3}
         infoContent={
           <>
             <p>Choose which Jira issue types to include in the health assessment.</p>

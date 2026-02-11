@@ -32,6 +32,8 @@ export type SettingsChoice = 'usePrevious' | 'startFresh' | null;
 export interface Step1Data {
   teamId: string | null;
   teamName: string;
+  teamIds: string[];
+  teamNames: string[];
   assessmentName: string;
   isTeamOnboarded: boolean;
   settingsChoice: SettingsChoice;
@@ -154,16 +156,42 @@ export interface Step6Data {
 }
 
 // ============================================
+// Field Selection (for TicketReady)
+// ============================================
+export type FieldApplicability = 'all' | string[]; // 'all' teams or specific team IDs
+
+export interface FieldSelection {
+  fieldId: string;
+  fieldName: string;
+  fieldType: string;
+  isCustom: boolean;
+  enabled: boolean;
+  teamApplicability: FieldApplicability;
+}
+
+export interface IssueTypeFieldConfig {
+  issueTypeKey: IssueTypeKey;
+  fields: FieldSelection[];
+}
+
+export interface FieldSelectionData {
+  configs: IssueTypeFieldConfig[];
+  isPerTeamCustomisation: boolean;
+  perTeamConfigs: Record<string, IssueTypeFieldConfig[]>;
+}
+
+// ============================================
 // Full Wizard State
 // ============================================
 export interface WizardState {
-  currentStep: number; // 0 = welcome, 1-7 = actual steps
+  currentStep: number; // 0 = welcome, 1-4 = actual steps
   step1: Step1Data;
   step2: Step2Data;
   step3: Step3Data;
   step4: Step4Data;
   step5: Step5Data;
   step6: Step6Data;
+  fieldSelection: FieldSelectionData;
 }
 
 // ============================================
@@ -174,6 +202,8 @@ const defaultRange = dateRangePresets[0].getRange();
 export const initialStep1Data: Step1Data = {
   teamId: null,
   teamName: '',
+  teamIds: [],
+  teamNames: [],
   assessmentName: '',
   isTeamOnboarded: false,
   settingsChoice: null,
@@ -247,6 +277,12 @@ export const initialStep6Data: Step6Data = {
   selectedMemberIds: [],
 };
 
+export const initialFieldSelectionData: FieldSelectionData = {
+  configs: [],
+  isPerTeamCustomisation: false,
+  perTeamConfigs: {},
+};
+
 export const initialWizardState: WizardState = {
   currentStep: 0,
   step1: initialStep1Data,
@@ -255,6 +291,7 @@ export const initialWizardState: WizardState = {
   step4: initialStep4Data,
   step5: initialStep5Data,
   step6: initialStep6Data,
+  fieldSelection: initialFieldSelectionData,
 };
 
 // ============================================
