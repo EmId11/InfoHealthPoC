@@ -6,6 +6,7 @@ import type {
   MaturityLevelName,
 } from './maturity';
 import type { OutcomeConfidenceSummary } from './outcomeConfidence';
+import type { AssessmentLensResults } from './patterns';
 
 // Re-export maturity types for convenience
 export type { MaturityLevel, MaturityLevelName };
@@ -205,6 +206,8 @@ export interface AssessmentResult {
   comparisonCriteria: string[];     // Human-readable criteria list
   comparisonGroupDescription: string;
   dimensions: DimensionResult[];
+  /** Four-lens data trust assessment results (coverage + 3 pattern lenses) */
+  lensResults?: AssessmentLensResults;
 }
 
 // ============================================

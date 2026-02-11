@@ -1,14 +1,19 @@
 import React, { useMemo, useState } from 'react';
 import { HealthScoreResult, TrendDirection } from '../../../types/assessment';
+import { AssessmentLensResults, LensType } from '../../../types/patterns';
 import { getCHSCategoryConfig, CHS_CATEGORIES, getCeilingGuidance } from '../../../constants/chsCategories';
 import { calculatePrecision } from '../../../utils/precisionIndicator';
 import HeroInfoButton from '../../common/HeroInfoButton';
 import CalculationButton from '../../common/CalculationButton';
 import { ASSESSMENT_EXPLANATION } from '../../../constants/pageExplanations';
+import LensCardsRow from '../patterns/LensCardsRow';
 
 interface HealthScoreHeroProps {
   healthScore: HealthScoreResult;
   overallTrend: TrendDirection;
+  lensResults?: AssessmentLensResults;
+  activeLens?: LensType;
+  onLensClick?: (lens: LensType) => void;
 }
 
 interface TooltipState {
@@ -37,6 +42,9 @@ const generateComparisonTeams = (teamCount: number = 47): number[] => {
 const HealthScoreHero: React.FC<HealthScoreHeroProps> = ({
   healthScore,
   overallTrend,
+  lensResults,
+  activeLens,
+  onLensClick,
 }) => {
   // Tooltip state
   const [tooltip, setTooltip] = useState<TooltipState>({
@@ -144,8 +152,8 @@ const HealthScoreHero: React.FC<HealthScoreHeroProps> = ({
         <div style={styles.heroContent}>
           <h1 style={styles.question}>Can you trust your Jira data?</h1>
           <p style={styles.description}>
-            This score reflects your team's Jira health across all dimensions,
-            enabling confident planning, forecasting, and decision-making.
+            This assessment examines your Jira data through four lenses — coverage, integrity, timing, and behaviour —
+            to determine whether it can be trusted for planning, forecasting, and decision-making.
           </p>
 
           {/* Redesigned Hero Metrics Card */}
@@ -431,6 +439,17 @@ const HealthScoreHero: React.FC<HealthScoreHeroProps> = ({
             );
           })()}
 
+          {/* Four-Lens Cards Row */}
+          {lensResults && (
+            <div style={styles.lensCardsWrapper}>
+              <LensCardsRow
+                lensResults={lensResults}
+                activeLens={activeLens}
+                onLensClick={onLensClick}
+              />
+            </div>
+          )}
+
         </div>
       </div>
 
@@ -613,6 +632,12 @@ const styles: Record<string, React.CSSProperties> = {
     maxWidth: '600px',
     marginLeft: 'auto',
     marginRight: 'auto',
+  },
+
+  // Lens Cards Row
+  lensCardsWrapper: {
+    marginTop: '24px',
+    width: '100%',
   },
 
   // Redesigned Hero Card - 2 columns

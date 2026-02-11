@@ -367,7 +367,7 @@ const StepFieldSelection: React.FC<StepFieldSelectionProps> = ({
         description="Choose which Jira fields to measure for each issue type."
         infoContent={
           <>
-            <p>Select the Jira fields you want to measure for completeness.</p>
+            <p>Select the Jira fields you want to include in the data trust assessment.</p>
             <p><strong>Matrix view:</strong> Rows are fields, columns are issue types. Check individual cells, or click the row checkbox to toggle a field across all issue types.</p>
             <p><strong>"--"</strong> means a field doesn't apply to that issue type.</p>
             <p><strong>Standard fields</strong> are built-in Jira fields. <strong>Custom fields</strong> are fields your organisation has added.</p>

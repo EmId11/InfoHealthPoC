@@ -167,7 +167,7 @@ const JiraStandardsStep5FieldHealth: React.FC<JiraStandardsStep5FieldHealthProps
           <div style={styles.fieldsSection}>
             <h3 style={styles.fieldsSectionTitle}>Standard Fields</h3>
             <p style={styles.fieldsSectionDesc}>
-              Select the Jira fields to include in field completeness assessments.
+              Select the Jira fields to include in data trust assessments.
             </p>
             <div style={styles.fieldGrid}>
               {currentValue.standardFields.map((field) => (
@@ -306,7 +306,7 @@ const JiraStandardsStep5FieldHealth: React.FC<JiraStandardsStep5FieldHealthProps
             <p style={styles.teamDecidesTitle}>Teams will configure their own field health checks</p>
             <p style={styles.teamDecidesDesc}>
               During assessment setup, each team will select which fields to include in their
-              field completeness analysis. This is recommended when teams have different
+              data trust analysis. This is recommended when teams have different
               documentation requirements.
             </p>
           </div>

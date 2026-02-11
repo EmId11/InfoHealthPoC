@@ -15,6 +15,7 @@ import { AdminState, AdminSection, OrganizationDefaults, ManagedUser, UserGroup,
 import { SetupType, isAllSetupComplete } from './types/adminSetup';
 import { SavedReport, generateShareToken } from './types/reports';
 import { generateMockAssessmentResultWithDim3 } from './constants/mockAssessmentData';
+import { generateMockPatternResults } from './constants/mockPatternData';
 import { initializeMockHistory } from './utils/historicalDataStorage';
 import {
   CURRENT_USER,
@@ -444,8 +445,14 @@ const App: React.FC = () => {
     setWizardState(assessment.wizardStateSnapshot);
 
     if (assessment.result) {
-      // Has existing results - show them
-      setAssessmentResult(assessment.result as AssessmentResult);
+      // Has existing results - show them (backfill lensResults if missing)
+      const result = assessment.result as AssessmentResult;
+      if (!result.lensResults) {
+        const trDim = result.dimensions?.[1];
+        const coverageScore = trDim ? (trDim.healthScore ?? Math.round(trDim.overallPercentile)) : 60;
+        result.lensResults = generateMockPatternResults(coverageScore);
+      }
+      setAssessmentResult(result);
       setAppView('assessment-results');
     } else if (assessment.status === 'completed') {
       // Completed but no cached result - generate mock results for demo

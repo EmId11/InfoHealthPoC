@@ -34,9 +34,15 @@ import { PersonaSwitcher } from '../persona';
 import { getDimensionDescription } from '../../constants/clusterDescriptions';
 import { getOutcomesForDimension } from '../../constants/outcomeDefinitions';
 import { getDimensionIcon, getOutcomeIcon } from '../../constants/dimensionIcons';
+import { LensType } from '../../types/patterns';
+import LensCardsRow from './patterns/LensCardsRow';
+import PatternLensDetailView from './patterns/PatternLensDetailView';
 
 // Top-level tabs
 type TopLevelTab = 'assessment-results' | 'improvement-plan' | 'reports';
+
+// Lens sub-tabs within assessment results
+type LensSubTab = 'coverage' | 'integrity' | 'timing' | 'behavioral';
 
 interface AssessmentResultsLayoutProps {
   assessmentResult: AssessmentResult;
@@ -100,6 +106,9 @@ const AssessmentResultsLayout: React.FC<AssessmentResultsLayoutProps> = ({
 
   // Top-level tab state
   const [activeTab, setActiveTab] = useState<TopLevelTab>('assessment-results');
+
+  // Lens sub-tab state within assessment results
+  const [lensSubTab, setLensSubTab] = useState<LensSubTab>('coverage');
 
   // Ticket Readiness is always dimension index 1
   const TICKET_READINESS_INDEX = 1;
@@ -328,7 +337,7 @@ const AssessmentResultsLayout: React.FC<AssessmentResultsLayoutProps> = ({
               <ArrowLeftIcon label="Back" primaryColor="white" size="medium" />
             </button>
             <h1 style={styles.title}>
-              Jira Health Assessment
+              Data Trust Assessment
               {assessmentResult.teamName && (
                 <span style={styles.teamNameInline}> — {assessmentResult.teamName}</span>
               )}
@@ -450,9 +459,46 @@ const AssessmentResultsLayout: React.FC<AssessmentResultsLayoutProps> = ({
           </div>
 
           {/* ═══════════════════════════════════════════════════════════════════
-              ASSESSMENT RESULTS TAB - Ticket Readiness Dimension Detail
+              ASSESSMENT RESULTS TAB - Four-Lens Data Trust View
           ═══════════════════════════════════════════════════════════════════ */}
-          {activeTab === 'assessment-results' && assessmentResult.dimensions[TICKET_READINESS_INDEX] && (() => {
+          {activeTab === 'assessment-results' && (
+            <>
+              {/* Lens Cards Row */}
+              {assessmentResult.lensResults && (
+                <LensCardsRow
+                  lensResults={assessmentResult.lensResults}
+                  activeLens={lensSubTab as LensType}
+                  onLensClick={(lens) => setLensSubTab(lens as LensSubTab)}
+                />
+              )}
+
+              {/* Lens Sub-Tab Buttons */}
+              {assessmentResult.lensResults && (
+                <div style={styles.lensTabsContainer}>
+                  <div style={styles.lensTabs}>
+                    {([
+                      { key: 'coverage', label: 'Coverage' },
+                      { key: 'integrity', label: 'Data Integrity' },
+                      { key: 'timing', label: 'Timing' },
+                      { key: 'behavioral', label: 'Behavioral' },
+                    ] as const).map(tab => (
+                      <button
+                        key={tab.key}
+                        style={{
+                          ...styles.lensTabButton,
+                          ...(lensSubTab === tab.key ? styles.lensTabButtonActive : {}),
+                        }}
+                        onClick={() => setLensSubTab(tab.key)}
+                      >
+                        {tab.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Coverage Lens — existing Ticket Readiness detail */}
+              {lensSubTab === 'coverage' && assessmentResult.dimensions[TICKET_READINESS_INDEX] && (() => {
                 const dimension = assessmentResult.dimensions[TICKET_READINESS_INDEX];
                 const dimDesc = getDimensionDescription(dimension.dimensionKey);
                 const tier = getIndicatorTier(dimension.healthScore ?? dimension.overallPercentile);
@@ -514,7 +560,7 @@ const AssessmentResultsLayout: React.FC<AssessmentResultsLayoutProps> = ({
                       <div style={styles.heroCenterFlow}>
                         {/* Title row with info button */}
                         <div style={styles.heroTitleRow}>
-                          <span style={styles.heroSubtitle}>Readiness Score</span>
+                          <span style={styles.heroSubtitle}>Health Score</span>
                           <span style={styles.heroInfoInline}>
                             <HeroInfoButton title={`About ${dimension.dimensionName}`}>
                               <div style={styles.infoModalBody}>
@@ -786,6 +832,23 @@ const AssessmentResultsLayout: React.FC<AssessmentResultsLayoutProps> = ({
                 );
               })()}
 
+              {/* Data Integrity Lens */}
+              {lensSubTab === 'integrity' && assessmentResult.lensResults && (
+                <PatternLensDetailView lensResult={assessmentResult.lensResults.integrity} />
+              )}
+
+              {/* Timing Lens */}
+              {lensSubTab === 'timing' && assessmentResult.lensResults && (
+                <PatternLensDetailView lensResult={assessmentResult.lensResults.timing} />
+              )}
+
+              {/* Behavioral Lens */}
+              {lensSubTab === 'behavioral' && assessmentResult.lensResults && (
+                <PatternLensDetailView lensResult={assessmentResult.lensResults.behavioral} />
+              )}
+            </>
+          )}
+
           {/* ═══════════════════════════════════════════════════════════════════
               IMPROVEMENT PLAN TAB
           ═══════════════════════════════════════════════════════════════════ */}
@@ -1046,6 +1109,38 @@ const styles: Record<string, React.CSSProperties> = {
     backgroundColor: '#FFFFFF',
     color: '#172B4D',
     boxShadow: '0 1px 3px rgba(9, 30, 66, 0.12)',
+  },
+  // Lens sub-tab styles
+  lensTabsContainer: {
+    display: 'flex',
+    justifyContent: 'center',
+    marginBottom: '24px',
+  },
+  lensTabs: {
+    display: 'flex',
+    gap: '2px',
+    backgroundColor: '#FFFFFF',
+    borderRadius: '10px',
+    padding: '4px',
+    border: '1px solid #E4E6EB',
+    boxShadow: '0 1px 4px rgba(9, 30, 66, 0.08)',
+  },
+  lensTabButton: {
+    padding: '8px 18px',
+    border: 'none',
+    backgroundColor: 'transparent',
+    borderRadius: '8px',
+    fontSize: '13px',
+    fontWeight: 500,
+    color: '#6B778C',
+    cursor: 'pointer',
+    transition: 'all 0.15s ease',
+    whiteSpace: 'nowrap',
+  } as React.CSSProperties,
+  lensTabButtonActive: {
+    backgroundColor: '#0052CC',
+    color: '#FFFFFF',
+    boxShadow: '0 1px 3px rgba(0, 82, 204, 0.3)',
   },
   fullWidthContent: {
     width: '100%',

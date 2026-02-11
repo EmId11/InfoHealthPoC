@@ -156,7 +156,7 @@ export interface Step6Data {
 }
 
 // ============================================
-// Field Selection (for TicketReady)
+// Field Selection (for PlanReady)
 // ============================================
 export type FieldApplicability = 'all' | string[]; // 'all' teams or specific team IDs
 

@@ -14,14 +14,15 @@ const Step0Welcome: React.FC<Step0Props> = ({ onGetStarted }) => {
           <div style={styles.iconContainer}>
             <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
               <rect x="4" y="4" width="40" height="40" rx="8" fill="#DEEBFF" />
-              <path d="M16 20h16M16 26h10M16 32h13" stroke="#0052CC" strokeWidth="2.5" strokeLinecap="round" />
-              <circle cx="34" cy="32" r="6" fill="#0052CC" />
-              <path d="M32 32l1.5 1.5L36 31" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M14 18h20M14 24h14M14 30h17" stroke="#0052CC" strokeWidth="2.5" strokeLinecap="round" />
+              <circle cx="35" cy="30" r="6" fill="#0052CC" />
+              <path d="M33 30l1.5 1.5L37 29" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </div>
-          <h1 style={styles.title}>Are Your Tickets Ready for Work?</h1>
+          <h1 style={styles.title}>Can You Trust Your Jira Data?</h1>
           <p style={styles.subtitle}>
-            Discover how complete your Jira fields are and find data gaps before they impact delivery.
+            Go beyond field completeness. Assess data integrity, timing, and behavioral patterns
+            that determine whether your Jira data can be trusted for planning and decisions.
           </p>
         </div>
 
@@ -29,7 +30,7 @@ const Step0Welcome: React.FC<Step0Props> = ({ onGetStarted }) => {
         <div style={styles.impactSection}>
           <h2 style={styles.sectionTitle}>Why This Matters</h2>
           <p style={styles.sectionIntro}>
-            Incomplete Jira tickets create blind spots that affect planning and delivery:
+            Untrustworthy Jira data creates blind spots that affect planning and delivery:
           </p>
 
           <div style={styles.impactGrid}>
@@ -41,8 +42,8 @@ const Step0Welcome: React.FC<Step0Props> = ({ onGetStarted }) => {
                 </svg>
               </div>
               <div style={styles.impactContent}>
-                <strong style={styles.impactTitle}>Incomplete Requirements</strong>
-                <span style={styles.impactText}>Missing acceptance criteria and descriptions force developers to guess</span>
+                <strong style={styles.impactTitle}>Incomplete Fields</strong>
+                <span style={styles.impactText}>Missing fields create gaps in reporting and force teams to guess at context</span>
               </div>
             </div>
 
@@ -54,8 +55,21 @@ const Step0Welcome: React.FC<Step0Props> = ({ onGetStarted }) => {
                 </svg>
               </div>
               <div style={styles.impactContent}>
-                <strong style={styles.impactTitle}>Missing Context</strong>
-                <span style={styles.impactText}>Empty priority, components, and labels make triage and reporting unreliable</span>
+                <strong style={styles.impactTitle}>Data That Looks Right But Isn't</strong>
+                <span style={styles.impactText}>Fields filled with defaults, placeholders, or copy-paste content inflate quality metrics</span>
+              </div>
+            </div>
+
+            <div style={styles.impactCard}>
+              <div style={styles.impactIcon}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="9" stroke="#DE350B" strokeWidth="2"/>
+                  <path d="M12 7v5l3 3" stroke="#DE350B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+              <div style={styles.impactContent}>
+                <strong style={styles.impactTitle}>Data That Arrives Too Late</strong>
+                <span style={styles.impactText}>Information added after decisions are made cannot inform those decisions</span>
               </div>
             </div>
 
@@ -67,44 +81,49 @@ const Step0Welcome: React.FC<Step0Props> = ({ onGetStarted }) => {
                 </svg>
               </div>
               <div style={styles.impactContent}>
-                <strong style={styles.impactTitle}>Data Gaps</strong>
-                <span style={styles.impactText}>Inconsistent field usage across teams undermines portfolio-level metrics</span>
+                <strong style={styles.impactTitle}>Patterns That Distort Metrics</strong>
+                <span style={styles.impactText}>Bulk updates, status skipping, and cleanup sprints make velocity and progress unreliable</span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* What We'll Do */}
+        {/* What We'll Do - 4 steps for 4 lenses */}
         <div style={styles.processSection}>
           <h2 style={styles.sectionTitle}>What This Assessment Does</h2>
-          <div style={styles.processSteps}>
-            <div style={styles.processStep}>
+          <div style={styles.processStepsVertical}>
+            <div style={styles.processStepRow}>
               <div style={styles.processNumber}>1</div>
               <div style={styles.processContent}>
-                <strong>Scan Jira fields</strong>
-                <span style={styles.processDesc}>Check which fields are populated across your selected issue types</span>
+                <strong>Check field coverage</strong>
+                <span style={styles.processDesc}>Measure which fields are populated across your selected issue types</span>
               </div>
             </div>
-            <div style={styles.processArrow}>&rarr;</div>
-            <div style={styles.processStep}>
+            <div style={styles.processStepRow}>
               <div style={styles.processNumber}>2</div>
               <div style={styles.processContent}>
-                <strong>Measure completeness</strong>
-                <span style={styles.processDesc}>Calculate a readiness score for each field and issue type</span>
+                <strong>Analyse data integrity</strong>
+                <span style={styles.processDesc}>Detect placeholder content, default values, and clustering that undermine data quality</span>
               </div>
             </div>
-            <div style={styles.processArrow}>&rarr;</div>
-            <div style={styles.processStep}>
+            <div style={styles.processStepRow}>
               <div style={styles.processNumber}>3</div>
               <div style={styles.processContent}>
-                <strong>Provide insights</strong>
-                <span style={styles.processDesc}>Show where data gaps exist and which fields need attention</span>
+                <strong>Audit information timing</strong>
+                <span style={styles.processDesc}>Check whether data was available when decisions were made, not added retroactively</span>
+              </div>
+            </div>
+            <div style={styles.processStepRow}>
+              <div style={styles.processNumber}>4</div>
+              <div style={styles.processContent}>
+                <strong>Detect behavioural patterns</strong>
+                <span style={styles.processDesc}>Identify bulk updates, status skipping, and other patterns that distort your metrics</span>
               </div>
             </div>
           </div>
           <p style={styles.modelNote}>
-            TicketReady analyses your Jira field data to measure how consistently tickets are filled out.
-            Your Readiness Score reflects the completeness of the fields you choose to track.
+            PlanReady analyses your Jira data through four lenses — coverage, integrity, timing, and behaviour —
+            to determine whether your data can be trusted for planning, forecasting, and decision-making.
           </p>
         </div>
 
@@ -228,6 +247,20 @@ const styles: { [key: string]: React.CSSProperties } = {
     padding: '20px',
     backgroundColor: '#F4F5F7',
     borderRadius: '8px',
+  },
+  processStepsVertical: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
+    padding: '20px',
+    backgroundColor: '#F4F5F7',
+    borderRadius: '8px',
+  },
+  processStepRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '14px',
+    textAlign: 'left',
   },
   processStep: {
     flex: 1,

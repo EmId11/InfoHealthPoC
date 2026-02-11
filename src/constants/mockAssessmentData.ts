@@ -25,6 +25,7 @@ import {
 import { WizardState, getEffectiveDateRange, initialWizardState } from '../types/wizard';
 import { MOCK_ATTRIBUTE_VALUES, MOCK_ATTRIBUTES, DEFAULT_FIELD_HEALTH } from './mockAdminData';
 import { FieldHealthConfig, StandardFieldConfig, CustomFieldConfig } from '../types/admin';
+import { generateMockPatternResults } from './mockPatternData';
 
 // ============================================
 // Dynamic Field Completeness Generator
@@ -4798,6 +4799,10 @@ export const generateMockAssessmentResultWithDim3 = (
 ): AssessmentResult => {
   const baseResult = generateMockAssessmentResult(wizardState);
 
+  // Derive coverage score from the Ticket Readiness dimension (dimension 2)
+  const ticketReadinessDim = mockDimension2Result;
+  const coverageScore = ticketReadinessDim ? ticketReadinessDim.healthScore : undefined;
+
   return {
     ...baseResult,
     dimensions: [
@@ -4816,6 +4821,7 @@ export const generateMockAssessmentResultWithDim3 = (
       mockDimension14Result,
       mockDimension16Result,
     ],
+    lensResults: generateMockPatternResults(coverageScore),
   };
 };
 
@@ -5078,6 +5084,12 @@ export function generateScenarioAssessment(
     dimensions.push(transformedDim);
   }
 
+  // Derive coverage score from Ticket Readiness dimension for lens results
+  const ticketReadinessDim = dimensions[1]; // index 1 = Ticket Readiness
+  const scenarioCoverageScore = ticketReadinessDim
+    ? (ticketReadinessDim.healthScore ?? Math.round(ticketReadinessDim.overallPercentile))
+    : scenario.targetPercentile;
+
   return {
     teamId: scenario.teamId,
     teamName: scenario.teamName,
@@ -5089,6 +5101,7 @@ export function generateScenarioAssessment(
     comparisonCriteria: ['Team Size: Medium (6-15 members)', 'Tenure: Established (6-18 months)', 'Process: Scrum'],
     comparisonGroupDescription: 'Comparing against 47 teams (Team Size: Medium, Tenure: Established, Process: Scrum)',
     dimensions,
+    lensResults: generateMockPatternResults(scenarioCoverageScore),
   };
 }
 

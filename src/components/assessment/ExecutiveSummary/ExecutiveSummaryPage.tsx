@@ -1,5 +1,6 @@
 import React, { useMemo, useEffect, useState } from 'react';
 import { AssessmentResult } from '../../../types/assessment';
+import { LensType } from '../../../types/patterns';
 import { ImprovementPlan } from '../../../types/improvementPlan';
 import { OutcomeAreaId } from '../../../types/outcomeConfidence';
 import { calculateExecutiveSummary } from '../../../utils/executiveSummaryUtils';
@@ -8,12 +9,13 @@ import DimensionTableView from '../DimensionTableView';
 import OutcomeConfidenceHero from './OutcomeConfidenceHero';
 import { ImprovementPlanTab } from './ImprovementPlanTab';
 import { AssessmentReportsTab } from './ReportsTab';
+import PatternLensDetailView from '../patterns/PatternLensDetailView';
 
 // Top-level tabs
 type TopLevelTab = 'assessment-results' | 'improvement-plan' | 'reports';
 
-// Sub-view within Assessment Results
-type AssessmentSubView = 'outcomes' | 'dimensions';
+// Sub-view within Assessment Results — now 4 lens tabs
+type AssessmentSubView = 'coverage' | 'integrity' | 'timing' | 'behavioral';
 
 // Inject keyframe animation once
 const ANIMATION_INJECTED_KEY = 'exec-summary-animations-injected';
@@ -57,6 +59,111 @@ interface ExecutiveSummaryPageProps {
   onClearNewlyCreatedPlan?: () => void;
 }
 
+// Helper component for the Coverage tab's inner sub-tabs (By Outcome / All Dimensions)
+const CoverageSubTabs: React.FC<{
+  assessmentResult: AssessmentResult;
+  summaryData: ReturnType<typeof calculateExecutiveSummary>;
+  onOutcomeClick: (outcomeId: OutcomeAreaId) => void;
+  onDimensionClick: (dimensionKey: string) => void;
+}> = ({ assessmentResult, summaryData, onOutcomeClick, onDimensionClick }) => {
+  const [subView, setSubView] = useState<'outcomes' | 'dimensions'>('outcomes');
+
+  return (
+    <>
+      <div style={coverageStyles.toggleContainer}>
+        <div style={coverageStyles.toggle}>
+          <button
+            style={{
+              ...coverageStyles.button,
+              ...(subView === 'outcomes' ? coverageStyles.buttonActive : {}),
+            }}
+            onClick={() => setSubView('outcomes')}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+            </svg>
+            By Outcome
+          </button>
+          <button
+            style={{
+              ...coverageStyles.button,
+              ...(subView === 'dimensions' ? coverageStyles.buttonActive : {}),
+            }}
+            onClick={() => setSubView('dimensions')}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M3 3h18v2H3V3zm0 4h18v2H3V7zm0 4h18v2H3v-2zm0 4h18v2H3v-2zm0 4h18v2H3v-2z" />
+            </svg>
+            All Dimensions
+          </button>
+        </div>
+      </div>
+
+      {subView === 'outcomes' && summaryData.outcomeConfidence && (
+        <OutcomeConfidenceHero
+          confidenceSummary={summaryData.outcomeConfidence}
+          onOutcomeClick={onOutcomeClick}
+          hideHeader={true}
+        />
+      )}
+
+      {subView === 'dimensions' && (
+        <section style={styles.areasSection}>
+          <div style={styles.sectionHeader}>
+            <div style={styles.sectionTitleGroup}>
+              <h2 style={styles.sectionTitle}>All Dimensions</h2>
+              <p style={styles.sectionSubtitle}>
+                Dimensions with outcome impact indicators
+              </p>
+            </div>
+          </div>
+          <div style={styles.areasCard}>
+            <DimensionTableView
+              dimensions={assessmentResult.dimensions}
+              onDimensionClick={onDimensionClick}
+            />
+          </div>
+        </section>
+      )}
+    </>
+  );
+};
+
+const coverageStyles: Record<string, React.CSSProperties> = {
+  toggleContainer: {
+    display: 'flex',
+    justifyContent: 'flex-start',
+    marginBottom: '16px',
+  },
+  toggle: {
+    display: 'inline-flex',
+    gap: '2px',
+    backgroundColor: '#FFFFFF',
+    borderRadius: '6px',
+    padding: '3px',
+    border: '1px solid #DFE1E6',
+  },
+  button: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    padding: '6px 12px',
+    border: 'none',
+    backgroundColor: 'transparent',
+    borderRadius: '4px',
+    fontSize: '13px',
+    fontWeight: 500,
+    color: '#6B778C',
+    cursor: 'pointer',
+    transition: 'all 0.15s ease',
+    fontFamily: 'inherit',
+  },
+  buttonActive: {
+    backgroundColor: '#0052CC',
+    color: '#FFFFFF',
+  },
+};
+
 const ExecutiveSummaryPage: React.FC<ExecutiveSummaryPageProps> = ({
   assessmentResult,
   onThemeClick,
@@ -74,7 +181,7 @@ const ExecutiveSummaryPage: React.FC<ExecutiveSummaryPageProps> = ({
   onClearNewlyCreatedPlan,
 }) => {
   const [activeTab, setActiveTab] = useState<TopLevelTab>('assessment-results');
-  const [assessmentSubView, setAssessmentSubView] = useState<AssessmentSubView>('outcomes');
+  const [assessmentSubView, setAssessmentSubView] = useState<AssessmentSubView>('coverage');
 
   // Handler to open the plan wizard
   const handleCreatePlan = () => {
@@ -164,65 +271,75 @@ const ExecutiveSummaryPage: React.FC<ExecutiveSummaryPageProps> = ({
           <HealthScoreHero
             healthScore={summaryData.healthScore}
             overallTrend={summaryData.overallTrend}
+            lensResults={assessmentResult.lensResults}
+            activeLens={assessmentSubView as LensType}
+            onLensClick={(lens) => setAssessmentSubView(lens as AssessmentSubView)}
           />
 
-          {/* Sub-view Toggle: Outcomes | Dimensions */}
+          {/* Lens Tab Toggle: Coverage | Data Integrity | Timing | Behavioral */}
           <div style={styles.subViewToggleContainer}>
             <div style={styles.subViewToggle}>
               <button
                 style={{
                   ...styles.subViewButton,
-                  ...(assessmentSubView === 'outcomes' ? styles.subViewButtonActive : {}),
+                  ...(assessmentSubView === 'coverage' ? styles.subViewButtonActive : {}),
                 }}
-                onClick={() => setAssessmentSubView('outcomes')}
+                onClick={() => setAssessmentSubView('coverage')}
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-                </svg>
-                By Outcome
+                Coverage
               </button>
               <button
                 style={{
                   ...styles.subViewButton,
-                  ...(assessmentSubView === 'dimensions' ? styles.subViewButtonActive : {}),
+                  ...(assessmentSubView === 'integrity' ? styles.subViewButtonActive : {}),
                 }}
-                onClick={() => setAssessmentSubView('dimensions')}
+                onClick={() => setAssessmentSubView('integrity')}
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M3 3h18v2H3V3zm0 4h18v2H3V7zm0 4h18v2H3v-2zm0 4h18v2H3v-2zm0 4h18v2H3v-2z" />
-                </svg>
-                All Dimensions
+                Data Integrity
+              </button>
+              <button
+                style={{
+                  ...styles.subViewButton,
+                  ...(assessmentSubView === 'timing' ? styles.subViewButtonActive : {}),
+                }}
+                onClick={() => setAssessmentSubView('timing')}
+              >
+                Timing
+              </button>
+              <button
+                style={{
+                  ...styles.subViewButton,
+                  ...(assessmentSubView === 'behavioral' ? styles.subViewButtonActive : {}),
+                }}
+                onClick={() => setAssessmentSubView('behavioral')}
+              >
+                Behavioral
               </button>
             </div>
           </div>
 
-          {/* Outcomes Sub-View */}
-          {assessmentSubView === 'outcomes' && summaryData.outcomeConfidence && (
-            <OutcomeConfidenceHero
-              confidenceSummary={summaryData.outcomeConfidence}
-              onOutcomeClick={onOutcomeClick}
-              hideHeader={true}
-            />
+          {/* Coverage Sub-View — existing outcomes/dimensions content */}
+          {assessmentSubView === 'coverage' && (
+            <>
+              {/* Sub-toggle: Outcomes | Dimensions */}
+              <CoverageSubTabs
+                assessmentResult={assessmentResult}
+                summaryData={summaryData}
+                onOutcomeClick={onOutcomeClick}
+                onDimensionClick={onDimensionClick}
+              />
+            </>
           )}
 
-          {/* Dimensions Sub-View */}
-          {assessmentSubView === 'dimensions' && (
-            <section style={styles.areasSection}>
-              <div style={styles.sectionHeader}>
-                <div style={styles.sectionTitleGroup}>
-                  <h2 style={styles.sectionTitle}>All Dimensions</h2>
-                  <p style={styles.sectionSubtitle}>
-                    Dimensions with outcome impact indicators
-                  </p>
-                </div>
-              </div>
-              <div style={styles.areasCard}>
-                <DimensionTableView
-                  dimensions={assessmentResult.dimensions}
-                  onDimensionClick={onDimensionClick}
-                />
-              </div>
-            </section>
+          {/* Pattern Lens Views */}
+          {assessmentSubView === 'integrity' && assessmentResult.lensResults && (
+            <PatternLensDetailView lensResult={assessmentResult.lensResults.integrity} />
+          )}
+          {assessmentSubView === 'timing' && assessmentResult.lensResults && (
+            <PatternLensDetailView lensResult={assessmentResult.lensResults.timing} />
+          )}
+          {assessmentSubView === 'behavioral' && assessmentResult.lensResults && (
+            <PatternLensDetailView lensResult={assessmentResult.lensResults.behavioral} />
           )}
         </>
       )}

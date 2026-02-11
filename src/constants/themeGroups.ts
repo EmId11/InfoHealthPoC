@@ -15,7 +15,7 @@ export const themeGroups: ThemeGroup[] = [
     id: 'dataQuality',
     name: 'Data Quality & Completeness',
     question: 'Is our Jira data complete and accurate?',
-    description: 'Measures how well your team captures work in Jira, including field completeness, data freshness, and issue hierarchy linkage.',
+    description: 'Measures how well your team captures work in Jira, including field coverage, data integrity, data freshness, and issue hierarchy linkage.',
     dimensionKeys: ['workCaptured', 'ticketReadiness', 'dataFreshness', 'issueTypeConsistency', 'workHierarchy'],
   },
   {

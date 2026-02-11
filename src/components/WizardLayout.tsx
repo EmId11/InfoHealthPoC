@@ -41,7 +41,7 @@ const WizardLayout: React.FC<WizardLayoutProps> = ({
   const isLastStep = displayStep === totalSteps;
   const progress = isWelcome ? 0 : ((displayStep - 1) / (totalSteps - 1)) * 100;
   const labels = stepLabels || defaultStepLabels;
-  const headerTitle = 'TicketReady Assessment';
+  const headerTitle = 'PlanReady Assessment';
 
   return (
     <div style={styles.container}>

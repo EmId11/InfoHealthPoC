@@ -71,7 +71,7 @@ const Step7Review: React.FC<Step7Props> = ({ wizardState, onStepChange }) => {
       <StepHeader
         icon={StepIcons.review()}
         title="Review Your Configuration"
-        description="Review your settings before running the assessment."
+        description="Review your settings before running the data trust assessment."
         infoContent={
           <>
             <p>Review your configuration before starting the assessment.</p>
@@ -112,11 +112,31 @@ const Step7Review: React.FC<Step7Props> = ({ wizardState, onStepChange }) => {
         </table>
       </div>
 
+      {/* Pattern Checks Info */}
+      <div style={styles.patternBox}>
+        <div style={styles.patternHeader}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="#0052CC" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          <strong style={styles.patternTitle}>Data Trust Patterns</strong>
+        </div>
+        <p style={styles.patternText}>
+          In addition to field coverage, 18 data trust patterns will be checked across three lenses:
+        </p>
+        <div style={styles.patternList}>
+          <span style={styles.patternLens}>6 integrity patterns</span>
+          <span style={styles.patternSep}>&middot;</span>
+          <span style={styles.patternLens}>5 timing patterns</span>
+          <span style={styles.patternSep}>&middot;</span>
+          <span style={styles.patternLens}>7 behavioural patterns</span>
+        </div>
+      </div>
+
       {/* Ready message */}
       <div style={styles.readyBox}>
         <h4 style={styles.readyTitle}>Ready to run the assessment</h4>
         <p style={styles.readyText}>
-          Click "Run Assessment" to analyse your Jira data and generate your ticket readiness report.
+          Click "Run Assessment" to analyse your Jira data and generate your data trust report.
         </p>
       </div>
     </div>
@@ -181,6 +201,44 @@ const styles: { [key: string]: React.CSSProperties } = {
     color: '#0052CC',
     cursor: 'pointer',
     transition: 'background-color 0.15s ease',
+  },
+  patternBox: {
+    marginBottom: '16px',
+    padding: '16px 20px',
+    backgroundColor: '#DEEBFF',
+    borderRadius: '8px',
+    border: '1px solid #B3D4FF',
+  },
+  patternHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    marginBottom: '8px',
+  },
+  patternTitle: {
+    fontSize: '14px',
+    fontWeight: 600,
+    color: '#0747A6',
+  },
+  patternText: {
+    margin: '0 0 8px 0',
+    fontSize: '13px',
+    color: '#172B4D',
+    lineHeight: 1.5,
+  },
+  patternList: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    fontSize: '13px',
+    color: '#0747A6',
+    fontWeight: 500,
+  },
+  patternLens: {
+    fontSize: '13px',
+  },
+  patternSep: {
+    color: '#B3BAC5',
   },
   readyBox: {
     marginTop: '8px',
