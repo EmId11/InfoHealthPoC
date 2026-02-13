@@ -1,6 +1,7 @@
 import React from 'react';
 import { AssessmentLensResults, LensType } from '../../../types/patterns';
 import LensCard from './LensCard';
+import { mockIntegrityDimensionResult } from '../../../constants/mockAssessmentData';
 
 interface LensCardsRowProps {
   lensResults: AssessmentLensResults;
@@ -20,6 +21,7 @@ const LensCardsRow: React.FC<LensCardsRowProps> = ({ lensResults, activeLens, on
       <LensCard
         lens="integrity"
         lensResult={lensResults.integrity}
+        integrityScore={mockIntegrityDimensionResult.healthScore}
         isActive={activeLens === 'integrity'}
         onClick={() => onLensClick?.('integrity')}
       />

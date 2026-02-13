@@ -107,6 +107,7 @@ export interface IndicatorCategory {
   status: RiskLevel;        // Overall status of this category
   issuesCount: number;      // Number of indicators flagged as concerning
   indicators: IndicatorResult[];
+  totalChecks?: number;     // Total antipatterns scanned for (Data Integrity); detected = indicators.length
 }
 
 export interface Recommendation {
@@ -313,6 +314,99 @@ export interface PeerGrowthData {
   /** Whether PGS can be calculated */
   hasSufficientPeers: boolean;
 }
+
+// ============================================
+// Dimension 0: Data Integrity Indicator IDs
+// ============================================
+
+/**
+ * Data Integrity indicator IDs follow the pattern: '{issueType}-{fieldId}-{findingKey}'
+ * Issue type tabs: Story, Bug, Task, Epic, Cross-Field
+ * Each finding is specific to a field within an issue type.
+ */
+export type DataIntegrityIndicatorId =
+  // Story field findings
+  | 'story-description-hollow'
+  | 'story-description-duplicate'
+  | 'story-acceptanceCriteria-format'
+  | 'story-storyPoints-clustering'
+  | 'story-storyPoints-nonstandard'
+  | 'story-priority-default'
+  | 'story-assignee-inactive'
+  | 'story-labels-empty'
+  // Bug field findings
+  | 'bug-description-hollow'
+  | 'bug-stepsToReproduce-hollow'
+  | 'bug-stepsToReproduce-duplicate'
+  | 'bug-storyPoints-clustering'
+  | 'bug-priority-default'
+  | 'bug-environment-default'
+  | 'bug-assignee-inactive'
+  | 'bug-components-empty'
+  // Task field findings
+  | 'task-description-hollow'
+  | 'task-description-short'
+  | 'task-storyPoints-empty'
+  | 'task-priority-default'
+  | 'task-assignee-inactive'
+  | 'task-duedate-empty'
+  // Epic field findings
+  | 'epic-description-hollow'
+  | 'epic-description-duplicate'
+  | 'epic-targetDate-empty'
+  | 'epic-businessPriority-cardinality'
+  | 'epic-priority-default'
+  | 'epic-assignee-inactive'
+  // Risk field findings
+  | 'risk-mitigationStrategy-hollow'
+  | 'risk-probability-default'
+  | 'risk-impact-default'
+  | 'risk-riskScore-empty'
+  | 'risk-riskOwner-inactive'
+  | 'risk-riskCategory-concentration'
+  // Assumption field findings
+  | 'assumption-impactIfWrong-hollow'
+  | 'assumption-confidenceLevel-default'
+  | 'assumption-validationStatus-default'
+  | 'assumption-validationDate-empty'
+  | 'assumption-related-missing'
+  // Feature field findings
+  | 'feature-benefitHypothesis-hollow'
+  | 'feature-benefitHypothesis-duplicate'
+  | 'feature-wsjfScore-empty'
+  | 'feature-targetPI-default'
+  | 'feature-featureSize-default'
+  | 'feature-description-short'
+  // Spike field findings
+  | 'spike-researchQuestion-hollow'
+  | 'spike-timebox-empty'
+  | 'spike-findings-hollow'
+  | 'spike-decision-default'
+  | 'spike-description-short'
+  // Dependency field findings
+  | 'dependency-neededByDate-empty'
+  | 'dependency-providerTeam-default'
+  | 'dependency-consumerTeam-default'
+  | 'dependency-dependencyType-default'
+  | 'dependency-description-hollow'
+  // Impediment field findings
+  | 'impediment-resolutionPlan-hollow'
+  | 'impediment-severity-default'
+  | 'impediment-escalationLevel-default'
+  | 'impediment-affectedTeams-empty'
+  | 'impediment-description-short'
+  // Initiative field findings
+  | 'initiative-businessOutcome-hollow'
+  | 'initiative-strategicTheme-default'
+  | 'initiative-targetQuarter-default'
+  | 'initiative-revenueImpact-empty'
+  | 'initiative-description-hollow'
+  | 'initiative-description-duplicate'
+  // Cross-field structural findings
+  | 'cross-status-field-conflicts'
+  | 'cross-hierarchy-inconsistency'
+  | 'cross-date-sequence-violations'
+  | 'cross-orphaned-references';
 
 // ============================================
 // Dimension 1 Specific Indicator IDs

@@ -19,6 +19,462 @@ export interface IndicatorMetadata {
 }
 
 // ============================================
+// Dimension 0: Data Integrity
+// ============================================
+
+const dataIntegrityIndicators: IndicatorMetadata[] = [
+  // Story field findings
+  {
+    id: 'story-description-hollow',
+    reportType: 'issueList',
+    issueListTitle: 'Stories with Placeholder Descriptions',
+    description: 'Stories where the description contains TBD, TODO, or template-only content.',
+  },
+  {
+    id: 'story-description-duplicate',
+    reportType: 'issueList',
+    issueListTitle: 'Stories with Duplicate Descriptions',
+    description: 'Stories sharing near-identical description text with other issues.',
+  },
+  {
+    id: 'story-acceptanceCriteria-format',
+    reportType: 'issueList',
+    issueListTitle: 'Stories Missing Given/When/Then',
+    description: 'Stories where Acceptance Criteria does not follow the required Given/When/Then format.',
+  },
+  {
+    id: 'story-storyPoints-clustering',
+    reportType: 'distribution',
+    distributionTitle: 'Story Point Value Distribution',
+    xAxisLabel: 'Story Points',
+    yAxisLabel: 'Count',
+    description: 'Distribution of story point values showing clustering on a single number.',
+  },
+  {
+    id: 'story-storyPoints-nonstandard',
+    reportType: 'distribution',
+    distributionTitle: 'Story Points: Fibonacci vs Non-Fibonacci',
+    xAxisLabel: 'Story Points',
+    yAxisLabel: 'Count',
+    description: 'Story point values that fall outside the Fibonacci sequence.',
+  },
+  {
+    id: 'story-priority-default',
+    reportType: 'issueList',
+    issueListTitle: 'Stories with Default Priority',
+    description: 'Stories where Priority remains at the system default "Medium".',
+  },
+  {
+    id: 'story-assignee-inactive',
+    reportType: 'issueList',
+    issueListTitle: 'Stories Assigned to Inactive Users',
+    description: 'Stories assigned to deactivated or departed users.',
+  },
+  {
+    id: 'story-labels-empty',
+    reportType: 'issueList',
+    issueListTitle: 'Stories with Empty Labels',
+    description: 'Stories with no labels or only a single generic label.',
+  },
+
+  // Bug field findings
+  {
+    id: 'bug-description-hollow',
+    reportType: 'issueList',
+    issueListTitle: 'Bugs with Placeholder Descriptions',
+    description: 'Bugs where the description contains placeholder text.',
+  },
+  {
+    id: 'bug-stepsToReproduce-hollow',
+    reportType: 'issueList',
+    issueListTitle: 'Bugs with Missing Reproduction Steps',
+    description: 'Bugs where Steps to Reproduce is empty or contains only placeholder text.',
+  },
+  {
+    id: 'bug-stepsToReproduce-duplicate',
+    reportType: 'issueList',
+    issueListTitle: 'Bugs with Duplicate Reproduction Steps',
+    description: 'Bugs sharing near-identical Steps to Reproduce text.',
+  },
+  {
+    id: 'bug-storyPoints-clustering',
+    reportType: 'distribution',
+    distributionTitle: 'Bug Story Point Distribution',
+    xAxisLabel: 'Story Points',
+    yAxisLabel: 'Count',
+    description: 'Distribution of bug story point values showing clustering patterns.',
+  },
+  {
+    id: 'bug-priority-default',
+    reportType: 'issueList',
+    issueListTitle: 'Bugs with Default Priority',
+    description: 'Bugs where Priority remains at the system default.',
+  },
+  {
+    id: 'bug-environment-default',
+    reportType: 'issueList',
+    issueListTitle: 'Bugs with Default Environment',
+    description: 'Bugs where Environment is left at the system default.',
+  },
+  {
+    id: 'bug-assignee-inactive',
+    reportType: 'issueList',
+    issueListTitle: 'Bugs Assigned to Inactive Users',
+    description: 'Bugs assigned to deactivated or departed users.',
+  },
+  {
+    id: 'bug-components-empty',
+    reportType: 'issueList',
+    issueListTitle: 'Bugs with Missing Components',
+    description: 'Bugs with no component selected for routing and categorization.',
+  },
+
+  // Task field findings
+  {
+    id: 'task-description-hollow',
+    reportType: 'issueList',
+    issueListTitle: 'Tasks with Placeholder Descriptions',
+    description: 'Tasks where the description contains placeholder text.',
+  },
+  {
+    id: 'task-description-short',
+    reportType: 'issueList',
+    issueListTitle: 'Tasks with Short Descriptions',
+    description: 'Tasks where the description is below the 50-character minimum.',
+  },
+  {
+    id: 'task-storyPoints-empty',
+    reportType: 'issueList',
+    issueListTitle: 'Tasks with Zero Story Points',
+    description: 'Tasks where Story Points is set to 0.',
+  },
+  {
+    id: 'task-priority-default',
+    reportType: 'issueList',
+    issueListTitle: 'Tasks with Default Priority',
+    description: 'Tasks where Priority remains at the system default.',
+  },
+  {
+    id: 'task-assignee-inactive',
+    reportType: 'issueList',
+    issueListTitle: 'Tasks Assigned to Inactive Users',
+    description: 'Tasks assigned to deactivated or departed users.',
+  },
+  {
+    id: 'task-duedate-empty',
+    reportType: 'issueList',
+    issueListTitle: 'Tasks with Missing Due Date',
+    description: 'Tasks with no due date set.',
+  },
+
+  // Epic field findings
+  {
+    id: 'epic-description-hollow',
+    reportType: 'issueList',
+    issueListTitle: 'Epics with Placeholder Descriptions',
+    description: 'Epics where the description contains placeholder text.',
+  },
+  {
+    id: 'epic-description-duplicate',
+    reportType: 'issueList',
+    issueListTitle: 'Epics with Duplicate Descriptions',
+    description: 'Epics sharing near-identical description text.',
+  },
+  {
+    id: 'epic-targetDate-empty',
+    reportType: 'issueList',
+    issueListTitle: 'Epics with Missing Target Date',
+    description: 'Epics with no Target Date set for roadmap alignment.',
+  },
+  {
+    id: 'epic-businessPriority-cardinality',
+    reportType: 'ratio',
+    ratioTitle: 'Business Priority Value Distribution',
+    description: 'Business Priority field uses only a small fraction of available values.',
+  },
+  {
+    id: 'epic-priority-default',
+    reportType: 'issueList',
+    issueListTitle: 'Epics with Default Priority',
+    description: 'Epics where Priority remains at the system default.',
+  },
+  {
+    id: 'epic-assignee-inactive',
+    reportType: 'issueList',
+    issueListTitle: 'Epics Assigned to Inactive Users',
+    description: 'Epics assigned to deactivated or departed users.',
+  },
+
+  // Risk field findings
+  {
+    id: 'risk-mitigationStrategy-hollow',
+    reportType: 'issueList',
+    issueListTitle: 'Risks with Placeholder Mitigation Strategy',
+    description: 'Risks where the Mitigation Strategy contains TBD, TODO, or template-only content.',
+  },
+  {
+    id: 'risk-probability-default',
+    reportType: 'issueList',
+    issueListTitle: 'Risks with Default Probability',
+    description: 'Risks where Probability remains at the system default, not reflecting actual likelihood.',
+  },
+  {
+    id: 'risk-impact-default',
+    reportType: 'issueList',
+    issueListTitle: 'Risks with Default Impact',
+    description: 'Risks where Impact remains at the system default, not reflecting actual severity.',
+  },
+  {
+    id: 'risk-riskScore-empty',
+    reportType: 'issueList',
+    issueListTitle: 'Risks with Empty Risk Score',
+    description: 'Risks where Risk Score is 0 or unset, providing no quantitative risk assessment.',
+  },
+  {
+    id: 'risk-riskOwner-inactive',
+    reportType: 'issueList',
+    issueListTitle: 'Risks with Inactive Risk Owner',
+    description: 'Risks assigned to a Risk Owner who is deactivated or departed.',
+  },
+  {
+    id: 'risk-riskCategory-concentration',
+    reportType: 'ratio',
+    ratioTitle: 'Risk Category Distribution',
+    description: 'Risk Category field dominated by a single value, providing no differentiation.',
+  },
+
+  // Assumption field findings
+  {
+    id: 'assumption-impactIfWrong-hollow',
+    reportType: 'issueList',
+    issueListTitle: 'Assumptions with Placeholder Impact if Wrong',
+    description: 'Assumptions where Impact if Wrong contains placeholder text.',
+  },
+  {
+    id: 'assumption-confidenceLevel-default',
+    reportType: 'issueList',
+    issueListTitle: 'Assumptions with Default Confidence Level',
+    description: 'Assumptions where Confidence Level remains at the system default.',
+  },
+  {
+    id: 'assumption-validationStatus-default',
+    reportType: 'issueList',
+    issueListTitle: 'Assumptions with Default Validation Status',
+    description: 'Assumptions where Validation Status remains at the system default.',
+  },
+  {
+    id: 'assumption-validationDate-empty',
+    reportType: 'issueList',
+    issueListTitle: 'Assumptions with Missing Validation Date',
+    description: 'Assumptions with no Validation Date set.',
+  },
+  {
+    id: 'assumption-related-missing',
+    reportType: 'issueList',
+    issueListTitle: 'Assumptions Missing Related Links',
+    description: 'Assumptions that should link to a parent feature or risk but don\'t.',
+  },
+
+  // Feature field findings
+  {
+    id: 'feature-benefitHypothesis-hollow',
+    reportType: 'issueList',
+    issueListTitle: 'Features with Placeholder Benefit Hypothesis',
+    description: 'Features where Benefit Hypothesis contains placeholder or template-only text.',
+  },
+  {
+    id: 'feature-benefitHypothesis-duplicate',
+    reportType: 'issueList',
+    issueListTitle: 'Features with Duplicate Benefit Hypothesis',
+    description: 'Features sharing near-identical Benefit Hypothesis text.',
+  },
+  {
+    id: 'feature-wsjfScore-empty',
+    reportType: 'issueList',
+    issueListTitle: 'Features with Empty WSJF Score',
+    description: 'Features where WSJF Score is 0 or unset.',
+  },
+  {
+    id: 'feature-targetPI-default',
+    reportType: 'issueList',
+    issueListTitle: 'Features with Default Target PI',
+    description: 'Features where Target PI remains at the system default.',
+  },
+  {
+    id: 'feature-featureSize-default',
+    reportType: 'issueList',
+    issueListTitle: 'Features with Default Feature Size',
+    description: 'Features where Feature Size remains at the system default.',
+  },
+  {
+    id: 'feature-description-short',
+    reportType: 'issueList',
+    issueListTitle: 'Features with Short Descriptions',
+    description: 'Features where the description is below the minimum length threshold.',
+  },
+
+  // Spike field findings
+  {
+    id: 'spike-researchQuestion-hollow',
+    reportType: 'issueList',
+    issueListTitle: 'Spikes with Placeholder Research Question',
+    description: 'Spikes where Research Question contains TBD or placeholder text.',
+  },
+  {
+    id: 'spike-timebox-empty',
+    reportType: 'issueList',
+    issueListTitle: 'Spikes with Empty Time-box',
+    description: 'Spikes where Time-box is 0 or unset.',
+  },
+  {
+    id: 'spike-findings-hollow',
+    reportType: 'issueList',
+    issueListTitle: 'Spikes with Placeholder Findings',
+    description: 'Spikes where Findings field contains placeholder text.',
+  },
+  {
+    id: 'spike-decision-default',
+    reportType: 'issueList',
+    issueListTitle: 'Spikes with Default Decision',
+    description: 'Spikes where Decision remains at the system default.',
+  },
+  {
+    id: 'spike-description-short',
+    reportType: 'issueList',
+    issueListTitle: 'Spikes with Short Descriptions',
+    description: 'Spikes where the description is below the minimum length threshold.',
+  },
+
+  // Dependency field findings
+  {
+    id: 'dependency-neededByDate-empty',
+    reportType: 'issueList',
+    issueListTitle: 'Dependencies with Missing Needed By Date',
+    description: 'Dependencies with no Needed By Date set.',
+  },
+  {
+    id: 'dependency-providerTeam-default',
+    reportType: 'issueList',
+    issueListTitle: 'Dependencies with Default Provider Team',
+    description: 'Dependencies where Provider Team remains at the system default.',
+  },
+  {
+    id: 'dependency-consumerTeam-default',
+    reportType: 'issueList',
+    issueListTitle: 'Dependencies with Default Consumer Team',
+    description: 'Dependencies where Consumer Team remains at the system default.',
+  },
+  {
+    id: 'dependency-dependencyType-default',
+    reportType: 'issueList',
+    issueListTitle: 'Dependencies with Default Dependency Type',
+    description: 'Dependencies where Dependency Type remains at the system default.',
+  },
+  {
+    id: 'dependency-description-hollow',
+    reportType: 'issueList',
+    issueListTitle: 'Dependencies with Placeholder Descriptions',
+    description: 'Dependencies where the description contains placeholder text.',
+  },
+
+  // Impediment field findings
+  {
+    id: 'impediment-resolutionPlan-hollow',
+    reportType: 'issueList',
+    issueListTitle: 'Impediments with Placeholder Resolution Plan',
+    description: 'Impediments where Resolution Plan contains placeholder text.',
+  },
+  {
+    id: 'impediment-severity-default',
+    reportType: 'issueList',
+    issueListTitle: 'Impediments with Default Severity',
+    description: 'Impediments where Severity remains at the system default.',
+  },
+  {
+    id: 'impediment-escalationLevel-default',
+    reportType: 'issueList',
+    issueListTitle: 'Impediments with Default Escalation Level',
+    description: 'Impediments where Escalation Level remains at the system default.',
+  },
+  {
+    id: 'impediment-affectedTeams-empty',
+    reportType: 'issueList',
+    issueListTitle: 'Impediments with Empty Affected Teams',
+    description: 'Impediments with no Affected Teams selected.',
+  },
+  {
+    id: 'impediment-description-short',
+    reportType: 'issueList',
+    issueListTitle: 'Impediments with Short Descriptions',
+    description: 'Impediments where the description is below the minimum length threshold.',
+  },
+
+  // Initiative field findings
+  {
+    id: 'initiative-businessOutcome-hollow',
+    reportType: 'issueList',
+    issueListTitle: 'Initiatives with Placeholder Business Outcome',
+    description: 'Initiatives where Business Outcome contains placeholder text.',
+  },
+  {
+    id: 'initiative-strategicTheme-default',
+    reportType: 'issueList',
+    issueListTitle: 'Initiatives with Default Strategic Theme',
+    description: 'Initiatives where Strategic Theme remains at the system default.',
+  },
+  {
+    id: 'initiative-targetQuarter-default',
+    reportType: 'issueList',
+    issueListTitle: 'Initiatives with Default Target Quarter',
+    description: 'Initiatives where Target Quarter remains at the system default.',
+  },
+  {
+    id: 'initiative-revenueImpact-empty',
+    reportType: 'issueList',
+    issueListTitle: 'Initiatives with Empty Revenue Impact',
+    description: 'Initiatives where Expected Revenue Impact is 0 or unset.',
+  },
+  {
+    id: 'initiative-description-hollow',
+    reportType: 'issueList',
+    issueListTitle: 'Initiatives with Placeholder Descriptions',
+    description: 'Initiatives where the description contains placeholder text.',
+  },
+  {
+    id: 'initiative-description-duplicate',
+    reportType: 'issueList',
+    issueListTitle: 'Initiatives with Duplicate Descriptions',
+    description: 'Initiatives sharing near-identical description text.',
+  },
+
+  // Cross-field structural findings
+  {
+    id: 'cross-status-field-conflicts',
+    reportType: 'issueList',
+    issueListTitle: 'Issues with Status-Field Conflicts',
+    description: 'Issues where status conflicts with other field values (Done with no assignee, In Progress with no estimate).',
+  },
+  {
+    id: 'cross-hierarchy-inconsistency',
+    reportType: 'issueList',
+    issueListTitle: 'Parent-Child Inconsistencies',
+    description: 'Parent issues where child data contradicts parent-level field values.',
+  },
+  {
+    id: 'cross-date-sequence-violations',
+    reportType: 'issueList',
+    issueListTitle: 'Issues with Date Sequence Violations',
+    description: 'Issues where date fields violate logical ordering across fields.',
+  },
+  {
+    id: 'cross-orphaned-references',
+    reportType: 'issueList',
+    issueListTitle: 'Orphaned and Stale Links',
+    description: 'Issue links pointing to deleted, moved, or long-closed targets.',
+  },
+];
+
+// ============================================
 // Dimension 1: Invisible Work
 // ============================================
 
@@ -845,6 +1301,7 @@ const backlogDisciplineIndicators: IndicatorMetadata[] = [
 // ============================================
 
 const allIndicators: IndicatorMetadata[] = [
+  ...dataIntegrityIndicators,
   ...dimension1Indicators,
   ...dimension2Indicators,
   ...dimension3Indicators,
@@ -903,6 +1360,7 @@ export const getReportTypeCounts = (): Record<DrillDownReportType, number> => {
 };
 
 export {
+  dataIntegrityIndicators,
   dimension1Indicators,
   dimension2Indicators,
   dimension3Indicators,

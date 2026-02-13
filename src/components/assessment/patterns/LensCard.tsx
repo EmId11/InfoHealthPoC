@@ -5,6 +5,7 @@ interface LensCardProps {
   lens: LensType;
   coverageData?: CoverageLensData;
   lensResult?: LensResult;
+  integrityScore?: number;
   onClick?: () => void;
   isActive?: boolean;
 }
@@ -28,13 +29,16 @@ function getCoverageSeverity(percent: number): OverallSeverity {
   return 'critical';
 }
 
-const LensCard: React.FC<LensCardProps> = ({ lens, coverageData, lensResult, onClick, isActive }) => {
+const LensCard: React.FC<LensCardProps> = ({ lens, coverageData, lensResult, integrityScore, onClick, isActive }) => {
   const config = LENS_CONFIG[lens];
 
   const isCoverage = lens === 'coverage';
+  const isIntegrity = lens === 'integrity' && integrityScore !== undefined;
   const severity = isCoverage
     ? getCoverageSeverity(coverageData?.coveragePercent ?? 0)
-    : (lensResult?.overallSeverity ?? 'clean');
+    : isIntegrity
+      ? getCoverageSeverity(integrityScore)
+      : (lensResult?.overallSeverity ?? 'clean');
   const severityStyle = SEVERITY_STYLES[severity];
 
   return (
@@ -61,6 +65,11 @@ const LensCard: React.FC<LensCardProps> = ({ lens, coverageData, lensResult, onC
           <>
             <span style={styles.metricValue}>{coverageData?.coveragePercent ?? 0}%</span>
             <span style={styles.metricUnit}>complete</span>
+          </>
+        ) : isIntegrity ? (
+          <>
+            <span style={styles.metricValue}>{integrityScore}</span>
+            <span style={styles.metricUnit}>/100</span>
           </>
         ) : (
           <>

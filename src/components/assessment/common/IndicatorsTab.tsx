@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { DimensionResult, IndicatorCategory, IndicatorResult, IndicatorDrillDownState } from '../../../types/assessment';
+import { MOCK_JIRA_FIELDS_BY_ISSUE_TYPE } from '../../../constants/presets';
 import {
   INDICATOR_TIERS,
   getTierDistribution,
@@ -14,6 +15,46 @@ import DistributionSpectrum from './DistributionSpectrum';
 import Sparkline from './Sparkline';
 
 type ViewMode = 'cards' | 'table';
+
+// Field name lookup from field definitions
+const FIELD_NAME_MAP = new Map(
+  MOCK_JIRA_FIELDS_BY_ISSUE_TYPE.map(f => [f.id, f.name])
+);
+
+function getFieldDisplayName(fieldId: string): string {
+  return FIELD_NAME_MAP.get(fieldId) || fieldId.charAt(0).toUpperCase() + fieldId.slice(1);
+}
+
+interface FieldGroup {
+  fieldId: string;
+  fieldName: string;
+  indicators: IndicatorResult[];
+}
+
+/**
+ * Group indicators by jiraFieldId, preserving order.
+ * Only groups when 2+ indicators share a field.
+ */
+function groupIndicatorsByField(indicators: IndicatorResult[]): FieldGroup[] {
+  const groups: FieldGroup[] = [];
+  let currentFieldId: string | undefined;
+
+  for (const indicator of indicators) {
+    const fieldId = indicator.jiraFieldId || '';
+    if (fieldId !== currentFieldId) {
+      groups.push({
+        fieldId,
+        fieldName: fieldId ? getFieldDisplayName(fieldId) : '',
+        indicators: [indicator],
+      });
+      currentFieldId = fieldId;
+    } else {
+      groups[groups.length - 1].indicators.push(indicator);
+    }
+  }
+
+  return groups;
+}
 
 
 interface IndicatorsTabProps {
@@ -50,6 +91,23 @@ function computeTrendCounts(indicators: IndicatorResult[]): { improving: number;
     else stable++;
   });
   return { improving, stable, declining };
+}
+
+// ============================================================================
+// Detection Ratio → Tier (for Data Integrity sidebar)
+// ============================================================================
+
+/**
+ * Map detected/total antipattern ratio to a color + background tint pair.
+ * 0% → green, 1-25% → green, 26-50% → blue, 51-75% → orange, 76-100% → red.
+ */
+function getDetectionTierColors(detected: number, total: number): { color: string; bg: string } {
+  if (detected === 0) return { color: '#006644', bg: '#E3FCEF' };
+  const ratio = detected / total;
+  if (ratio <= 0.25) return { color: '#006644', bg: '#E3FCEF' };
+  if (ratio <= 0.50) return { color: '#0052CC', bg: '#DEEBFF' };
+  if (ratio <= 0.75) return { color: '#FF8B00', bg: '#FFF7E6' };
+  return { color: '#DE350B', bg: '#FFEBE6' };
 }
 
 // ============================================================================
@@ -181,9 +239,9 @@ const toolbarStyles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     gap: '16px',
-    padding: '12px 20px',
-    backgroundColor: '#FFFFFF',
-    borderBottom: '1px solid #E4E6EB',
+    padding: '10px 20px',
+    backgroundColor: '#FAFBFC',
+    borderBottom: 'none',
   },
   tierGroup: {
     display: 'flex',
@@ -333,7 +391,10 @@ const badgeStyles: Record<string, React.CSSProperties> = {
 const IndicatorsTab: React.FC<IndicatorsTabProps> = ({ dimension, dimensionIndex, onIndicatorDrillDown, comparisonTeamCount, comparisonTeamNames }) => {
   const [selectedIndicator, setSelectedIndicator] = useState<IndicatorResult | null>(null);
   const [activeTabIndex, setActiveTabIndex] = useState(0);
-  const [viewMode, setViewMode] = useState<ViewMode>('cards');
+  const [hoveredSidebarIdx, setHoveredSidebarIdx] = useState<number | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>(
+    dimension.dimensionKey === 'dataIntegrity' ? 'table' : 'cards'
+  );
 
   // Handle drill-down navigation
   const handleDrillDown = (indicator: IndicatorResult, categoryIndex: number) => {
@@ -352,10 +413,16 @@ const IndicatorsTab: React.FC<IndicatorsTabProps> = ({ dimension, dimensionIndex
   // Compute tier distribution for active category (used in unified header)
   const activeTierDistribution = activeCategory ? getTierDistribution(activeCategory.indicators) : null;
 
+  // Use vertical layout when 5+ categories (e.g., Data Integrity with many issue types)
+  const useVerticalTabs = dimension.categories.length >= 5;
+
+  // Find the index of the Cross-Field tab (always last, separated by divider)
+  const crossFieldIndex = dimension.categories.findIndex(c => c.id === 'crossField');
+
   return (
     <div style={styles.container}>
       {/* Tab Selector */}
-      {dimension.categories.length > 1 && (
+      {dimension.categories.length > 1 && !useVerticalTabs && (
         <div style={styles.tabHeader}>
           <div style={styles.tabBar}>
             {dimension.categories.map((category, idx) => {
@@ -399,8 +466,148 @@ const IndicatorsTab: React.FC<IndicatorsTabProps> = ({ dimension, dimensionIndex
         </div>
       )}
 
-      {/* Active Category Table (no redundant header) */}
-      {activeCategory && (
+      {/* Vertical sidebar layout for 5+ categories */}
+      {dimension.categories.length > 1 && useVerticalTabs && (
+        <div style={verticalStyles.wrapper}>
+          <div style={verticalStyles.sidebar}>
+            <div style={verticalStyles.sidebarHeader}>Issue Types</div>
+            <div style={verticalStyles.sidebarSubtitle}>patterns detected / checked</div>
+            {dimension.categories.map((category, idx) => {
+              const isActive = idx === activeTabIndex;
+              const detected = category.indicators.length;
+              const total = category.totalChecks;
+              const showDivider = crossFieldIndex >= 0 && idx === crossFieldIndex && idx > 0;
+
+              // Determine badge colors
+              let dotColor: string;
+              let pillBg: string | undefined;
+              let pillTextColor: string;
+              if (total != null) {
+                const tier = getDetectionTierColors(detected, total);
+                dotColor = tier.color;
+                pillBg = tier.bg;
+                pillTextColor = tier.color;
+              } else {
+                const catDist = getTierDistribution(category.indicators);
+                const worstTier = catDist.needsAttention > 0
+                  ? INDICATOR_TIERS[0]
+                  : catDist.belowAverage > 0
+                  ? INDICATOR_TIERS[1]
+                  : catDist.average > 0
+                  ? INDICATOR_TIERS[2]
+                  : catDist.good > 0
+                  ? INDICATOR_TIERS[3]
+                  : INDICATOR_TIERS[4];
+                dotColor = worstTier.color;
+                pillTextColor = dotColor;
+              }
+              const isClean = total != null && detected === 0;
+
+              const isHoveredTab = hoveredSidebarIdx === idx;
+              const ratioPercent = total != null && total > 0 ? (detected / total) * 100 : 0;
+
+              return (
+                <React.Fragment key={category.id}>
+                  {showDivider && <div style={verticalStyles.divider} />}
+                  <button
+                    onClick={() => setActiveTabIndex(idx)}
+                    onMouseEnter={() => setHoveredSidebarIdx(idx)}
+                    onMouseLeave={() => setHoveredSidebarIdx(null)}
+                    style={{
+                      ...verticalStyles.sidebarTab,
+                      ...(isActive ? verticalStyles.sidebarTabActive : verticalStyles.sidebarTabInactive),
+                      ...(!isActive && isHoveredTab ? { backgroundColor: '#ECEDF0', opacity: 1 } : {}),
+                    }}
+                  >
+                    <span style={{
+                      ...verticalStyles.sidebarTabName,
+                      color: isActive ? '#172B4D' : '#6B778C',
+                    }}>{category.shortName}</span>
+
+                    {total != null ? (
+                      <span
+                        style={{
+                          ...verticalStyles.ratioPill,
+                          backgroundColor: pillBg,
+                          color: pillTextColor,
+                        }}
+                        title={`${detected} patterns detected out of ${total} checked`}
+                      >
+                        {isClean ? (
+                          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ flexShrink: 0 }}>
+                            <path d="M2.5 6.2L5 8.7L9.5 3.5" stroke="#006644" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        ) : (
+                          <span style={{ ...verticalStyles.ratioDot, backgroundColor: dotColor }} />
+                        )}
+                        <span style={{ fontWeight: 700 }}>{detected}</span>
+                        <span style={{ opacity: 0.6 }}>/</span>
+                        <span style={{ fontWeight: 400, opacity: 0.7 }}>{total}</span>
+                      </span>
+                    ) : (
+                      <div style={verticalStyles.sidebarTabRight}>
+                        <span style={{ ...verticalStyles.sidebarDot, backgroundColor: dotColor }} />
+                        <span style={{
+                          ...verticalStyles.sidebarCount,
+                          backgroundColor: isActive ? '#0052CC' : '#C1C7D0',
+                        }}>
+                          {detected}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Mini ratio bar at bottom edge */}
+                    {total != null && !isClean && (
+                      <div style={verticalStyles.ratioBarTrack}>
+                        <div style={{
+                          width: `${ratioPercent}%`,
+                          height: '100%',
+                          backgroundColor: dotColor,
+                          borderRadius: '0 1px 1px 0',
+                          transition: 'width 0.2s ease',
+                        }} />
+                      </div>
+                    )}
+                    {total != null && isClean && (
+                      <div style={{
+                        ...verticalStyles.ratioBarTrack,
+                        backgroundColor: '#ABF5D1',
+                      }}>
+                        <div style={{
+                          width: '100%',
+                          height: '100%',
+                          backgroundColor: '#36B37E',
+                          borderRadius: '1px',
+                          opacity: 0.5,
+                        }} />
+                      </div>
+                    )}
+                  </button>
+                </React.Fragment>
+              );
+            })}
+          </div>
+          <div style={verticalStyles.content}>
+            {activeCategory && (
+              <CategorySection
+                key={activeCategory.id}
+                category={activeCategory}
+                categoryIndex={activeTabIndex}
+                viewMode={viewMode}
+                onViewModeChange={setViewMode}
+                onIndicatorClick={setSelectedIndicator}
+                onIndicatorDrillDown={onIndicatorDrillDown ? (indicator) => handleDrillDown(indicator, activeTabIndex) : undefined}
+                comparisonTeamCount={comparisonTeamCount}
+                comparisonTeamNames={comparisonTeamNames}
+                embedded
+              />
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Active Category Table for horizontal layout (no redundant header) */}
+      {activeCategory && !useVerticalTabs && (
         <CategorySection
           key={activeCategory.id}
           category={activeCategory}
@@ -487,6 +694,7 @@ interface CategorySectionProps {
   onIndicatorDrillDown?: (indicator: IndicatorResult) => void;
   comparisonTeamCount?: number;
   comparisonTeamNames?: string[];
+  embedded?: boolean;
 }
 
 const CategorySection: React.FC<CategorySectionProps> = ({
@@ -498,9 +706,12 @@ const CategorySection: React.FC<CategorySectionProps> = ({
   onIndicatorDrillDown,
   comparisonTeamCount,
   comparisonTeamNames,
+  embedded,
 }) => {
+  const [hoveredRowId, setHoveredRowId] = useState<string | null>(null);
+
   return (
-    <div style={styles.categorySection}>
+    <div style={embedded ? styles.categorySectionEmbedded : styles.categorySection}>
       {/* Summary toolbar — always shown */}
       <SummaryToolbar
         indicators={category.indicators}
@@ -511,89 +722,154 @@ const CategorySection: React.FC<CategorySectionProps> = ({
       {/* Render card grid or table based on viewMode */}
       {viewMode === 'table' ? (
         <div style={styles.tableContainer}>
-          <table style={styles.table}>
-            <thead>
-              <tr>
-                <th style={styles.tableHeaderCell}>Indicator</th>
-                <th style={{ ...styles.tableHeaderCell, textAlign: 'center' }}>Value</th>
-                <th style={{ ...styles.tableHeaderCell, textAlign: 'center' }}>Health</th>
-                <th style={{ ...styles.tableHeaderCell, textAlign: 'center' }}>Trend</th>
-                <th style={{ ...styles.tableHeaderCell, textAlign: 'center' }}>History</th>
-                <th style={styles.tableHeaderCell}>Applies to</th>
-              </tr>
-            </thead>
-            <tbody>
-              {category.indicators.map((indicator) => {
-                const indicatorTier = getIndicatorTier(indicator.benchmarkPercentile);
-                const trend = computeIndicatorTrend(indicator);
-                const trendIcon = trend.direction === 'up' ? '↗' : trend.direction === 'down' ? '↘' : null;
+          {(() => {
+            const groups = groupIndicatorsByField(category.indicators);
+            const hasFieldGroups = groups.some(g => g.fieldId);
 
-                return (
-                  <tr
-                    key={indicator.id}
-                    style={{
-                      ...styles.tableRow,
-                      cursor: onIndicatorDrillDown ? 'pointer' : 'default',
-                    }}
-                    onClick={onIndicatorDrillDown ? () => onIndicatorDrillDown(indicator) : undefined}
-                  >
-                    <td style={styles.tableCellName}>{indicator.name}</td>
-                    <td style={{ ...styles.tableCell, textAlign: 'center', fontWeight: 700, color: indicatorTier.color }}>
-                      {indicator.displayValue}
-                    </td>
-                    <td style={{ ...styles.tableCell, textAlign: 'center' }}>
-                      <span style={{
-                        ...badgeStyles.tierBadgeSummary,
-                        backgroundColor: indicatorTier.bgColor,
-                        color: indicatorTier.color,
-                        fontSize: '11px',
-                      }}>
-                        <span style={{ ...badgeStyles.tierDot, backgroundColor: indicatorTier.color }} />
-                        {indicatorTier.name}
-                      </span>
-                    </td>
-                    <td style={{ ...styles.tableCell, textAlign: 'center' }}>
-                      <span style={{ color: trend.color, fontWeight: 600, fontSize: '13px', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-                        {trendIcon ?? <MediaServicesActualSizeIcon label="" size="small" primaryColor="#6B778C" />} {trend.label}
-                      </span>
-                    </td>
-                    <td style={{ ...styles.tableCell, textAlign: 'center' }}>
-                      {indicator.trendData && indicator.trendData.length >= 2 ? (
-                        <div
-                          style={{ display: 'inline-block', cursor: 'pointer' }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onIndicatorClick(indicator);
-                          }}
-                        >
-                          <Sparkline
-                            data={indicator.trendData}
-                            trend={indicator.trend}
-                            width={70}
-                            height={24}
-                          />
-                        </div>
-                      ) : (
-                        <span style={{ fontSize: '10px', color: '#97A0AF' }}>--</span>
-                      )}
-                    </td>
-                    <td style={styles.tableCell}>
-                      {indicator.appliesTo && indicator.appliesTo.length > 0 && (
-                        <div style={styles.issueTypeRow}>
-                          {indicator.appliesTo.map((type, i) => (
-                            <React.Fragment key={type}>
-                              {i > 0 && <span style={styles.issueTypeSep}>&middot;</span>}
-                              <span style={styles.issueTypeLabel}>{type}</span>
-                            </React.Fragment>
-                          ))}
-                        </div>
-                      )}
-                    </td>
+            // Flatten indicators with group metadata for field-grouped rendering
+            const rows: Array<{ indicator: IndicatorResult; fieldName: string; isFirstInGroup: boolean; groupSize: number; groupIndex: number }> = [];
+            let gIdx = 0;
+            for (const group of groups) {
+              group.indicators.forEach((indicator, idx) => {
+                rows.push({
+                  indicator,
+                  fieldName: group.fieldName,
+                  isFirstInGroup: idx === 0,
+                  groupSize: group.indicators.length,
+                  groupIndex: gIdx,
+                });
+              });
+              gIdx++;
+            }
+
+            return (
+              <table style={styles.table}>
+                <thead>
+                  <tr>
+                    {hasFieldGroups && <th style={styles.tableHeaderCell}>Field</th>}
+                    <th style={styles.tableHeaderCell}>Finding</th>
+                    <th style={{ ...styles.tableHeaderCell, width: '160px' }}>Severity</th>
+                    <th style={{ ...styles.tableHeaderCell, textAlign: 'center', width: '110px' }}>History</th>
+                    {!hasFieldGroups && <th style={styles.tableHeaderCell}>Applies to</th>}
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                </thead>
+                <tbody>
+                  {rows.map(({ indicator, fieldName, isFirstInGroup, groupSize, groupIndex }) => {
+                    const indicatorTier = getIndicatorTier(indicator.benchmarkPercentile);
+                    const trend = computeIndicatorTrend(indicator);
+                    const trendColor = trend.direction === 'up' ? '#36B37E' : trend.direction === 'down' ? '#DE350B' : '#97A0AF';
+                    const stripeBg = indicatorTier.level === 1 ? '#FFF8F7'
+                      : indicatorTier.level === 2 ? '#FFFCF5'
+                      : groupIndex % 2 === 1 ? '#F8F9FA' : '#FFFFFF';
+                    const isHovered = hoveredRowId === indicator.id;
+                    const rowBg = isHovered ? '#F0F4FF' : stripeBg;
+                    const accentColor = indicatorTier.level <= 3 ? indicatorTier.color : indicatorTier.borderColor;
+
+                    return (
+                      <tr
+                        key={indicator.id}
+                        style={{
+                          ...styles.tableRow,
+                          backgroundColor: rowBg,
+                          ...(isFirstInGroup && hasFieldGroups ? styles.tableRowGroupStart : {}),
+                          cursor: onIndicatorDrillDown ? 'pointer' : 'default',
+                        }}
+                        onClick={onIndicatorDrillDown ? () => onIndicatorDrillDown(indicator) : undefined}
+                        onMouseEnter={() => setHoveredRowId(indicator.id)}
+                        onMouseLeave={() => setHoveredRowId(null)}
+                      >
+                        {hasFieldGroups && (
+                          isFirstInGroup ? (
+                            <td
+                              style={{
+                                ...styles.tableCellField,
+                              }}
+                              rowSpan={groupSize}
+                            >
+                              {fieldName}
+                            </td>
+                          ) : null
+                        )}
+                        <td style={{
+                          ...styles.tableCellName,
+                          borderLeft: `3px solid ${accentColor}`,
+                        }}>
+                          {indicator.name}
+                        </td>
+                        <td style={styles.tableCellPeers}>
+                          <span style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            padding: '5px 12px',
+                            borderRadius: '10px',
+                            backgroundColor: indicatorTier.bgColor,
+                          }}>
+                            <span style={{
+                              fontWeight: 700,
+                              fontSize: '13px',
+                              color: indicatorTier.color,
+                            }}>
+                              {indicator.displayValue}
+                            </span>
+                            <span style={{
+                              width: '3px',
+                              height: '3px',
+                              borderRadius: '50%',
+                              backgroundColor: indicatorTier.color,
+                              opacity: 0.4,
+                              flexShrink: 0,
+                            }} />
+                            <span style={{
+                              fontSize: '11px',
+                              fontWeight: 600,
+                              color: indicatorTier.color,
+                              opacity: 0.7,
+                            }}>
+                              {indicatorTier.name}
+                            </span>
+                          </span>
+                        </td>
+                        <td style={{ ...styles.tableCell, textAlign: 'center' }}>
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                            {indicator.trendData && indicator.trendData.length >= 2 && (
+                              <div
+                                style={{ cursor: 'pointer', opacity: 0.85, flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                                onClick={(e) => { e.stopPropagation(); onIndicatorClick(indicator); }}
+                              >
+                                <Sparkline data={indicator.trendData} trend={indicator.trend} width={72} height={22} />
+                                <span style={{
+                                  width: '6px',
+                                  height: '6px',
+                                  borderRadius: '50%',
+                                  backgroundColor: trendColor,
+                                  flexShrink: 0,
+                                }} />
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                        {!hasFieldGroups && (
+                          <td style={styles.tableCell}>
+                            {indicator.appliesTo && indicator.appliesTo.length > 0 && (
+                              <div style={styles.issueTypeRow}>
+                                {indicator.appliesTo.map((type, i) => (
+                                  <React.Fragment key={type}>
+                                    {i > 0 && <span style={styles.issueTypeSep}>&middot;</span>}
+                                    <span style={styles.issueTypeLabel}>{type}</span>
+                                  </React.Fragment>
+                                ))}
+                              </div>
+                            )}
+                          </td>
+                        )}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            );
+          })()}
         </div>
       ) : (
         <div style={styles.cardGrid}>
@@ -739,6 +1015,13 @@ const styles: Record<string, React.CSSProperties> = {
     borderTop: 'none',
     overflow: 'hidden',
   },
+  categorySectionEmbedded: {
+    backgroundColor: '#FAFBFC',
+    borderRadius: 0,
+    border: 'none',
+    overflow: 'hidden',
+    flex: 1,
+  },
 
   // Card Grid — hero-style indicator cards
   cardGrid: {
@@ -844,26 +1127,35 @@ const styles: Record<string, React.CSSProperties> = {
 
   // Table styles
   tableContainer: {
-    padding: '16px 20px 20px',
+    margin: '16px 20px 20px',
+    backgroundColor: '#FFFFFF',
+    borderRadius: '10px',
+    border: '1px solid #E4E6EB',
+    boxShadow: '0 1px 3px rgba(9, 30, 66, 0.08)',
+    overflow: 'hidden',
+    padding: 0,
   },
   table: {
     width: '100%',
     borderCollapse: 'collapse',
     fontSize: '13px',
+    borderRadius: '8px',
+    overflow: 'hidden',
   },
   tableHeaderCell: {
-    padding: '10px 12px',
-    fontSize: '11px',
-    fontWeight: 600,
-    color: '#5E6C84',
+    padding: '9px 12px',
+    fontSize: '10px',
+    fontWeight: 700,
+    color: '#7A869A',
     textTransform: 'uppercase' as const,
-    letterSpacing: '0.5px',
-    borderBottom: '2px solid #E4E6EB',
+    letterSpacing: '0.8px',
+    borderBottom: '1px solid #E4E6EB',
     textAlign: 'left' as const,
     whiteSpace: 'nowrap' as const,
+    backgroundColor: '#FAFBFC',
   },
   tableRow: {
-    borderBottom: '1px solid #F0F1F4',
+    borderBottom: '1px solid #EBECF0',
     transition: 'background-color 0.1s ease',
   },
   tableCell: {
@@ -873,12 +1165,41 @@ const styles: Record<string, React.CSSProperties> = {
     verticalAlign: 'middle' as const,
   },
   tableCellName: {
-    padding: '12px',
+    padding: '11px 12px',
     fontSize: '13px',
-    fontWeight: 500,
+    fontWeight: 600,
     color: '#172B4D',
-    maxWidth: '300px',
     verticalAlign: 'middle' as const,
+    lineHeight: 1.4,
+  },
+  tableCellField: {
+    padding: '14px 16px',
+    fontSize: '11px',
+    fontWeight: 700,
+    color: '#44546F',
+    verticalAlign: 'top' as const,
+    borderRight: '1px solid #E4E6EB',
+    whiteSpace: 'nowrap' as const,
+    lineHeight: 1.35,
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.5px',
+    backgroundColor: '#F8F9FA',
+  },
+  tableCellPeers: {
+    padding: '10px 12px',
+    fontSize: '12px',
+    verticalAlign: 'middle' as const,
+  },
+  peerBadge: {
+    display: 'inline-block',
+    padding: '3px 9px',
+    borderRadius: '10px',
+    fontSize: '11px',
+    fontWeight: 600,
+    whiteSpace: 'nowrap' as const,
+  },
+  tableRowGroupStart: {
+    borderTop: '1px solid #DFE1E6',
   },
 
   // Modal styles
@@ -949,6 +1270,138 @@ const styles: Record<string, React.CSSProperties> = {
     letterSpacing: '0.5px',
   },
 
+};
+
+// ============================================================================
+// Vertical Sidebar Tab Styles (for 5+ categories)
+// ============================================================================
+
+const verticalStyles: Record<string, React.CSSProperties> = {
+  wrapper: {
+    display: 'flex',
+    border: '1px solid #E4E6EB',
+    borderRadius: '12px',
+    overflow: 'hidden',
+    minHeight: '400px',
+  },
+  sidebar: {
+    width: '220px',
+    flexShrink: 0,
+    backgroundColor: '#F4F5F7',
+    borderRight: '1px solid #E4E6EB',
+    display: 'flex',
+    flexDirection: 'column',
+    overflowY: 'auto',
+    padding: '8px 0',
+  },
+  sidebarTab: {
+    position: 'relative' as const,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '11px 16px 14px',
+    border: 'none',
+    borderLeft: '3px solid transparent',
+    borderBottom: '1px solid #E4E6EB',
+    cursor: 'pointer',
+    transition: 'all 0.15s ease',
+    textAlign: 'left' as const,
+    outline: 'none',
+    width: '100%',
+    minHeight: '44px',
+  },
+  sidebarTabActive: {
+    backgroundColor: '#FFFFFF',
+    borderLeft: '3px solid #0052CC',
+    boxShadow: '1px 0 4px rgba(9, 30, 66, 0.08)',
+  },
+  sidebarTabInactive: {
+    backgroundColor: 'transparent',
+    borderLeft: '3px solid transparent',
+    opacity: 0.85,
+  },
+  sidebarTabName: {
+    fontSize: '13px',
+    fontWeight: 600,
+    lineHeight: 1.3,
+  },
+  sidebarTabRight: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    flexShrink: 0,
+  },
+  sidebarDot: {
+    width: '7px',
+    height: '7px',
+    borderRadius: '50%',
+    flexShrink: 0,
+  },
+  sidebarCount: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: '20px',
+    height: '20px',
+    padding: '0 6px',
+    borderRadius: '10px',
+    fontSize: '11px',
+    fontWeight: 600,
+    color: '#FFFFFF',
+  },
+  ratioPill: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '4px',
+    padding: '2px 8px 2px 6px',
+    borderRadius: '10px',
+    fontSize: '12px',
+    fontWeight: 600,
+    whiteSpace: 'nowrap' as const,
+    lineHeight: 1,
+    flexShrink: 0,
+  },
+  ratioDot: {
+    width: '6px',
+    height: '6px',
+    borderRadius: '50%',
+    flexShrink: 0,
+  },
+  ratioBarTrack: {
+    position: 'absolute' as const,
+    bottom: 0,
+    left: '3px',
+    right: 0,
+    height: '2px',
+    backgroundColor: 'rgba(0, 0, 0, 0.04)',
+    overflow: 'hidden',
+  },
+  sidebarHeader: {
+    fontSize: '10px',
+    fontWeight: 700,
+    color: '#7A869A',
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.8px',
+    padding: '12px 16px 4px',
+  },
+  sidebarSubtitle: {
+    fontSize: '11px',
+    fontWeight: 400,
+    color: '#8993A4',
+    padding: '0 16px 10px',
+    borderBottom: '1px solid #E4E6EB',
+  },
+  divider: {
+    height: '1px',
+    backgroundColor: '#DFE1E6',
+    margin: '4px 12px',
+  },
+  content: {
+    flex: 1,
+    minWidth: 0,
+    display: 'flex',
+    flexDirection: 'column',
+  },
 };
 
 export default IndicatorsTab;

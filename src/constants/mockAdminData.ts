@@ -26,6 +26,7 @@ import {
   WorkflowConfig,
   EstimationPolicy,
   BlockerMethodConfig,
+  QualityRule,
 } from '../types/admin';
 import { INITIAL_ADMIN_SETUP_PROGRESS } from '../types/adminSetup';
 import { INITIAL_REPORTS_STATE } from './mockReportsData';
@@ -263,6 +264,96 @@ export const DEFAULT_BLOCKER_CONFIG: BlockerMethodConfig = {
 };
 
 // ============================================
+// Mock Quality Rules
+// ============================================
+export const MOCK_QUALITY_RULES: QualityRule[] = [
+  {
+    id: 'qr-ac-given-when-then',
+    name: 'AC must use Given/When/Then',
+    description: 'Acceptance criteria should follow the Given/When/Then format for testability.',
+    fieldId: 'acceptanceCriteria',
+    fieldType: 'text',
+    ruleType: 'text-contains-pattern',
+    config: { pattern: '(?i)(given|when|then)' },
+    appliesTo: ['story', 'bug'],
+    enabled: true,
+    severity: 'required',
+  },
+  {
+    id: 'qr-desc-min-length',
+    name: 'Description minimum 50 characters',
+    description: 'All descriptions must contain at least 50 characters of meaningful content.',
+    fieldId: 'description',
+    fieldType: 'text',
+    ruleType: 'text-minimum-length',
+    config: { minLength: 50 },
+    appliesTo: ['story', 'bug', 'task'],
+    enabled: true,
+    severity: 'required',
+  },
+  {
+    id: 'qr-desc-no-placeholder',
+    name: 'Description must not contain placeholders',
+    description: 'Descriptions should not contain placeholder text like TBD, TODO, or N/A.',
+    fieldId: 'description',
+    fieldType: 'text',
+    ruleType: 'text-no-placeholder',
+    config: { placeholderPhrases: ['TBD', 'TODO', 'N/A', 'To be determined', 'Fill in later'] },
+    appliesTo: ['story', 'bug', 'task'],
+    enabled: true,
+    severity: 'recommended',
+  },
+  {
+    id: 'qr-story-points-fibonacci',
+    name: 'Story points must use Fibonacci values',
+    description: 'Story point estimates must be from the Fibonacci sequence.',
+    fieldId: 'storyPoints',
+    fieldType: 'number',
+    ruleType: 'number-in-set',
+    config: { allowedValues: [1, 2, 3, 5, 8, 13, 21] },
+    appliesTo: ['story'],
+    enabled: true,
+    severity: 'required',
+  },
+  {
+    id: 'qr-story-points-range',
+    name: 'Story points within reasonable range',
+    description: 'Story points should be between 1 and 13 for individual stories.',
+    fieldId: 'storyPoints',
+    fieldType: 'number',
+    ruleType: 'number-in-range',
+    config: { min: 1, max: 13 },
+    appliesTo: ['story'],
+    enabled: true,
+    severity: 'recommended',
+  },
+  {
+    id: 'qr-priority-not-default',
+    name: 'Priority must be deliberately set',
+    description: 'Priority should not remain at the system default "Medium".',
+    fieldId: 'priority',
+    fieldType: 'select',
+    ruleType: 'select-not-default',
+    config: { defaultValue: 'Medium' },
+    appliesTo: ['story', 'bug', 'task'],
+    enabled: true,
+    severity: 'recommended',
+  },
+  {
+    id: 'qr-component-set',
+    name: 'Component must be selected',
+    description: 'At least one component must be selected for categorization.',
+    fieldId: 'components',
+    fieldType: 'multi-select',
+    ruleType: 'multi-select-min-count',
+    config: { minCount: 1 },
+    appliesTo: ['story', 'bug'],
+    enabled: true,
+    severity: 'recommended',
+  },
+];
+
+// ============================================
 // Mock Organization Defaults
 // ============================================
 export const MOCK_ORG_DEFAULTS: OrganizationDefaults = {
@@ -304,6 +395,10 @@ export const MOCK_ORG_DEFAULTS: OrganizationDefaults = {
   blockers: {
     mode: 'org-defined',
     value: DEFAULT_BLOCKER_CONFIG,
+  },
+  qualityRules: {
+    mode: 'org-defined',
+    value: MOCK_QUALITY_RULES,
   },
   updatedAt: '2024-12-01T10:00:00Z',
   updatedBy: 'Rachel Garcia',

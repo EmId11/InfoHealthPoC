@@ -192,6 +192,63 @@ export interface BlockerMethodConfig {
 }
 
 // ============================================
+// Quality Rule Types (for Standards Compliance)
+// ============================================
+
+export type FieldType = 'text' | 'number' | 'select' | 'multi-select' | 'date' | 'user' | 'link';
+
+export type QualityRuleType =
+  | 'text-contains-pattern'     // Text must match regex (e.g., Given/When/Then)
+  | 'text-minimum-length'       // Text must be at least N characters
+  | 'text-no-placeholder'       // Text must not contain placeholder phrases
+  | 'number-in-range'           // Number must be between min and max
+  | 'number-in-set'             // Number must be one of specific values (Fibonacci)
+  | 'select-not-default'        // Select must not be the default value
+  | 'select-in-set'             // Select must be one of allowed values
+  | 'date-relative-constraint'  // Date must be within N days of another date/now
+  | 'user-not-unassigned'       // User field must be populated
+  | 'multi-select-min-count'    // Multi-select must have at least N values
+  | 'field-populated-by-status'; // Field must be populated when status = X
+
+export interface QualityRuleConfig {
+  // text-contains-pattern
+  pattern?: string;             // Regex pattern
+  // text-minimum-length
+  minLength?: number;
+  // text-no-placeholder
+  placeholderPhrases?: string[]; // e.g., ["TBD", "TODO", "N/A"]
+  // number-in-range
+  min?: number;
+  max?: number;
+  // number-in-set
+  allowedValues?: number[];      // e.g., [1, 2, 3, 5, 8, 13]
+  // select-not-default
+  defaultValue?: string;
+  // select-in-set
+  allowedOptions?: string[];
+  // date-relative-constraint
+  relativeTo?: 'now' | string;  // 'now' or another field ID
+  maxDaysDelta?: number;
+  // multi-select-min-count
+  minCount?: number;
+  // field-populated-by-status
+  triggerStatus?: string;        // Status that requires the field to be populated
+}
+
+export interface QualityRule {
+  id: string;
+  name: string;                      // e.g., "AC must use Given/When/Then"
+  description: string;
+  fieldId: string;                   // Which field this rule applies to
+  fieldType: FieldType;
+  ruleType: QualityRuleType;
+  config: QualityRuleConfig;
+  appliesTo: IssueTypeKey[];         // Which issue types
+  enabled: boolean;
+  severity: 'required' | 'recommended';
+}
+
+// ============================================
 // Organization Defaults Types
 // ============================================
 
@@ -208,6 +265,7 @@ export interface OrganizationDefaults {
   workflows: OrgSetting<WorkflowConfig[]>;
   estimation: OrgSetting<EstimationPolicy[]>;
   blockers: OrgSetting<BlockerMethodConfig>;
+  qualityRules: OrgSetting<QualityRule[]>; // Quality standards for Standards Compliance
   updatedAt: string;
   updatedBy: string;
 }
