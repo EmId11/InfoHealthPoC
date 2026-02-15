@@ -97,9 +97,10 @@ interface DataIntegritySummaryTableProps {
 
 const DataIntegritySummaryTable: React.FC<DataIntegritySummaryTableProps> = ({ dimension }) => {
   const [modalRow, setModalRow] = useState<FieldSummary | null>(null);
+  const [selectedTypes, setSelectedTypes] = useState<Set<string>>(new Set());
 
   // Aggregate all indicators/passedChecks across categories by jiraFieldId
-  const { fieldRows, crossFieldRow, stats } = useMemo(() => {
+  const { fieldRows, crossFieldRow, issueTypeList, stats } = useMemo(() => {
     const fieldMap = new Map<string, {
       indicators: IndicatorResult[];
       failedCount: number;
@@ -238,9 +239,20 @@ const DataIntegritySummaryTable: React.FC<DataIntegritySummaryTableProps> = ({ d
       else stable++;
     }
 
+    // Collect all unique issue types across all data
+    const allIssueTypes = new Set<string>();
+    for (const r of rows) {
+      for (const t of r.issueTypes) allIssueTypes.add(t);
+    }
+    if (crossRow) {
+      for (const t of crossRow.issueTypes) allIssueTypes.add(t);
+    }
+    const issueTypeList = Array.from(allIssueTypes).sort();
+
     return {
       fieldRows: rows,
       crossFieldRow: crossRow,
+      issueTypeList,
       stats: {
         totalFields,
         totalFailed,
@@ -257,112 +269,320 @@ const DataIntegritySummaryTable: React.FC<DataIntegritySummaryTableProps> = ({ d
     };
   }, [dimension]);
 
+  const toggleType = (type: string) => {
+    setSelectedTypes(prev => {
+      const next = new Set(prev);
+      if (next.has(type)) next.delete(type);
+      else next.add(type);
+      return next;
+    });
+  };
+
+  // Filtered view when issue type chips are selected
+  const { filteredFieldRows, filteredCrossFieldRow, filteredStats } = useMemo(() => {
+    const isAllFields = selectedTypes.size === 0;
+    if (isAllFields) {
+      return { filteredFieldRows: fieldRows, filteredCrossFieldRow: crossFieldRow, filteredStats: stats };
+    }
+
+    const issueFilters = new Set(selectedTypes);
+    const crossFieldSelected = issueFilters.delete('__crossField__');
+    const hasIssueFilters = issueFilters.size > 0;
+
+    // Filter a row's checks to only those matching selected issue types
+    const filterRowByIssueTypes = (row: FieldSummary): FieldSummary | null => {
+      if (!hasIssueFilters) return row; // no issue type filter, pass through
+      const filteredFailed = row.failedIndicators.filter(ind => ind.appliesTo?.some(t => issueFilters.has(t)));
+      const filteredPassed = row.passedChecks.filter(pc => pc.appliesTo?.some(t => issueFilters.has(t)));
+      const totalChecks = filteredFailed.length + filteredPassed.length;
+      if (totalChecks === 0) return null;
+      const failRate = filteredFailed.length / totalChecks;
+      const severity = getSeverity(failRate);
+      const trendDir = computeTrendDirection(filteredFailed);
+      const syntheticData = buildSyntheticTrendData(filteredFailed);
+      return {
+        ...row,
+        failedIndicators: filteredFailed,
+        passedChecks: filteredPassed,
+        failedCount: filteredFailed.length,
+        passedCount: filteredPassed.length,
+        totalChecks,
+        failRate,
+        severityLabel: severity.label,
+        severityColor: severity.color,
+        severityBg: severity.bg,
+        trendDirection: trendDir,
+        trendArrow: trendDir === 'up' ? '\u2197' : trendDir === 'down' ? '\u2198' : '\u2014',
+        trendColor: trendDir === 'up' ? '#36B37E' : trendDir === 'down' ? '#DE350B' : '#6B778C',
+        syntheticTrendData: syntheticData,
+        syntheticTrend: trendDir === 'up' ? 'improving' : trendDir === 'down' ? 'declining' : 'stable',
+      };
+    };
+
+    // Field rows: only shown when issue type filters are active
+    const filtered = hasIssueFilters
+      ? fieldRows.map(filterRowByIssueTypes).filter((r): r is FieldSummary => r !== null)
+      : [];
+
+    // Cross-field row: only shown when cross-field chip is selected
+    let filteredCross: FieldSummary | null = null;
+    if (crossFieldSelected && crossFieldRow) {
+      filteredCross = filterRowByIssueTypes(crossFieldRow);
+    }
+
+    // Recompute banner stats
+    const allRows = [...filtered, ...(filteredCross ? [filteredCross] : [])];
+    const totalFields = filtered.length;
+    const totalFailed = allRows.reduce((s, r) => s + r.failedCount, 0);
+    const totalPassed = allRows.reduce((s, r) => s + r.passedCount, 0);
+    const totalAll = totalFailed + totalPassed;
+    const overallFailRate = totalAll > 0 ? totalFailed / totalAll : 0;
+    const overallSev = getSeverity(overallFailRate);
+
+    let improving = 0, declining = 0, stable = 0;
+    for (const r of allRows) {
+      if (r.trendDirection === 'up') improving++;
+      else if (r.trendDirection === 'down') declining++;
+      else stable++;
+    }
+
+    return {
+      filteredFieldRows: filtered,
+      filteredCrossFieldRow: filteredCross,
+      filteredStats: {
+        totalFields,
+        totalFailed,
+        totalPassed,
+        totalChecks: totalAll,
+        overallFailRate,
+        overallSevLabel: overallSev.label,
+        overallSevColor: overallSev.color,
+        overallSevBg: overallSev.bg,
+        improving,
+        declining,
+        stable,
+      },
+    };
+  }, [fieldRows, crossFieldRow, stats, selectedTypes]);
+
+  const isAllFields = selectedTypes.size === 0;
+
+  // ── Derived values for redesigned banner ──
+  const allDisplayRows = [...filteredFieldRows, ...(filteredCrossFieldRow ? [filteredCrossFieldRow] : [])];
+  const sevCounts = { Critical: 0, 'At Risk': 0, Fair: 0, Healthy: 0 };
+  for (const row of allDisplayRows) {
+    if (row.severityLabel in sevCounts) sevCounts[row.severityLabel as keyof typeof sevCounts]++;
+  }
+
+  // Fields sorted worst-to-best for heatmap
+  const sortedFields = [...allDisplayRows].sort((a, b) => b.failRate - a.failRate);
+  const worstField = sortedFields.length > 0 ? sortedFields[0] : null;
+
+  // Ring angle
+  const passRate = filteredStats.totalChecks > 0 ? 1 - filteredStats.overallFailRate : 1;
+  const passAngle = Math.round(passRate * 360);
+
+  // Trend helpers (from dimension prop — stable across filters)
+  const trendArrow = dimension.trend === 'improving' ? '↗' : dimension.trend === 'declining' ? '↘' : '→';
+  const trendLabel = dimension.trend === 'improving' ? 'Improving' : dimension.trend === 'declining' ? 'Declining' : 'Stable';
+  const trendColor = dimension.trend === 'improving' ? '#36B37E' : dimension.trend === 'declining' ? '#DE350B' : '#6B778C';
+  const trendBg = dimension.trend === 'improving' ? '#E3FCEF' : dimension.trend === 'declining' ? '#FFEBE6' : '#F4F5F7';
+
   return (
     <div>
+      {/* ── Issue Type Filter Chips ── */}
+      {(issueTypeList.length >= 2 || crossFieldRow) && (
+        <div style={filterStyles.container}>
+          <button
+            style={isAllFields ? filterStyles.chipActive : filterStyles.chip}
+            onClick={() => setSelectedTypes(new Set())}
+          >
+            All Fields
+          </button>
+          {issueTypeList.map(type => (
+            <button
+              key={type}
+              style={selectedTypes.has(type) ? filterStyles.chipActive : filterStyles.chip}
+              onClick={() => toggleType(type)}
+            >
+              {type.charAt(0).toUpperCase() + type.slice(1)}
+            </button>
+          ))}
+          {crossFieldRow && (
+            <button
+              style={selectedTypes.has('__crossField__') ? filterStyles.chipActive : filterStyles.chip}
+              onClick={() => toggleType('__crossField__')}
+            >
+              Cross-Field
+            </button>
+          )}
+        </div>
+      )}
+
       {/* ── Summary Stats Banner ── */}
       <div style={bannerStyles.container}>
-        {/* Panel 1: Field Health */}
-        <div style={bannerStyles.panel}>
-          <div style={bannerStyles.panelLabel}>Field Health</div>
-          <div style={bannerStyles.panelMain}>
-            <span style={bannerStyles.bigNumber}>{stats.totalFields}</span>
-            <span style={bannerStyles.bigUnit}>fields</span>
+        {/* Left Column — Health Ring */}
+        <div style={bannerStyles.ringColumn}>
+          {/* Donut ring */}
+          <div style={{
+            ...bannerStyles.ringOuter,
+            background: allDisplayRows.length > 0
+              ? `conic-gradient(#36B37E 0deg ${passAngle}deg, #DE350B ${passAngle}deg 360deg)`
+              : '#E4E6EB',
+          }}>
+            <div style={bannerStyles.ringInner}>
+              <span style={bannerStyles.ringScore}>{Math.round(passRate * 100)}</span>
+              <span style={bannerStyles.ringUnit}>% pass</span>
+            </div>
           </div>
-          <div style={bannerStyles.miniBar}>
-            {stats.totalPassed > 0 && (
-              <div style={{
-                flex: stats.totalPassed,
-                height: '100%',
-                backgroundColor: '#36B37E',
-                borderRadius: stats.totalFailed > 0 ? '3px 0 0 3px' : '3px',
-              }} />
-            )}
-            {stats.totalFailed > 0 && (
-              <div style={{
-                flex: stats.totalFailed,
-                height: '100%',
-                backgroundColor: '#DE350B',
-                borderRadius: stats.totalPassed > 0 ? '0 3px 3px 0' : '3px',
-              }} />
-            )}
-          </div>
-          <span style={{ fontSize: '11px', color: '#6B778C' }}>
-            <span style={{ color: '#36B37E', fontWeight: 600 }}>{stats.totalPassed} passed</span>
-            {' \u00B7 '}
-            <span style={{ color: '#DE350B', fontWeight: 600 }}>{stats.totalFailed} failed</span>
+
+          {/* Severity badge */}
+          <span style={{
+            ...bannerStyles.sevBadge,
+            backgroundColor: filteredStats.overallSevBg,
+            color: filteredStats.overallSevColor,
+          }}>
+            <span style={{
+              width: '6px', height: '6px', borderRadius: '50%',
+              backgroundColor: filteredStats.overallSevColor, flexShrink: 0,
+            }} />
+            {filteredStats.overallSevLabel}
+          </span>
+
+          {/* Trend badge */}
+          <span style={{ ...bannerStyles.trendBadge, backgroundColor: trendBg, color: trendColor }}>
+            {trendArrow} {trendLabel}
+          </span>
+
+          {/* Total checks */}
+          <span style={{ fontSize: '11px', color: '#6B778C', marginTop: '2px' }}>
+            {filteredStats.totalChecks} checks
           </span>
         </div>
 
-        <div style={bannerStyles.divider} />
+        {/* Vertical divider */}
+        <div style={bannerStyles.verticalDivider} />
 
-        {/* Panel 2: Trend Movement */}
-        <div style={bannerStyles.panel}>
-          <div style={bannerStyles.panelLabel}>Trend Movement</div>
-          <div style={bannerStyles.panelMain}>
-            <span style={bannerStyles.bigNumber}>
-              {Math.max(stats.improving, stats.declining, stats.stable)}
-            </span>
-            <span style={bannerStyles.bigUnit}>
-              {stats.stable >= stats.improving && stats.stable >= stats.declining
-                ? 'stable'
-                : stats.improving >= stats.declining
-                  ? 'improving'
-                  : 'declining'}
-            </span>
+        {/* Right Column — Details */}
+        <div style={bannerStyles.detailsColumn}>
+          {/* Top: Severity Distribution */}
+          <div style={bannerStyles.sevSection}>
+            <div style={bannerStyles.sectionLabel}>Severity Distribution</div>
+            {/* Proportional bar */}
+            <div style={bannerStyles.sevBar}>
+              {sevCounts.Critical > 0 && (
+                <div style={{ flex: sevCounts.Critical, backgroundColor: '#DE350B', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {sevCounts.Critical > 1 && <span style={bannerStyles.sevBarText}>{sevCounts.Critical}</span>}
+                </div>
+              )}
+              {sevCounts['At Risk'] > 0 && (
+                <div style={{ flex: sevCounts['At Risk'], backgroundColor: '#FF8B00', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {sevCounts['At Risk'] > 1 && <span style={bannerStyles.sevBarText}>{sevCounts['At Risk']}</span>}
+                </div>
+              )}
+              {sevCounts.Fair > 0 && (
+                <div style={{ flex: sevCounts.Fair, backgroundColor: '#FFAB00', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {sevCounts.Fair > 1 && <span style={bannerStyles.sevBarText}>{sevCounts.Fair}</span>}
+                </div>
+              )}
+              {sevCounts.Healthy > 0 && (
+                <div style={{ flex: sevCounts.Healthy, backgroundColor: '#36B37E', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {sevCounts.Healthy > 1 && <span style={bannerStyles.sevBarText}>{sevCounts.Healthy}</span>}
+                </div>
+              )}
+            </div>
+            {/* Legend */}
+            <div style={bannerStyles.sevLabels}>
+              {sevCounts.Critical > 0 && (
+                <span style={bannerStyles.sevLabelItem}>
+                  <span style={{ ...bannerStyles.sevDot, backgroundColor: '#DE350B' }} />
+                  {sevCounts.Critical} Critical
+                </span>
+              )}
+              {sevCounts['At Risk'] > 0 && (
+                <span style={bannerStyles.sevLabelItem}>
+                  <span style={{ ...bannerStyles.sevDot, backgroundColor: '#FF8B00' }} />
+                  {sevCounts['At Risk']} At Risk
+                </span>
+              )}
+              {sevCounts.Fair > 0 && (
+                <span style={bannerStyles.sevLabelItem}>
+                  <span style={{ ...bannerStyles.sevDot, backgroundColor: '#FFAB00' }} />
+                  {sevCounts.Fair} Fair
+                </span>
+              )}
+              {sevCounts.Healthy > 0 && (
+                <span style={bannerStyles.sevLabelItem}>
+                  <span style={{ ...bannerStyles.sevDot, backgroundColor: '#36B37E' }} />
+                  {sevCounts.Healthy} Healthy
+                </span>
+              )}
+            </div>
           </div>
-          <div style={bannerStyles.trendRow}>
-            {stats.improving > 0 && (
-              <span style={{ ...bannerStyles.trendToken, color: '#006644' }}>
-                ↗ {stats.improving} improved
-              </span>
-            )}
-            {stats.declining > 0 && (
-              <span style={{ ...bannerStyles.trendToken, color: '#DE350B' }}>
-                ↘ {stats.declining} declined
-              </span>
-            )}
-            {stats.stable > 0 && (
-              <span style={{ ...bannerStyles.trendToken, color: '#6B778C' }}>
-                → {stats.stable} stable
-              </span>
-            )}
-          </div>
-        </div>
 
-        <div style={bannerStyles.divider} />
+          {/* Horizontal divider */}
+          <div style={bannerStyles.horizontalDivider} />
 
-        {/* Panel 3: Checks */}
-        <div style={bannerStyles.panel}>
-          <div style={bannerStyles.panelLabel}>Checks</div>
-          <div style={bannerStyles.panelMain}>
-            <span style={bannerStyles.bigNumber}>{stats.totalChecks}</span>
-            <span style={bannerStyles.bigUnit}>total</span>
+          {/* Bottom: Heatmap + Trend */}
+          <div style={bannerStyles.bottomRow}>
+            {/* Fields by Health heatmap */}
+            <div style={bannerStyles.heatmapSection}>
+              <div style={bannerStyles.sectionLabel}>Fields by Health</div>
+              <div style={bannerStyles.heatmapGrid}>
+                {sortedFields.map((f) => (
+                  <div
+                    key={f.fieldId}
+                    title={`${f.fieldName} — ${f.severityLabel} (${Math.round(f.failRate * 100)}% fail)`}
+                    style={{
+                      width: '20px', height: '20px', borderRadius: '3px',
+                      backgroundColor: f.severityColor === '#006644' ? '#36B37E' : f.severityColor,
+                      cursor: 'pointer',
+                    }}
+                  />
+                ))}
+              </div>
+              {worstField && worstField.severityLabel !== 'Healthy' && (
+                <div style={bannerStyles.worstCallout}>
+                  Worst: {worstField.fieldName} ({Math.round(worstField.failRate * 100)}% fail rate)
+                </div>
+              )}
+            </div>
+
+            {/* Sub-divider */}
+            <div style={bannerStyles.subDivider} />
+
+            {/* Trend sparkline */}
+            <div style={bannerStyles.trendSection}>
+              <div style={bannerStyles.sectionLabel}>Trend</div>
+              <Sparkline
+                data={dimension.trendData}
+                trend={dimension.trend}
+                enhanced
+                height={56}
+                unit="%"
+              />
+              <div style={bannerStyles.trendTokenRow}>
+                <span style={{ color: '#36B37E', fontWeight: 600, fontSize: '11px' }}>
+                  ↗{filteredStats.improving}
+                </span>
+                <span style={{ color: '#6B778C', fontWeight: 600, fontSize: '11px' }}>
+                  →{filteredStats.stable}
+                </span>
+                <span style={{ color: '#DE350B', fontWeight: 600, fontSize: '11px' }}>
+                  ↘{filteredStats.declining}
+                </span>
+              </div>
+            </div>
           </div>
-          <div style={bannerStyles.miniBar}>
-            {stats.totalPassed > 0 && (
-              <div style={{
-                flex: stats.totalPassed,
-                height: '100%',
-                backgroundColor: '#36B37E',
-                borderRadius: stats.totalFailed > 0 ? '3px 0 0 3px' : '3px',
-              }} />
-            )}
-            {stats.totalFailed > 0 && (
-              <div style={{
-                flex: stats.totalFailed,
-                height: '100%',
-                backgroundColor: '#DE350B',
-                borderRadius: stats.totalPassed > 0 ? '0 3px 3px 0' : '3px',
-              }} />
-            )}
-          </div>
-          <span style={{ fontSize: '11px', color: '#36B37E', fontWeight: 600 }}>
-            {stats.totalPassed} passed ({stats.totalChecks > 0 ? Math.round((1 - stats.overallFailRate) * 100) : 0}%)
-          </span>
         </div>
       </div>
 
       {/* ── Field Table ── */}
+      {!isAllFields && filteredFieldRows.length === 0 && filteredCrossFieldRow === null ? (
+        <div style={filterStyles.emptyState}>
+          No field checks match the selected filters.
+        </div>
+      ) : (
       <div style={tableStyles.container}>
         <table style={tableStyles.table}>
           <thead>
@@ -375,12 +595,12 @@ const DataIntegritySummaryTable: React.FC<DataIntegritySummaryTableProps> = ({ d
             </tr>
           </thead>
           <tbody>
-            {fieldRows.map((row) => (
+            {filteredFieldRows.map((row) => (
               <FieldRow key={row.fieldId} row={row} onRowClick={setModalRow} />
             ))}
 
             {/* Cross-field separator */}
-            {crossFieldRow && (
+            {filteredCrossFieldRow && (
               <>
                 <tr>
                   <td colSpan={5} style={tableStyles.separatorRow}>
@@ -395,12 +615,13 @@ const DataIntegritySummaryTable: React.FC<DataIntegritySummaryTableProps> = ({ d
                     </div>
                   </td>
                 </tr>
-                <FieldRow row={crossFieldRow} onRowClick={setModalRow} />
+                <FieldRow row={filteredCrossFieldRow} onRowClick={setModalRow} />
               </>
             )}
           </tbody>
         </table>
       </div>
+      )}
 
       {/* ── Field Detail Modal ── */}
       {modalRow && (
@@ -594,65 +815,177 @@ const bannerStyles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'stretch',
     margin: '16px 0 12px',
+    minHeight: '180px',
     backgroundColor: '#FFFFFF',
-    borderRadius: '10px',
+    borderRadius: '12px',
     border: '1px solid #E4E6EB',
-    boxShadow: '0 1px 3px rgba(9, 30, 66, 0.08)',
+    boxShadow: '0 2px 8px rgba(9, 30, 66, 0.08)',
     overflow: 'hidden',
   },
-  panel: {
+  // ── Left Column: Health Ring ──
+  ringColumn: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '20px 28px',
+    minWidth: '180px',
+    backgroundColor: '#FAFBFC',
+    gap: '8px',
+  },
+  ringOuter: {
+    width: '120px',
+    height: '120px',
+    borderRadius: '50%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ringInner: {
+    width: '92px',
+    height: '92px',
+    borderRadius: '50%',
+    backgroundColor: '#FAFBFC',
+    display: 'flex',
+    flexDirection: 'column' as const,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ringScore: {
+    fontSize: '32px',
+    fontWeight: 800,
+    color: '#172B4D',
+    lineHeight: 1,
+  },
+  ringUnit: {
+    fontSize: '11px',
+    color: '#6B778C',
+    marginTop: '2px',
+  },
+  sevBadge: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '4px',
+    padding: '3px 10px',
+    borderRadius: '12px',
+    fontSize: '11px',
+    fontWeight: 600,
+    whiteSpace: 'nowrap' as const,
+  },
+  trendBadge: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '3px',
+    padding: '3px 10px',
+    borderRadius: '12px',
+    fontSize: '11px',
+    fontWeight: 600,
+    whiteSpace: 'nowrap' as const,
+  },
+  // ── Dividers ──
+  verticalDivider: {
+    width: '1px',
+    backgroundColor: '#E4E6EB',
+    flexShrink: 0,
+  },
+  horizontalDivider: {
+    height: '1px',
+    backgroundColor: '#F4F5F7',
+    flexShrink: 0,
+  },
+  subDivider: {
+    width: '1px',
+    backgroundColor: '#F4F5F7',
+    flexShrink: 0,
+  },
+  // ── Right Column: Details ──
+  detailsColumn: {
     flex: 1,
+    display: 'flex',
+    flexDirection: 'column' as const,
     padding: '16px 20px',
+    gap: '12px',
+  },
+  // Severity Distribution section
+  sevSection: {
     display: 'flex',
     flexDirection: 'column' as const,
     gap: '6px',
   },
-  panelLabel: {
-    fontSize: '10px',
+  sectionLabel: {
+    fontSize: '9px',
     fontWeight: 700,
     color: '#7A869A',
     textTransform: 'uppercase' as const,
     letterSpacing: '0.8px',
   },
-  panelMain: {
-    display: 'flex',
-    alignItems: 'baseline',
-    gap: '4px',
-  },
-  bigNumber: {
-    fontSize: '26px',
-    fontWeight: 700,
-    color: '#172B4D',
-    lineHeight: 1,
-  },
-  bigUnit: {
-    fontSize: '12px',
-    fontWeight: 500,
-    color: '#6B778C',
-  },
-  miniBar: {
+  sevBar: {
     display: 'flex',
     width: '100%',
-    height: '6px',
-    borderRadius: '3px',
+    height: '28px',
+    borderRadius: '14px',
     overflow: 'hidden',
     backgroundColor: '#F4F5F7',
   },
-  divider: {
-    width: '1px',
-    backgroundColor: '#E4E6EB',
+  sevBarText: {
+    fontSize: '11px',
+    fontWeight: 700,
+    color: '#FFFFFF',
+  },
+  sevLabels: {
+    display: 'flex',
+    flexWrap: 'wrap' as const,
+    gap: '12px',
+  },
+  sevLabelItem: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '4px',
+    fontSize: '11px',
+    fontWeight: 600,
+    color: '#505F79',
+  },
+  sevDot: {
+    width: '6px',
+    height: '6px',
+    borderRadius: '50%',
     flexShrink: 0,
   },
-  trendRow: {
+  // Bottom row
+  bottomRow: {
+    display: 'flex',
+    flex: 1,
+    gap: '0px',
+  },
+  heatmapSection: {
+    flex: 3,
     display: 'flex',
     flexDirection: 'column' as const,
-    gap: '4px',
-    marginTop: '4px',
+    gap: '6px',
+    paddingRight: '16px',
   },
-  trendToken: {
-    fontSize: '12px',
-    fontWeight: 600,
-    whiteSpace: 'nowrap' as const,
+  heatmapGrid: {
+    display: 'flex',
+    flexWrap: 'wrap' as const,
+    gap: '3px',
+  },
+  worstCallout: {
+    fontSize: '11px',
+    fontWeight: 500,
+    color: '#6B778C',
+    fontStyle: 'italic' as const,
+  },
+  trendSection: {
+    flex: 2,
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: '6px',
+    minWidth: '180px',
+    paddingLeft: '16px',
+  },
+  trendTokenRow: {
+    display: 'flex',
+    gap: '12px',
   },
 };
 
@@ -835,6 +1168,52 @@ const modalStyles: Record<string, React.CSSProperties> = {
     fontWeight: 500,
     color: '#8993A4',
     fontFamily: "'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace",
+  },
+};
+
+// ============================================================================
+// Filter chip styles
+// ============================================================================
+
+const filterStyles: Record<string, React.CSSProperties> = {
+  container: {
+    display: 'flex',
+    flexWrap: 'wrap' as const,
+    gap: '6px',
+    margin: '16px 0 0',
+  },
+  chip: {
+    padding: '4px 12px',
+    borderRadius: '16px',
+    fontSize: '12px',
+    fontWeight: 600,
+    border: '1px solid #DFE1E6',
+    backgroundColor: '#F4F5F7',
+    color: '#505F79',
+    cursor: 'pointer',
+    transition: 'all 0.15s ease',
+    lineHeight: 1.4,
+  },
+  chipActive: {
+    padding: '4px 12px',
+    borderRadius: '16px',
+    fontSize: '12px',
+    fontWeight: 600,
+    border: '1px solid #0052CC',
+    backgroundColor: '#DEEBFF',
+    color: '#0052CC',
+    cursor: 'pointer',
+    transition: 'all 0.15s ease',
+    lineHeight: 1.4,
+  },
+  emptyState: {
+    textAlign: 'center' as const,
+    padding: '48px 24px',
+    fontSize: '14px',
+    color: '#6B778C',
+    backgroundColor: '#FFFFFF',
+    borderRadius: '10px',
+    border: '1px solid #E4E6EB',
   },
 };
 

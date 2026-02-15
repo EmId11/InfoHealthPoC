@@ -15,6 +15,7 @@ import DistributionSpectrum from './DistributionSpectrum';
 import Sparkline from './Sparkline';
 import FieldCompletenessChart from './FieldCompletenessChart';
 import DataIntegritySummaryTable from './DataIntegritySummaryTable';
+import FieldCompletenessSummaryTable from './FieldCompletenessSummaryTable';
 
 // Field name lookup from field definitions
 const FIELD_NAME_MAP = new Map(
@@ -556,6 +557,15 @@ const IndicatorsTab: React.FC<IndicatorsTabProps> = ({ dimension, dimensionIndex
         <DataIntegritySummaryTable dimension={dimension} />
       )}
 
+      {/* Field Completeness: summary table */}
+      {dimension.dimensionKey === 'ticketReadiness' && (
+        <FieldCompletenessSummaryTable
+          dimension={dimension}
+          dimensionIndex={dimensionIndex}
+          onFieldDrillDown={onIndicatorDrillDown}
+        />
+      )}
+
       {/* Vertical sidebar layout for 5+ categories */}
       {dimension.categories.length > 1 && useVerticalTabs && dimension.dimensionKey !== 'dataIntegrity' && (
         <div style={verticalStyles.wrapper}>
@@ -822,7 +832,7 @@ const IndicatorsTab: React.FC<IndicatorsTabProps> = ({ dimension, dimensionIndex
       )}
 
       {/* Active Category Table for horizontal layout (no redundant header) */}
-      {activeCategory && !useVerticalTabs && (
+      {activeCategory && !useVerticalTabs && dimension.dimensionKey !== 'ticketReadiness' && (
         <CategorySection
           key={activeCategory.id}
           category={activeCategory}
