@@ -447,6 +447,142 @@ const dataIntegrityIndicators: IndicatorMetadata[] = [
     description: 'Initiatives sharing near-identical description text.',
   },
 
+  // Data Freshness — Stale findings
+  {
+    id: 'freshness-story-stale',
+    reportType: 'issueList',
+    issueListTitle: 'Stale Stories (no activity in 14+ days)',
+    description: 'Stories with no updates in the configured threshold period.',
+  },
+  {
+    id: 'freshness-bug-stale',
+    reportType: 'issueList',
+    issueListTitle: 'Stale Bugs (no activity in 7+ days)',
+    description: 'Bugs with no updates in the configured threshold period.',
+  },
+  {
+    id: 'freshness-task-stale',
+    reportType: 'issueList',
+    issueListTitle: 'Stale Tasks (no activity in 7+ days)',
+    description: 'Tasks with no updates in the configured threshold period.',
+  },
+  {
+    id: 'freshness-epic-stale',
+    reportType: 'issueList',
+    issueListTitle: 'Stale Epics (no activity in 30+ days)',
+    description: 'Epics with no updates in the configured threshold period.',
+  },
+  {
+    id: 'freshness-risk-stale',
+    reportType: 'issueList',
+    issueListTitle: 'Stale Risks (no activity in 14+ days)',
+    description: 'Risks with no updates in the configured threshold period.',
+  },
+  {
+    id: 'freshness-assumption-stale',
+    reportType: 'issueList',
+    issueListTitle: 'Stale Assumptions (no activity in 14+ days)',
+    description: 'Assumptions with no updates in the configured threshold period.',
+  },
+  {
+    id: 'freshness-feature-stale',
+    reportType: 'issueList',
+    issueListTitle: 'Stale Features (no activity in 30+ days)',
+    description: 'Features with no updates in the configured threshold period.',
+  },
+  {
+    id: 'freshness-spike-stale',
+    reportType: 'issueList',
+    issueListTitle: 'Stale Spikes (no activity in 7+ days)',
+    description: 'Spikes with no updates in the configured threshold period.',
+  },
+  {
+    id: 'freshness-dependency-stale',
+    reportType: 'issueList',
+    issueListTitle: 'Stale Dependencies (no activity in 14+ days)',
+    description: 'Dependencies with no updates in the configured threshold period.',
+  },
+  {
+    id: 'freshness-impediment-stale',
+    reportType: 'issueList',
+    issueListTitle: 'Stale Impediments (no activity in 7+ days)',
+    description: 'Impediments with no updates in the configured threshold period.',
+  },
+  {
+    id: 'freshness-initiative-stale',
+    reportType: 'issueList',
+    issueListTitle: 'Stale Initiatives (no activity in 30+ days)',
+    description: 'Initiatives with no updates in the configured threshold period.',
+  },
+
+  // Data Freshness — Bulk update findings
+  {
+    id: 'freshness-story-bulkUpdated',
+    reportType: 'issueList',
+    issueListTitle: 'Stories with Bulk-Updated Fields',
+    description: 'Stories where field changes were part of a bulk operation.',
+  },
+  {
+    id: 'freshness-bug-bulkUpdated',
+    reportType: 'issueList',
+    issueListTitle: 'Bugs with Bulk-Updated Fields',
+    description: 'Bugs where field changes were part of a bulk operation.',
+  },
+  {
+    id: 'freshness-task-bulkUpdated',
+    reportType: 'issueList',
+    issueListTitle: 'Tasks with Bulk-Updated Fields',
+    description: 'Tasks where field changes were part of a bulk operation.',
+  },
+  {
+    id: 'freshness-epic-bulkUpdated',
+    reportType: 'issueList',
+    issueListTitle: 'Epics with Bulk-Updated Fields',
+    description: 'Epics where field changes were part of a bulk operation.',
+  },
+  {
+    id: 'freshness-risk-bulkUpdated',
+    reportType: 'issueList',
+    issueListTitle: 'Risks with Bulk-Updated Fields',
+    description: 'Risks where field changes were part of a bulk operation.',
+  },
+  {
+    id: 'freshness-assumption-bulkUpdated',
+    reportType: 'issueList',
+    issueListTitle: 'Assumptions with Bulk-Updated Fields',
+    description: 'Assumptions where field changes were part of a bulk operation.',
+  },
+  {
+    id: 'freshness-feature-bulkUpdated',
+    reportType: 'issueList',
+    issueListTitle: 'Features with Bulk-Updated Fields',
+    description: 'Features where field changes were part of a bulk operation.',
+  },
+  {
+    id: 'freshness-spike-bulkUpdated',
+    reportType: 'issueList',
+    issueListTitle: 'Spikes with Bulk-Updated Fields',
+    description: 'Spikes where field changes were part of a bulk operation.',
+  },
+  {
+    id: 'freshness-dependency-bulkUpdated',
+    reportType: 'issueList',
+    issueListTitle: 'Dependencies with Bulk-Updated Fields',
+    description: 'Dependencies where field changes were part of a bulk operation.',
+  },
+  {
+    id: 'freshness-impediment-bulkUpdated',
+    reportType: 'issueList',
+    issueListTitle: 'Impediments with Bulk-Updated Fields',
+    description: 'Impediments where field changes were part of a bulk operation.',
+  },
+  {
+    id: 'freshness-initiative-bulkUpdated',
+    reportType: 'issueList',
+    issueListTitle: 'Initiatives with Bulk-Updated Fields',
+    description: 'Initiatives where field changes were part of a bulk operation.',
+  },
+
   // Cross-field structural findings
   {
     id: 'cross-status-field-conflicts',

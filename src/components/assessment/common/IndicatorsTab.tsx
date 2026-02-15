@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { DimensionResult, IndicatorCategory, IndicatorResult, IndicatorDrillDownState } from '../../../types/assessment';
+import { DimensionResult, IndicatorCategory, IndicatorResult, IndicatorDrillDownState, PassedCheck } from '../../../types/assessment';
 import { MOCK_JIRA_FIELDS_BY_ISSUE_TYPE } from '../../../constants/presets';
 import {
   INDICATOR_TIERS,
@@ -13,8 +13,8 @@ import CrossIcon from '@atlaskit/icon/glyph/cross';
 import TrendChart from './TrendChart';
 import DistributionSpectrum from './DistributionSpectrum';
 import Sparkline from './Sparkline';
-
-type ViewMode = 'cards' | 'table';
+import FieldCompletenessChart from './FieldCompletenessChart';
+import DataIntegritySummaryTable from './DataIntegritySummaryTable';
 
 // Field name lookup from field definitions
 const FIELD_NAME_MAP = new Map(
@@ -56,6 +56,46 @@ function groupIndicatorsByField(indicators: IndicatorResult[]): FieldGroup[] {
   return groups;
 }
 
+interface FieldSuite {
+  fieldId: string;
+  fieldName: string;
+  detected: IndicatorResult[];
+  passed: PassedCheck[];
+}
+
+function buildFieldSuites(indicators: IndicatorResult[], passedChecks?: PassedCheck[]): FieldSuite[] {
+  const groups = groupIndicatorsByField(indicators);
+  const passedByField = new Map<string, PassedCheck[]>();
+  if (passedChecks) {
+    for (const pc of passedChecks) {
+      const key = pc.jiraFieldId || '';
+      if (!passedByField.has(key)) passedByField.set(key, []);
+      passedByField.get(key)!.push(pc);
+    }
+  }
+  const consumedFieldIds = new Set<string>();
+  const suites: FieldSuite[] = [];
+  for (const group of groups) {
+    if (group.fieldId) consumedFieldIds.add(group.fieldId);
+    suites.push({
+      fieldId: group.fieldId,
+      fieldName: group.fieldName,
+      detected: group.indicators,
+      passed: (group.fieldId && passedByField.get(group.fieldId)) || [],
+    });
+  }
+  // Append passed-only fields (e.g., sprint, components, fixVersions)
+  Array.from(passedByField.entries()).forEach(([fieldId, checks]) => {
+    if (consumedFieldIds.has(fieldId)) return;
+    suites.push({
+      fieldId,
+      fieldName: fieldId ? getFieldDisplayName(fieldId) : '',
+      detected: [],
+      passed: checks,
+    });
+  });
+  return suites;
+}
 
 interface IndicatorsTabProps {
   dimension: DimensionResult;
@@ -155,21 +195,46 @@ const CategoryTierBadges: React.FC<CategoryTierBadgesProps> = ({ distribution })
 };
 
 // ============================================================================
-// Summary Toolbar Component — tier bar + trend tokens + view toggle
+// Summary Toolbar Component — tier bar + trend tokens (or pass/fail counts)
 // ============================================================================
 
 interface SummaryToolbarProps {
   indicators: IndicatorResult[];
-  viewMode: ViewMode;
-  onViewModeChange: (mode: ViewMode) => void;
+  totalChecks?: number;
+  passedCheckCount?: number;
 }
 
-const SummaryToolbar: React.FC<SummaryToolbarProps> = ({ indicators, viewMode, onViewModeChange }) => {
+const SummaryToolbar: React.FC<SummaryToolbarProps> = ({ indicators, totalChecks, passedCheckCount }) => {
+  const failedCount = indicators.length;
+  const passedCount = passedCheckCount ?? 0;
+
+  // Data Integrity mode: show simple pass/fail counts
+  if (totalChecks != null) {
+    return (
+      <div style={toolbarStyles.container}>
+        <div style={toolbarStyles.testSummary}>
+          {failedCount > 0 && (
+            <span style={{ ...toolbarStyles.testCount, color: '#DE350B' }}>
+              <span style={{ fontSize: '14px' }}>✕</span> {failedCount} failed
+            </span>
+          )}
+          {failedCount > 0 && passedCount > 0 && (
+            <span style={{ color: '#DFE1E6', fontSize: '12px' }}>·</span>
+          )}
+          {passedCount > 0 && (
+            <span style={{ ...toolbarStyles.testCount, color: '#36B37E' }}>
+              <span style={{ fontSize: '14px' }}>✓</span> {passedCount} passed
+            </span>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Other dimensions: show tier distribution + trend tokens
   const distribution = getTierDistribution(indicators);
-  const total = indicators.length;
   const { improving, stable, declining } = computeTrendCounts(indicators);
 
-  // Build tier segments for stacked bar
   const tierSegments = [
     { tier: INDICATOR_TIERS[0], count: distribution.needsAttention },
     { tier: INDICATOR_TIERS[1], count: distribution.belowAverage },
@@ -180,7 +245,6 @@ const SummaryToolbar: React.FC<SummaryToolbarProps> = ({ indicators, viewMode, o
 
   return (
     <div style={toolbarStyles.container}>
-      {/* Left: Stacked tier bar + compact legend */}
       <div style={toolbarStyles.tierGroup}>
         <div style={toolbarStyles.stackedBar}>
           {tierSegments.map(({ tier, count }) => (
@@ -205,10 +269,8 @@ const SummaryToolbar: React.FC<SummaryToolbarProps> = ({ indicators, viewMode, o
         </div>
       </div>
 
-      {/* Divider */}
       <div style={toolbarStyles.divider} />
 
-      {/* Center: Compact trend tokens */}
       <div style={toolbarStyles.trendGroup}>
         {improving > 0 && (
           <span style={{ ...toolbarStyles.trendToken, color: '#006644' }}>
@@ -227,9 +289,6 @@ const SummaryToolbar: React.FC<SummaryToolbarProps> = ({ indicators, viewMode, o
           </span>
         )}
       </div>
-
-      {/* Right: View toggle */}
-      <ViewToggle viewMode={viewMode} onToggle={onViewModeChange} />
     </div>
   );
 };
@@ -286,72 +345,19 @@ const toolbarStyles: Record<string, React.CSSProperties> = {
     fontWeight: 600,
     whiteSpace: 'nowrap' as const,
   },
-};
-
-// ============================================================================
-// View Mode Toggle Component
-// ============================================================================
-
-interface ViewToggleProps {
-  viewMode: ViewMode;
-  onToggle: (mode: ViewMode) => void;
-}
-
-const ViewToggle: React.FC<ViewToggleProps> = ({ viewMode, onToggle }) => (
-  <div style={toggleStyles.container}>
-    <button
-      style={{
-        ...toggleStyles.button,
-        ...(viewMode === 'cards' ? toggleStyles.buttonActive : {}),
-      }}
-      onClick={() => onToggle('cards')}
-      title="Card view"
-    >
-      <svg width="14" height="14" viewBox="0 0 14 14" fill={viewMode === 'cards' ? '#0052CC' : '#6B778C'}>
-        <rect x="0.5" y="0.5" width="5.5" height="5.5" rx="1" />
-        <rect x="8" y="0.5" width="5.5" height="5.5" rx="1" />
-        <rect x="0.5" y="8" width="5.5" height="5.5" rx="1" />
-        <rect x="8" y="8" width="5.5" height="5.5" rx="1" />
-      </svg>
-    </button>
-    <button
-      style={{
-        ...toggleStyles.button,
-        ...(viewMode === 'table' ? toggleStyles.buttonActive : {}),
-      }}
-      onClick={() => onToggle('table')}
-      title="Table view"
-    >
-      <svg width="14" height="14" viewBox="0 0 14 14" fill={viewMode === 'table' ? '#0052CC' : '#6B778C'}>
-        <rect x="0.5" y="1" width="13" height="2" rx="0.5" />
-        <rect x="0.5" y="6" width="13" height="2" rx="0.5" />
-        <rect x="0.5" y="11" width="13" height="2" rx="0.5" />
-      </svg>
-    </button>
-  </div>
-);
-
-const toggleStyles: Record<string, React.CSSProperties> = {
-  container: {
-    display: 'inline-flex',
-    border: '1px solid #E4E6EB',
-    borderRadius: '6px',
-    overflow: 'hidden',
-  },
-  button: {
+  testSummary: {
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center',
-    width: '32px',
-    height: '28px',
-    padding: 0,
-    backgroundColor: '#FFFFFF',
-    border: 'none',
-    cursor: 'pointer',
-    transition: 'background-color 0.15s ease',
+    gap: '10px',
+    flex: 1,
   },
-  buttonActive: {
-    backgroundColor: '#F0F4FF',
+  testCount: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '5px',
+    fontSize: '13px',
+    fontWeight: 600,
+    whiteSpace: 'nowrap' as const,
   },
 };
 
@@ -388,14 +394,89 @@ const badgeStyles: Record<string, React.CSSProperties> = {
   },
 };
 
+// ============================================================================
+// Test Results Dashboard (Data Integrity table-view replacement)
+// ============================================================================
+
+interface TestResultsDashboardProps {
+  category: IndicatorCategory;
+  passedChecks?: PassedCheck[];
+  onIndicatorDrillDown?: (indicator: IndicatorResult) => void;
+}
+
+const TestResultsDashboard: React.FC<TestResultsDashboardProps> = ({
+  category,
+  passedChecks,
+  onIndicatorDrillDown,
+}) => {
+  const [hoveredRowId, setHoveredRowId] = useState<string | null>(null);
+  const suites = buildFieldSuites(category.indicators, passedChecks);
+  const hasFieldGroups = suites.some(s => s.fieldId);
+
+  return (
+    <div style={dashStyles.container}>
+      {suites.map((suite, suiteIdx) => {
+        const failedCount = suite.detected.length;
+        const passedCount = suite.passed.length;
+        const showHeader = hasFieldGroups && suite.fieldId !== '';
+
+        return (
+          <div key={suite.fieldId || `suite-${suiteIdx}`}>
+            {/* Suite header */}
+            {showHeader && (
+              <div style={{
+                ...dashStyles.suiteHeader,
+                ...(suiteIdx === 0 ? { borderTop: 'none' } : {}),
+              }}>
+                <span style={dashStyles.suiteFieldName}>{suite.fieldName}</span>
+                <span style={dashStyles.suiteSummary}>
+                  {failedCount > 0 && <span style={{ color: '#97A0AF' }}>{failedCount} ✕</span>}
+                  {failedCount > 0 && passedCount > 0 && <span style={{ color: '#DFE1E6' }}> / </span>}
+                  {passedCount > 0 && <span style={{ color: '#97A0AF' }}>{passedCount} ✓</span>}
+                </span>
+              </div>
+            )}
+
+            {/* Failed check rows */}
+            {suite.detected.map((indicator) => {
+              const isHovered = hoveredRowId === indicator.id;
+
+              return (
+                <div
+                  key={indicator.id}
+                  style={{
+                    ...dashStyles.row,
+                    backgroundColor: isHovered ? '#F4F5F7' : 'transparent',
+                    cursor: onIndicatorDrillDown ? 'pointer' : 'default',
+                  }}
+                  onClick={onIndicatorDrillDown ? () => onIndicatorDrillDown(indicator) : undefined}
+                  onMouseEnter={() => setHoveredRowId(indicator.id)}
+                  onMouseLeave={() => setHoveredRowId(null)}
+                >
+                  <span style={{ color: '#DE350B', fontSize: '15px', flexShrink: 0, width: '16px', textAlign: 'center' as const }}>✕</span>
+                  <span style={dashStyles.rowName}>{indicator.name}</span>
+                </div>
+              );
+            })}
+
+            {/* Passed check rows */}
+            {suite.passed.map((check) => (
+              <div key={check.id} style={dashStyles.passedRow}>
+                <span style={{ color: '#36B37E', fontSize: '15px', flexShrink: 0, width: '16px', textAlign: 'center' as const }}>✓</span>
+                <span style={dashStyles.passedName}>{check.name}</span>
+              </div>
+            ))}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
 const IndicatorsTab: React.FC<IndicatorsTabProps> = ({ dimension, dimensionIndex, onIndicatorDrillDown, comparisonTeamCount, comparisonTeamNames }) => {
   const [selectedIndicator, setSelectedIndicator] = useState<IndicatorResult | null>(null);
   const [activeTabIndex, setActiveTabIndex] = useState(0);
   const [hoveredSidebarIdx, setHoveredSidebarIdx] = useState<number | null>(null);
-  const [viewMode, setViewMode] = useState<ViewMode>(
-    dimension.dimensionKey === 'dataIntegrity' ? 'table' : 'cards'
-  );
-
   // Handle drill-down navigation
   const handleDrillDown = (indicator: IndicatorResult, categoryIndex: number) => {
     if (onIndicatorDrillDown) {
@@ -418,6 +499,10 @@ const IndicatorsTab: React.FC<IndicatorsTabProps> = ({ dimension, dimensionIndex
 
   // Find the index of the Cross-Field tab (always last, separated by divider)
   const crossFieldIndex = dimension.categories.findIndex(c => c.id === 'crossField');
+
+  // Split categories into issue types vs cross-cutting
+  const issueTypeCategories = dimension.categories.filter(c => c.id !== 'crossField');
+  const crossFieldCat = crossFieldIndex >= 0 ? dimension.categories[crossFieldIndex] : null;
 
   return (
     <div style={styles.container}>
@@ -466,57 +551,64 @@ const IndicatorsTab: React.FC<IndicatorsTabProps> = ({ dimension, dimensionIndex
         </div>
       )}
 
+      {/* Data Integrity: field-based summary table */}
+      {dimension.dimensionKey === 'dataIntegrity' && (
+        <DataIntegritySummaryTable dimension={dimension} />
+      )}
+
       {/* Vertical sidebar layout for 5+ categories */}
-      {dimension.categories.length > 1 && useVerticalTabs && (
+      {dimension.categories.length > 1 && useVerticalTabs && dimension.dimensionKey !== 'dataIntegrity' && (
         <div style={verticalStyles.wrapper}>
           <div style={verticalStyles.sidebar}>
             <div style={verticalStyles.sidebarHeader}>Issue Types</div>
             <div style={verticalStyles.sidebarSubtitle}>patterns detected / checked</div>
-            {dimension.categories.map((category, idx) => {
-              const isActive = idx === activeTabIndex;
-              const detected = category.indicators.length;
-              const total = category.totalChecks;
-              const showDivider = crossFieldIndex >= 0 && idx === crossFieldIndex && idx > 0;
 
-              // Determine badge colors
-              let dotColor: string;
-              let pillBg: string | undefined;
-              let pillTextColor: string;
-              if (total != null) {
-                const tier = getDetectionTierColors(detected, total);
-                dotColor = tier.color;
-                pillBg = tier.bg;
-                pillTextColor = tier.color;
-              } else {
-                const catDist = getTierDistribution(category.indicators);
-                const worstTier = catDist.needsAttention > 0
-                  ? INDICATOR_TIERS[0]
-                  : catDist.belowAverage > 0
-                  ? INDICATOR_TIERS[1]
-                  : catDist.average > 0
-                  ? INDICATOR_TIERS[2]
-                  : catDist.good > 0
-                  ? INDICATOR_TIERS[3]
-                  : INDICATOR_TIERS[4];
-                dotColor = worstTier.color;
-                pillTextColor = dotColor;
-              }
-              const isClean = total != null && detected === 0;
+            {/* Section 1: Issue Types */}
+            <div style={verticalStyles.issueTypeList}>
+              {issueTypeCategories.map((category) => {
+                const idx = dimension.categories.indexOf(category);
+                const isActive = idx === activeTabIndex;
+                const detected = category.indicators.length;
+                const total = category.totalChecks;
 
-              const isHoveredTab = hoveredSidebarIdx === idx;
-              const ratioPercent = total != null && total > 0 ? (detected / total) * 100 : 0;
+                // Determine badge colors
+                let dotColor: string;
+                let pillBg: string | undefined;
+                let pillTextColor: string;
+                if (total != null) {
+                  const tier = getDetectionTierColors(detected, total);
+                  dotColor = tier.color;
+                  pillBg = tier.bg;
+                  pillTextColor = tier.color;
+                } else {
+                  const catDist = getTierDistribution(category.indicators);
+                  const worstTier = catDist.needsAttention > 0
+                    ? INDICATOR_TIERS[0]
+                    : catDist.belowAverage > 0
+                    ? INDICATOR_TIERS[1]
+                    : catDist.average > 0
+                    ? INDICATOR_TIERS[2]
+                    : catDist.good > 0
+                    ? INDICATOR_TIERS[3]
+                    : INDICATOR_TIERS[4];
+                  dotColor = worstTier.color;
+                  pillTextColor = dotColor;
+                }
+                const isClean = total != null && detected === 0;
 
-              return (
-                <React.Fragment key={category.id}>
-                  {showDivider && <div style={verticalStyles.divider} />}
+                const isHoveredTab = hoveredSidebarIdx === idx;
+                const ratioPercent = total != null && total > 0 ? (detected / total) * 100 : 0;
+
+                return (
                   <button
+                    key={category.id}
                     onClick={() => setActiveTabIndex(idx)}
                     onMouseEnter={() => setHoveredSidebarIdx(idx)}
                     onMouseLeave={() => setHoveredSidebarIdx(null)}
                     style={{
                       ...verticalStyles.sidebarTab,
                       ...(isActive ? verticalStyles.sidebarTabActive : verticalStyles.sidebarTabInactive),
-                      ...(!isActive && isHoveredTab ? { backgroundColor: '#ECEDF0', opacity: 1 } : {}),
+                      ...(!isActive && isHoveredTab ? { backgroundColor: '#F0F1F4', borderRadius: '6px' } : {}),
                     }}
                   >
                     <span style={{
@@ -583,9 +675,132 @@ const IndicatorsTab: React.FC<IndicatorsTabProps> = ({ dimension, dimensionIndex
                       </div>
                     )}
                   </button>
-                </React.Fragment>
+                );
+              })}
+            </div>
+
+            {/* Section 2: Cross-Cutting Patterns */}
+            {crossFieldCat && (() => {
+              const idx = crossFieldIndex;
+              const isActive = idx === activeTabIndex;
+              const detected = crossFieldCat.indicators.length;
+              const total = crossFieldCat.totalChecks;
+
+              let dotColor: string;
+              let pillBg: string | undefined;
+              let pillTextColor: string;
+              if (total != null) {
+                const tier = getDetectionTierColors(detected, total);
+                dotColor = tier.color;
+                pillBg = tier.bg;
+                pillTextColor = tier.color;
+              } else {
+                const catDist = getTierDistribution(crossFieldCat.indicators);
+                const worstTier = catDist.needsAttention > 0
+                  ? INDICATOR_TIERS[0]
+                  : catDist.belowAverage > 0
+                  ? INDICATOR_TIERS[1]
+                  : catDist.average > 0
+                  ? INDICATOR_TIERS[2]
+                  : catDist.good > 0
+                  ? INDICATOR_TIERS[3]
+                  : INDICATOR_TIERS[4];
+                dotColor = worstTier.color;
+                pillTextColor = dotColor;
+              }
+              const isClean = total != null && detected === 0;
+              const isHoveredTab = hoveredSidebarIdx === idx;
+              const ratioPercent = total != null && total > 0 ? (detected / total) * 100 : 0;
+
+              return (
+                <div style={verticalStyles.crossCuttingSection}>
+                  <div style={verticalStyles.crossCuttingSectionHeader}>
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0, marginRight: '5px' }}>
+                      <rect x="1" y="3" width="8" height="6" rx="1.5" stroke="#7A869A" strokeWidth="1.2" fill="none" />
+                      <rect x="5" y="5" width="8" height="6" rx="1.5" stroke="#7A869A" strokeWidth="1.2" fill="none" />
+                    </svg>
+                    Cross-Cutting
+                  </div>
+                  <div style={verticalStyles.crossCuttingSectionSubtitle}>systemic patterns</div>
+                  <div style={{ padding: '4px 8px 8px' }}>
+                    <button
+                      onClick={() => setActiveTabIndex(idx)}
+                      onMouseEnter={() => setHoveredSidebarIdx(idx)}
+                      onMouseLeave={() => setHoveredSidebarIdx(null)}
+                      style={{
+                        ...verticalStyles.sidebarTab,
+                        ...(isActive ? verticalStyles.sidebarTabActive : verticalStyles.sidebarTabInactive),
+                        ...(!isActive && isHoveredTab ? { backgroundColor: '#F0F1F4', borderRadius: '6px' } : {}),
+                      }}
+                    >
+                      <span style={{
+                        ...verticalStyles.sidebarTabName,
+                        color: isActive ? '#172B4D' : '#6B778C',
+                      }}>{crossFieldCat.shortName}</span>
+
+                      {total != null ? (
+                        <span
+                          style={{
+                            ...verticalStyles.ratioPill,
+                            backgroundColor: pillBg,
+                            color: pillTextColor,
+                          }}
+                          title={`${detected} patterns detected out of ${total} checked`}
+                        >
+                          {isClean ? (
+                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ flexShrink: 0 }}>
+                              <path d="M2.5 6.2L5 8.7L9.5 3.5" stroke="#006644" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          ) : (
+                            <span style={{ ...verticalStyles.ratioDot, backgroundColor: dotColor }} />
+                          )}
+                          <span style={{ fontWeight: 700 }}>{detected}</span>
+                          <span style={{ opacity: 0.6 }}>/</span>
+                          <span style={{ fontWeight: 400, opacity: 0.7 }}>{total}</span>
+                        </span>
+                      ) : (
+                        <div style={verticalStyles.sidebarTabRight}>
+                          <span style={{ ...verticalStyles.sidebarDot, backgroundColor: dotColor }} />
+                          <span style={{
+                            ...verticalStyles.sidebarCount,
+                            backgroundColor: isActive ? '#0052CC' : '#C1C7D0',
+                          }}>
+                            {detected}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Mini ratio bar at bottom edge */}
+                      {total != null && !isClean && (
+                        <div style={verticalStyles.ratioBarTrack}>
+                          <div style={{
+                            width: `${ratioPercent}%`,
+                            height: '100%',
+                            backgroundColor: dotColor,
+                            borderRadius: '0 1px 1px 0',
+                            transition: 'width 0.2s ease',
+                          }} />
+                        </div>
+                      )}
+                      {total != null && isClean && (
+                        <div style={{
+                          ...verticalStyles.ratioBarTrack,
+                          backgroundColor: '#ABF5D1',
+                        }}>
+                          <div style={{
+                            width: '100%',
+                            height: '100%',
+                            backgroundColor: '#36B37E',
+                            borderRadius: '1px',
+                            opacity: 0.5,
+                          }} />
+                        </div>
+                      )}
+                    </button>
+                  </div>
+                </div>
               );
-            })}
+            })()}
           </div>
           <div style={verticalStyles.content}>
             {activeCategory && (
@@ -593,13 +808,13 @@ const IndicatorsTab: React.FC<IndicatorsTabProps> = ({ dimension, dimensionIndex
                 key={activeCategory.id}
                 category={activeCategory}
                 categoryIndex={activeTabIndex}
-                viewMode={viewMode}
-                onViewModeChange={setViewMode}
                 onIndicatorClick={setSelectedIndicator}
                 onIndicatorDrillDown={onIndicatorDrillDown ? (indicator) => handleDrillDown(indicator, activeTabIndex) : undefined}
                 comparisonTeamCount={comparisonTeamCount}
                 comparisonTeamNames={comparisonTeamNames}
                 embedded
+                passedChecks={activeCategory.passedChecks}
+                dimensionKey={dimension.dimensionKey}
               />
             )}
           </div>
@@ -612,12 +827,12 @@ const IndicatorsTab: React.FC<IndicatorsTabProps> = ({ dimension, dimensionIndex
           key={activeCategory.id}
           category={activeCategory}
           categoryIndex={activeTabIndex}
-          viewMode={viewMode}
-          onViewModeChange={setViewMode}
           onIndicatorClick={setSelectedIndicator}
           onIndicatorDrillDown={onIndicatorDrillDown ? (indicator) => handleDrillDown(indicator, activeTabIndex) : undefined}
           comparisonTeamCount={comparisonTeamCount}
           comparisonTeamNames={comparisonTeamNames}
+          passedChecks={activeCategory.passedChecks}
+          dimensionKey={dimension.dimensionKey}
         />
       )}
 
@@ -688,46 +903,60 @@ const IndicatorsTab: React.FC<IndicatorsTabProps> = ({ dimension, dimensionIndex
 interface CategorySectionProps {
   category: IndicatorCategory;
   categoryIndex: number;
-  viewMode: ViewMode;
-  onViewModeChange: (mode: ViewMode) => void;
   onIndicatorClick: (indicator: IndicatorResult) => void;
   onIndicatorDrillDown?: (indicator: IndicatorResult) => void;
   comparisonTeamCount?: number;
   comparisonTeamNames?: string[];
   embedded?: boolean;
+  passedChecks?: PassedCheck[];
+  dimensionKey?: string;
 }
 
 const CategorySection: React.FC<CategorySectionProps> = ({
   category,
   categoryIndex,
-  viewMode,
-  onViewModeChange,
   onIndicatorClick,
   onIndicatorDrillDown,
   comparisonTeamCount,
   comparisonTeamNames,
   embedded,
+  passedChecks,
+  dimensionKey,
 }) => {
   const [hoveredRowId, setHoveredRowId] = useState<string | null>(null);
 
   return (
     <div style={embedded ? styles.categorySectionEmbedded : styles.categorySection}>
-      {/* Summary toolbar — always shown */}
+      {/* Summary toolbar */}
       <SummaryToolbar
         indicators={category.indicators}
-        viewMode={viewMode}
-        onViewModeChange={onViewModeChange}
+        totalChecks={category.totalChecks}
+        passedCheckCount={passedChecks?.length}
       />
 
-      {/* Render card grid or table based on viewMode */}
-      {viewMode === 'table' ? (
+      {/* Render table view */}
+      {category.totalChecks != null ? (
+        <TestResultsDashboard
+          category={category}
+          passedChecks={passedChecks}
+          onIndicatorDrillDown={onIndicatorDrillDown}
+        />
+      ) : dimensionKey === 'ticketReadiness' ? (
+        <FieldCompletenessChart
+          category={category}
+          onIndicatorClick={onIndicatorClick}
+          onIndicatorDrillDown={onIndicatorDrillDown}
+        />
+      ) : (
         <div style={styles.tableContainer}>
           {(() => {
             const groups = groupIndicatorsByField(category.indicators);
             const hasFieldGroups = groups.some(g => g.fieldId);
 
-            // Flatten indicators with group metadata for field-grouped rendering
-            const rows: Array<{ indicator: IndicatorResult; fieldName: string; isFirstInGroup: boolean; groupSize: number; groupIndex: number }> = [];
+            // Build row array from field groups
+            const rows: Array<
+              { indicator: IndicatorResult; fieldName: string; isFirstInGroup: boolean; groupSize: number; groupIndex: number }
+            > = [];
             let gIdx = 0;
             for (const group of groups) {
               group.indicators.forEach((indicator, idx) => {
@@ -754,7 +983,8 @@ const CategorySection: React.FC<CategorySectionProps> = ({
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map(({ indicator, fieldName, isFirstInGroup, groupSize, groupIndex }) => {
+                  {rows.map((row) => {
+                    const { indicator, fieldName, isFirstInGroup, groupSize, groupIndex } = row;
                     const indicatorTier = getIndicatorTier(indicator.benchmarkPercentile);
                     const trend = computeIndicatorTrend(indicator);
                     const trendColor = trend.direction === 'up' ? '#36B37E' : trend.direction === 'down' ? '#DE350B' : '#97A0AF';
@@ -871,63 +1101,6 @@ const CategorySection: React.FC<CategorySectionProps> = ({
             );
           })()}
         </div>
-      ) : (
-        <div style={styles.cardGrid}>
-          {category.indicators.map((indicator) => {
-            const indicatorTier = getIndicatorTier(indicator.benchmarkPercentile);
-            const numStr = indicator.displayValue.replace('%', '');
-            const isPercent = indicator.unit === '%';
-            const trend = computeIndicatorTrend(indicator);
-            const trendIcon = trend.direction === 'up' ? '↗' : trend.direction === 'down' ? '↘' : <MediaServicesActualSizeIcon label="" size="small" primaryColor="#6B778C" />;
-
-            return (
-              <div
-                key={indicator.id}
-                style={{
-                  ...styles.indicatorCard,
-                  borderLeftColor: indicatorTier.color,
-                  cursor: onIndicatorDrillDown ? 'pointer' : 'default',
-                }}
-                onClick={onIndicatorDrillDown ? () => onIndicatorDrillDown(indicator) : undefined}
-              >
-                {/* Header: name + scope */}
-                <div style={styles.cardHeader}>
-                  <span style={styles.cardName}>{indicator.name}</span>
-                  {indicator.appliesTo && indicator.appliesTo.length > 0 && (
-                    <span style={styles.cardScope}>
-                      Applies to {indicator.appliesTo.join(' · ')}
-                    </span>
-                  )}
-                </div>
-
-                {/* Metric value */}
-                <div style={styles.cardMetric}>
-                  <span style={{ ...styles.cardValue, color: indicatorTier.color }}>{numStr}</span>
-                  {isPercent && <span style={{ ...styles.cardPercent, color: indicatorTier.color }}>%</span>}
-                </div>
-
-                {/* Status row: tier + trend + sparkline */}
-                <div style={styles.cardStatusRow}>
-                  <span style={{ ...styles.statusDot, backgroundColor: indicatorTier.color }} />
-                  <span style={{ ...styles.statusTierName, color: indicatorTier.color }}>{indicatorTier.name}</span>
-                  <span style={styles.statusSep}>·</span>
-                  <span style={{ ...styles.statusTrend, color: trend.color }}>
-                    {trendIcon} {trend.label}
-                  </span>
-                  {indicator.trendData && indicator.trendData.length >= 2 && (
-                    <div
-                      style={styles.statusSparkline}
-                      onClick={(e) => { e.stopPropagation(); onIndicatorClick(indicator); }}
-                      title="View trend history"
-                    >
-                      <Sparkline data={indicator.trendData} trend={indicator.trend} width={56} height={20} />
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
       )}
     </div>
   );
@@ -1023,90 +1196,6 @@ const styles: Record<string, React.CSSProperties> = {
     flex: 1,
   },
 
-  // Card Grid — hero-style indicator cards
-  cardGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(3, 1fr)',
-    gap: '16px',
-    padding: '20px',
-  },
-  indicatorCard: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px',
-    backgroundColor: '#FFFFFF',
-    borderRadius: '12px',
-    border: '1px solid #E4E6EB',
-    borderLeft: '4px solid transparent',
-    padding: '20px 20px 18px',
-    transition: 'box-shadow 0.15s ease',
-  },
-  cardHeader: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '2px',
-  },
-  cardName: {
-    fontSize: '13px',
-    fontWeight: 600,
-    color: '#172B4D',
-    lineHeight: 1.35,
-  },
-  cardScope: {
-    fontSize: '11px',
-    color: '#97A0AF',
-    lineHeight: 1.3,
-  },
-  cardMetric: {
-    display: 'flex',
-    alignItems: 'baseline',
-  },
-  cardValue: {
-    fontSize: '44px',
-    fontWeight: 800,
-    lineHeight: 1,
-    letterSpacing: '-1.5px',
-  },
-  cardPercent: {
-    fontSize: '20px',
-    fontWeight: 600,
-    marginLeft: '2px',
-  },
-  cardStatusRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    backgroundColor: '#F7F8F9',
-    padding: '6px 10px',
-    borderRadius: '8px',
-  },
-  statusDot: {
-    width: '7px',
-    height: '7px',
-    borderRadius: '50%',
-    flexShrink: 0,
-  },
-  statusTierName: {
-    fontSize: '12px',
-    fontWeight: 600,
-  },
-  statusSep: {
-    fontSize: '12px',
-    color: '#C1C7D0',
-  },
-  statusTrend: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '2px',
-    fontSize: '12px',
-    fontWeight: 600,
-  },
-  statusSparkline: {
-    marginLeft: 'auto',
-    cursor: 'pointer',
-    opacity: 0.7,
-    flexShrink: 0,
-  },
   // Issue types in table view
   issueTypeRow: {
     display: 'flex',
@@ -1283,16 +1372,17 @@ const verticalStyles: Record<string, React.CSSProperties> = {
     borderRadius: '12px',
     overflow: 'hidden',
     minHeight: '400px',
+    boxShadow: '0 1px 3px rgba(9, 30, 66, 0.06)',
   },
   sidebar: {
     width: '220px',
     flexShrink: 0,
-    backgroundColor: '#F4F5F7',
+    backgroundColor: '#FFFFFF',
     borderRight: '1px solid #E4E6EB',
     display: 'flex',
     flexDirection: 'column',
     overflowY: 'auto',
-    padding: '8px 0',
+    padding: '8px 0 0',
   },
   sidebarTab: {
     position: 'relative' as const,
@@ -1302,7 +1392,7 @@ const verticalStyles: Record<string, React.CSSProperties> = {
     padding: '11px 16px 14px',
     border: 'none',
     borderLeft: '3px solid transparent',
-    borderBottom: '1px solid #E4E6EB',
+    borderRadius: '6px',
     cursor: 'pointer',
     transition: 'all 0.15s ease',
     textAlign: 'left' as const,
@@ -1311,14 +1401,13 @@ const verticalStyles: Record<string, React.CSSProperties> = {
     minHeight: '44px',
   },
   sidebarTabActive: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F4F5F7',
     borderLeft: '3px solid #0052CC',
-    boxShadow: '1px 0 4px rgba(9, 30, 66, 0.08)',
+    boxShadow: 'inset 0 1px 3px rgba(9, 30, 66, 0.06)',
   },
   sidebarTabInactive: {
     backgroundColor: 'transparent',
     borderLeft: '3px solid transparent',
-    opacity: 0.85,
   },
   sidebarTabName: {
     fontSize: '13px',
@@ -1352,8 +1441,8 @@ const verticalStyles: Record<string, React.CSSProperties> = {
   ratioPill: {
     display: 'inline-flex',
     alignItems: 'center',
-    gap: '4px',
-    padding: '2px 8px 2px 6px',
+    gap: '5px',
+    padding: '3px 9px 3px 7px',
     borderRadius: '10px',
     fontSize: '12px',
     fontWeight: 600,
@@ -1372,29 +1461,51 @@ const verticalStyles: Record<string, React.CSSProperties> = {
     bottom: 0,
     left: '3px',
     right: 0,
-    height: '2px',
+    height: '2.5px',
     backgroundColor: 'rgba(0, 0, 0, 0.04)',
     overflow: 'hidden',
+    borderRadius: '0 0 2px 0',
   },
   sidebarHeader: {
-    fontSize: '10px',
+    fontSize: '11px',
     fontWeight: 700,
-    color: '#7A869A',
+    color: '#44546F',
     textTransform: 'uppercase' as const,
     letterSpacing: '0.8px',
     padding: '12px 16px 4px',
+    background: 'linear-gradient(180deg, #FAFBFC 0%, #FFFFFF 100%)',
   },
   sidebarSubtitle: {
     fontSize: '11px',
     fontWeight: 400,
     color: '#8993A4',
     padding: '0 16px 10px',
-    borderBottom: '1px solid #E4E6EB',
   },
-  divider: {
-    height: '1px',
-    backgroundColor: '#DFE1E6',
-    margin: '4px 12px',
+  issueTypeList: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: '2px',
+    padding: '4px 8px',
+  },
+  crossCuttingSection: {
+    borderTop: '1px solid #E4E6EB',
+    background: 'linear-gradient(180deg, #F7F8FA 0%, #F4F5F7 100%)',
+  },
+  crossCuttingSectionHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    fontSize: '10px',
+    fontWeight: 700,
+    color: '#44546F',
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.8px',
+    padding: '12px 16px 2px',
+  },
+  crossCuttingSectionSubtitle: {
+    fontSize: '10px',
+    fontWeight: 400,
+    color: '#8993A4',
+    padding: '0 16px 4px',
   },
   content: {
     flex: 1,
@@ -1404,4 +1515,69 @@ const verticalStyles: Record<string, React.CSSProperties> = {
   },
 };
 
+// ============================================================================
+// Test Results Dashboard Styles
+// ============================================================================
+
+const dashStyles: Record<string, React.CSSProperties> = {
+  container: {
+    margin: '8px 20px 20px',
+    backgroundColor: '#FFFFFF',
+    borderRadius: '6px',
+    border: '1px solid #EBECF0',
+    overflow: 'hidden',
+  },
+  suiteHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '12px 16px 6px',
+    borderTop: '1px solid #F4F5F7',
+  },
+  suiteFieldName: {
+    fontSize: '11px',
+    fontWeight: 700,
+    color: '#44546F',
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px',
+  },
+  suiteSummary: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '6px',
+    fontSize: '12px',
+    fontWeight: 500,
+  },
+  row: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '4px 16px 4px 16px',
+    transition: 'background-color 0.1s ease',
+    minHeight: '28px',
+  },
+  rowName: {
+    flex: 1,
+    fontSize: '13px',
+    fontWeight: 500,
+    color: '#172B4D',
+    lineHeight: 1.4,
+    fontFamily: "'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace",
+  },
+  passedRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '4px 16px',
+    minHeight: '28px',
+  },
+  passedName: {
+    fontSize: '13px',
+    fontWeight: 500,
+    color: '#8993A4',
+    fontFamily: "'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace",
+  },
+};
+
+export { SummaryToolbar, TestResultsDashboard, buildFieldSuites };
 export default IndicatorsTab;

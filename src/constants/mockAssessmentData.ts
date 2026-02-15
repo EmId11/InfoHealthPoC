@@ -7,6 +7,7 @@ import {
   IndicatorCategory,
   IndicatorResult,
   IndicatorDistribution,
+  PassedCheck,
   Recommendation,
   RiskLevel,
   MaturityLevel,
@@ -1643,53 +1644,276 @@ function mkFinding(
 // ============================================
 const storyFindings: IndicatorResult[] = [
   mkFinding(
-    'story-description-hollow', 'Contains placeholder content (TBD, TODO)',
+    'story-description-hollow', 'Most stories have placeholder-free descriptions',
     'Percentage of Story descriptions containing placeholder text like TBD, TODO, N/A, or template-only content that adds no real context.',
     'A description that says "TBD" is worse than empty — it hides the gap and inflates completeness metrics while leaving developers without context.',
     0.31, '31%', '%', 0.12, '12%', 18, 'stable', false, 'description', ['Story'],
   ),
   mkFinding(
-    'story-description-duplicate', 'Shares near-identical content with other issues',
+    'story-description-duplicate', 'Most stories have unique descriptions',
     'Stories sharing near-identical description text, detected via similarity hashing. Suggests copy-paste without tailoring context per story.',
     'Copy-paste descriptions suggest no real thought went into defining the work. Each story should describe a distinct piece of work with specific context.',
     0.12, '12%', '%', 0.05, '5%', 20, 'stable', false, 'description', ['Story'],
   ),
   mkFinding(
-    'story-acceptanceCriteria-format', 'Doesn\'t follow Given/When/Then format',
+    'story-acceptanceCriteria-format', 'Most stories use Given/When/Then acceptance criteria',
     'Stories where Acceptance Criteria does not follow the required Given/When/Then structure, per your quality rules.',
     'You chose Given/When/Then because it makes criteria testable. Without this structure, QA cannot systematically validate stories against defined expectations.',
     0.69, '69%', '%', 0.45, '45%', 18, 'improving', false, 'customfield_10001', ['Story'],
   ),
   mkFinding(
-    'story-storyPoints-clustering', 'Most values cluster on a single number (3)',
+    'story-storyPoints-clustering', 'Most stories have distributed story point estimates',
     'Story Points values cluster heavily on a single number. When the majority of stories get the same estimate, the field provides no differentiation.',
     'When 55% of stories are "3 points," the team is not distinguishing between small and large work. Velocity becomes meaningless for forecasting.',
     0.55, '55%', '%', 0.30, '30%', 14, 'declining', false, 'customfield_10002', ['Story'],
   ),
   mkFinding(
-    'story-storyPoints-nonstandard', 'Uses non-Fibonacci values',
+    'story-storyPoints-nonstandard', 'Most stories use Fibonacci-scale story points',
     'Stories estimated with non-Fibonacci values (4, 6, 10, 15) per your quality rule requiring Fibonacci sequence (1, 2, 3, 5, 8, 13, 21).',
     'Non-standard values undermine team calibration and make velocity comparisons meaningless across sprints and teams.',
     0.29, '29%', '%', 0.18, '18%', 35, 'stable', false, 'customfield_10002', ['Story'],
   ),
   mkFinding(
-    'story-priority-default', 'Left at system default (Medium)',
+    'story-priority-default', 'Most stories have explicitly set priority',
     'Stories where Priority remains at the Jira system default "Medium", per your quality rule requiring deliberate priority setting.',
     'When 58% of stories are "Medium," priority filters and dashboards cannot distinguish urgent from routine. Triage becomes guesswork.',
     0.58, '58%', '%', 0.28, '28%', 10, 'stable', false, 'priority', ['Story'],
   ),
   mkFinding(
-    'story-assignee-inactive', 'References inactive or departed users',
+    'story-assignee-inactive', 'Most stories are assigned to active team members',
     'Stories assigned to users who are deactivated, suspended, or no longer in the project.',
     'Issues assigned to people who are gone have no real owner — they will not be worked on until someone notices and reassigns them.',
     0.09, '9%', '%', 0.03, '3%', 25, 'stable', false, 'assignee', ['Story'],
   ),
   mkFinding(
-    'story-labels-empty', 'Empty or single-value selections',
+    'story-labels-empty', 'Most stories have meaningful labels',
     'Stories with no labels or only a single generic label, providing no useful categorization for filtering or reporting.',
     'Labels that are empty or generic ("misc", "other") add noise rather than signal. They make cross-cutting views and release filtering unreliable.',
     0.41, '41%', '%', 0.22, '22%', 16, 'stable', false, 'labels', ['Story'],
   ),
+];
+
+// ============================================
+// Data Freshness — Stale findings (per issue type)
+// ============================================
+const staleFreshFindings: IndicatorResult[] = [
+  mkFinding(
+    'freshness-story-stale', 'Stories: no movement in 14+ days',
+    '47% of Story issues have had no status changes, comments, or field updates in the last 14 days. Stale items carry field values that may no longer reflect the current state of work.',
+    'When items sit untouched, field values become unreliable — priorities shift, assignees change roles, and estimates lose meaning. Data from stale items inflates integrity metrics while hiding real gaps.',
+    0.47, '47%', '%', 0.20, '20%', 12, 'stable', false, 'staleness', ['Story'],
+  ),
+  mkFinding(
+    'freshness-bug-stale', 'Bugs: no movement in 7+ days',
+    '34% of Bug issues have had no status changes, comments, or field updates in the last 7 days. Stale items carry field values that may no longer reflect the current state of work.',
+    'When items sit untouched, field values become unreliable — priorities shift, assignees change roles, and estimates lose meaning. Data from stale items inflates integrity metrics while hiding real gaps.',
+    0.34, '34%', '%', 0.15, '15%', 18, 'stable', false, 'staleness', ['Bug'],
+  ),
+  mkFinding(
+    'freshness-task-stale', 'Tasks: no movement in 7+ days',
+    '52% of Task issues have had no status changes, comments, or field updates in the last 7 days. Stale items carry field values that may no longer reflect the current state of work.',
+    'When items sit untouched, field values become unreliable — priorities shift, assignees change roles, and estimates lose meaning. Data from stale items inflates integrity metrics while hiding real gaps.',
+    0.52, '52%', '%', 0.22, '22%', 10, 'declining', false, 'staleness', ['Task'],
+  ),
+  mkFinding(
+    'freshness-epic-stale', 'Epics: no movement in 30+ days',
+    '28% of Epic issues have had no status changes, comments, or field updates in the last 30 days. Stale items carry field values that may no longer reflect the current state of work.',
+    'When items sit untouched, field values become unreliable — priorities shift, assignees change roles, and estimates lose meaning. Data from stale items inflates integrity metrics while hiding real gaps.',
+    0.28, '28%', '%', 0.18, '18%', 30, 'stable', false, 'staleness', ['Epic'],
+  ),
+  mkFinding(
+    'freshness-risk-stale', 'Risks: no movement in 14+ days',
+    '41% of Risk issues have had no status changes, comments, or field updates in the last 14 days. Stale items carry field values that may no longer reflect the current state of work.',
+    'When items sit untouched, field values become unreliable — priorities shift, assignees change roles, and estimates lose meaning. Data from stale items inflates integrity metrics while hiding real gaps.',
+    0.41, '41%', '%', 0.20, '20%', 14, 'stable', false, 'staleness', ['Risk'],
+  ),
+  mkFinding(
+    'freshness-assumption-stale', 'Assumptions: no movement in 14+ days',
+    '55% of Assumption issues have had no status changes, comments, or field updates in the last 14 days. Stale items carry field values that may no longer reflect the current state of work.',
+    'When items sit untouched, field values become unreliable — priorities shift, assignees change roles, and estimates lose meaning. Data from stale items inflates integrity metrics while hiding real gaps.',
+    0.55, '55%', '%', 0.25, '25%', 8, 'declining', false, 'staleness', ['Assumption'],
+  ),
+  mkFinding(
+    'freshness-feature-stale', 'Features: no movement in 30+ days',
+    '33% of Feature issues have had no status changes, comments, or field updates in the last 30 days. Stale items carry field values that may no longer reflect the current state of work.',
+    'When items sit untouched, field values become unreliable — priorities shift, assignees change roles, and estimates lose meaning. Data from stale items inflates integrity metrics while hiding real gaps.',
+    0.33, '33%', '%', 0.18, '18%', 22, 'stable', false, 'staleness', ['Feature'],
+  ),
+  mkFinding(
+    'freshness-spike-stale', 'Spikes: no movement in 7+ days',
+    '22% of Spike issues have had no status changes, comments, or field updates in the last 7 days. Stale items carry field values that may no longer reflect the current state of work.',
+    'When items sit untouched, field values become unreliable — priorities shift, assignees change roles, and estimates lose meaning. Data from stale items inflates integrity metrics while hiding real gaps.',
+    0.22, '22%', '%', 0.10, '10%', 25, 'stable', false, 'staleness', ['Spike'],
+  ),
+  mkFinding(
+    'freshness-dependency-stale', 'Dependencies: no movement in 14+ days',
+    '44% of Dependency issues have had no status changes, comments, or field updates in the last 14 days. Stale items carry field values that may no longer reflect the current state of work.',
+    'When items sit untouched, field values become unreliable — priorities shift, assignees change roles, and estimates lose meaning. Data from stale items inflates integrity metrics while hiding real gaps.',
+    0.44, '44%', '%', 0.20, '20%', 12, 'stable', false, 'staleness', ['Dependency'],
+  ),
+  mkFinding(
+    'freshness-impediment-stale', 'Impediments: no movement in 7+ days',
+    '38% of Impediment issues have had no status changes, comments, or field updates in the last 7 days. Stale items carry field values that may no longer reflect the current state of work.',
+    'When items sit untouched, field values become unreliable — priorities shift, assignees change roles, and estimates lose meaning. Data from stale items inflates integrity metrics while hiding real gaps.',
+    0.38, '38%', '%', 0.15, '15%', 15, 'stable', false, 'staleness', ['Impediment'],
+  ),
+  mkFinding(
+    'freshness-initiative-stale', 'Initiatives: no movement in 30+ days',
+    '30% of Initiative issues have had no status changes, comments, or field updates in the last 30 days. Stale items carry field values that may no longer reflect the current state of work.',
+    'When items sit untouched, field values become unreliable — priorities shift, assignees change roles, and estimates lose meaning. Data from stale items inflates integrity metrics while hiding real gaps.',
+    0.30, '30%', '%', 0.18, '18%', 24, 'stable', false, 'staleness', ['Initiative'],
+  ),
+];
+
+// ============================================
+// Data Freshness — Bulk update findings (per issue type)
+// ============================================
+const bulkUpdateFreshFindings: IndicatorResult[] = [
+  mkFinding(
+    'freshness-story-bulkUpdated', 'Stories: 18% of field changes applied in bulk',
+    'Percentage of field changes on Story issues that were part of a bulk operation (10+ issues modified in the same batch). Bulk updates often indicate retroactive cleanup rather than real-time field maintenance.',
+    'Bulk-updated fields are typically set to the same value across many issues, reducing their informational value. Data entered in bulk is more likely to be rubber-stamped than thoughtfully chosen.',
+    0.18, '18%', '%', 0.05, '5%', 10, 'stable', false, 'bulkUpdates', ['Story'],
+  ),
+  mkFinding(
+    'freshness-bug-bulkUpdated', 'Bugs: 12% of field changes applied in bulk',
+    'Percentage of field changes on Bug issues that were part of a bulk operation (10+ issues modified in the same batch). Bulk updates often indicate retroactive cleanup rather than real-time field maintenance.',
+    'Bulk-updated fields are typically set to the same value across many issues, reducing their informational value. Data entered in bulk is more likely to be rubber-stamped than thoughtfully chosen.',
+    0.12, '12%', '%', 0.04, '4%', 15, 'stable', false, 'bulkUpdates', ['Bug'],
+  ),
+  mkFinding(
+    'freshness-task-bulkUpdated', 'Tasks: 25% of field changes applied in bulk',
+    'Percentage of field changes on Task issues that were part of a bulk operation (10+ issues modified in the same batch). Bulk updates often indicate retroactive cleanup rather than real-time field maintenance.',
+    'Bulk-updated fields are typically set to the same value across many issues, reducing their informational value. Data entered in bulk is more likely to be rubber-stamped than thoughtfully chosen.',
+    0.25, '25%', '%', 0.06, '6%', 8, 'stable', false, 'bulkUpdates', ['Task'],
+  ),
+  mkFinding(
+    'freshness-epic-bulkUpdated', 'Epics: 15% of field changes applied in bulk',
+    'Percentage of field changes on Epic issues that were part of a bulk operation (10+ issues modified in the same batch). Bulk updates often indicate retroactive cleanup rather than real-time field maintenance.',
+    'Bulk-updated fields are typically set to the same value across many issues, reducing their informational value. Data entered in bulk is more likely to be rubber-stamped than thoughtfully chosen.',
+    0.15, '15%', '%', 0.05, '5%', 18, 'stable', false, 'bulkUpdates', ['Epic'],
+  ),
+  mkFinding(
+    'freshness-risk-bulkUpdated', 'Risks: 30% of field changes applied in bulk',
+    'Percentage of field changes on Risk issues that were part of a bulk operation (10+ issues modified in the same batch). Bulk updates often indicate retroactive cleanup rather than real-time field maintenance.',
+    'Bulk-updated fields are typically set to the same value across many issues, reducing their informational value. Data entered in bulk is more likely to be rubber-stamped than thoughtfully chosen.',
+    0.30, '30%', '%', 0.08, '8%', 6, 'declining', false, 'bulkUpdates', ['Risk'],
+  ),
+  mkFinding(
+    'freshness-assumption-bulkUpdated', 'Assumptions: 35% of field changes applied in bulk',
+    'Percentage of field changes on Assumption issues that were part of a bulk operation (10+ issues modified in the same batch). Bulk updates often indicate retroactive cleanup rather than real-time field maintenance.',
+    'Bulk-updated fields are typically set to the same value across many issues, reducing their informational value. Data entered in bulk is more likely to be rubber-stamped than thoughtfully chosen.',
+    0.35, '35%', '%', 0.10, '10%', 5, 'declining', false, 'bulkUpdates', ['Assumption'],
+  ),
+  mkFinding(
+    'freshness-feature-bulkUpdated', 'Features: 20% of field changes applied in bulk',
+    'Percentage of field changes on Feature issues that were part of a bulk operation (10+ issues modified in the same batch). Bulk updates often indicate retroactive cleanup rather than real-time field maintenance.',
+    'Bulk-updated fields are typically set to the same value across many issues, reducing their informational value. Data entered in bulk is more likely to be rubber-stamped than thoughtfully chosen.',
+    0.20, '20%', '%', 0.06, '6%', 12, 'stable', false, 'bulkUpdates', ['Feature'],
+  ),
+  mkFinding(
+    'freshness-spike-bulkUpdated', 'Spikes: 10% of field changes applied in bulk',
+    'Percentage of field changes on Spike issues that were part of a bulk operation (10+ issues modified in the same batch). Bulk updates often indicate retroactive cleanup rather than real-time field maintenance.',
+    'Bulk-updated fields are typically set to the same value across many issues, reducing their informational value. Data entered in bulk is more likely to be rubber-stamped than thoughtfully chosen.',
+    0.10, '10%', '%', 0.03, '3%', 20, 'stable', false, 'bulkUpdates', ['Spike'],
+  ),
+  mkFinding(
+    'freshness-dependency-bulkUpdated', 'Dependencies: 28% of field changes applied in bulk',
+    'Percentage of field changes on Dependency issues that were part of a bulk operation (10+ issues modified in the same batch). Bulk updates often indicate retroactive cleanup rather than real-time field maintenance.',
+    'Bulk-updated fields are typically set to the same value across many issues, reducing their informational value. Data entered in bulk is more likely to be rubber-stamped than thoughtfully chosen.',
+    0.28, '28%', '%', 0.08, '8%', 8, 'stable', false, 'bulkUpdates', ['Dependency'],
+  ),
+  mkFinding(
+    'freshness-impediment-bulkUpdated', 'Impediments: 22% of field changes applied in bulk',
+    'Percentage of field changes on Impediment issues that were part of a bulk operation (10+ issues modified in the same batch). Bulk updates often indicate retroactive cleanup rather than real-time field maintenance.',
+    'Bulk-updated fields are typically set to the same value across many issues, reducing their informational value. Data entered in bulk is more likely to be rubber-stamped than thoughtfully chosen.',
+    0.22, '22%', '%', 0.06, '6%', 10, 'stable', false, 'bulkUpdates', ['Impediment'],
+  ),
+  mkFinding(
+    'freshness-initiative-bulkUpdated', 'Initiatives: 18% of field changes applied in bulk',
+    'Percentage of field changes on Initiative issues that were part of a bulk operation (10+ issues modified in the same batch). Bulk updates often indicate retroactive cleanup rather than real-time field maintenance.',
+    'Bulk-updated fields are typically set to the same value across many issues, reducing their informational value. Data entered in bulk is more likely to be rubber-stamped than thoughtfully chosen.',
+    0.18, '18%', '%', 0.05, '5%', 14, 'stable', false, 'bulkUpdates', ['Initiative'],
+  ),
+];
+
+// ============================================
+// Passed Checks — checks that found no antipattern
+// ============================================
+
+const storyPassedChecks: PassedCheck[] = [
+  { id: 'story-description-minLength', name: 'Most stories meet description length minimum', description: 'All Story descriptions exceed the 50-character minimum threshold.', jiraFieldId: 'description', appliesTo: ['Story'] },
+  { id: 'story-sprint-assigned', name: 'Most stories have sprint assigned before start', description: 'All in-progress Stories are assigned to a sprint.', jiraFieldId: 'sprint', appliesTo: ['Story'] },
+  { id: 'story-components-selected', name: 'Most stories have a component selected', description: 'All Stories have at least one component for routing and categorization.', jiraFieldId: 'components', appliesTo: ['Story'] },
+  { id: 'story-fixVersion-populated', name: 'Most stories have fix version populated', description: 'All Stories have a fix version for release tracking.', jiraFieldId: 'fixVersions', appliesTo: ['Story'] },
+];
+
+const bugPassedChecks: PassedCheck[] = [
+  { id: 'bug-severity-set', name: 'Most bugs have severity appropriately set', description: 'All Bugs have Severity set to a non-default value.', jiraFieldId: 'customfield_10030', appliesTo: ['Bug'] },
+  { id: 'bug-labels-categorized', name: 'Most bugs have labels categorizing area', description: 'All Bugs have at least one meaningful label for categorization.', jiraFieldId: 'labels', appliesTo: ['Bug'] },
+  { id: 'bug-linked-source', name: 'Most bugs are linked to source story or feature', description: 'All Bugs are linked to the originating story or feature.', jiraFieldId: undefined, appliesTo: ['Bug'] },
+  { id: 'bug-fixVersion-populated', name: 'Most bugs have fix version populated', description: 'All Bugs have a fix version for release tracking.', jiraFieldId: 'fixVersions', appliesTo: ['Bug'] },
+];
+
+const taskPassedChecks: PassedCheck[] = [
+  { id: 'task-components-selected', name: 'Most tasks have a component selected', description: 'All Tasks have at least one component for routing.', jiraFieldId: 'components', appliesTo: ['Task'] },
+  { id: 'task-sprint-assigned', name: 'Most tasks have sprint assigned', description: 'All in-progress Tasks are assigned to a sprint.', jiraFieldId: 'sprint', appliesTo: ['Task'] },
+  { id: 'task-labels-categorized', name: 'Most tasks have categorizing labels', description: 'All Tasks have at least one meaningful label.', jiraFieldId: 'labels', appliesTo: ['Task'] },
+  { id: 'task-parentEpic-linked', name: 'Most tasks are linked to parent epic', description: 'All Tasks are linked to a parent epic for hierarchy tracking.', jiraFieldId: undefined, appliesTo: ['Task'] },
+];
+
+const epicPassedChecks: PassedCheck[] = [
+  { id: 'epic-startDate-set', name: 'Most epics have start date set', description: 'All Epics have a start date for timeline planning.', jiraFieldId: 'customfield_10015', appliesTo: ['Epic'] },
+  { id: 'epic-labels-categorized', name: 'Most epics have categorizing labels', description: 'All Epics have at least one meaningful label.', jiraFieldId: 'labels', appliesTo: ['Epic'] },
+  { id: 'epic-children-linked', name: 'Most epics are linked to at least one child story', description: 'All Epics have at least one child story or task linked.', jiraFieldId: undefined, appliesTo: ['Epic'] },
+  { id: 'epic-components-selected', name: 'Most epics have a component selected', description: 'All Epics have at least one component for team routing.', jiraFieldId: 'components', appliesTo: ['Epic'] },
+];
+
+const riskPassedChecks: PassedCheck[] = [
+  { id: 'risk-description-minLength', name: 'Most risks meet description length minimum', description: 'All Risk descriptions exceed the 50-character minimum threshold.', jiraFieldId: 'description', appliesTo: ['Risk'] },
+  { id: 'risk-linked-feature', name: 'Most risks are linked to related feature or epic', description: 'All Risks are linked to at least one related feature or epic.', jiraFieldId: undefined, appliesTo: ['Risk'] },
+  { id: 'risk-reviewDate-set', name: 'Most risks have review date set', description: 'All Risks have a review date for periodic reassessment.', jiraFieldId: 'customfield_10063', appliesTo: ['Risk'] },
+];
+
+const assumptionPassedChecks: PassedCheck[] = [
+  { id: 'assumption-description-minLength', name: 'Most assumptions meet description length minimum', description: 'All Assumption descriptions exceed the 50-character minimum.', jiraFieldId: 'description', appliesTo: ['Assumption'] },
+  { id: 'assumption-owner-assigned', name: 'Most assumptions have owner assigned', description: 'All Assumptions have an active assignee responsible for validation.', jiraFieldId: 'assignee', appliesTo: ['Assumption'] },
+  { id: 'assumption-category-classified', name: 'Most assumptions have category classified', description: 'All Assumptions have a category set for grouping and review.', jiraFieldId: 'customfield_10064', appliesTo: ['Assumption'] },
+];
+
+const featurePassedChecks: PassedCheck[] = [
+  { id: 'feature-linked-epic', name: 'Most features are linked to parent epic', description: 'All Features are linked to a parent epic for hierarchy tracking.', jiraFieldId: undefined, appliesTo: ['Feature'] },
+  { id: 'feature-owner-assigned', name: 'Most features have owner assigned', description: 'All Features have an active assignee responsible for delivery.', jiraFieldId: 'assignee', appliesTo: ['Feature'] },
+  { id: 'feature-ac-defined', name: 'Most features have acceptance criteria defined', description: 'All Features have acceptance criteria for validation.', jiraFieldId: 'customfield_10001', appliesTo: ['Feature'] },
+];
+
+const spikePassedChecks: PassedCheck[] = [
+  { id: 'spike-owner-assigned', name: 'Most spikes have owner assigned', description: 'All Spikes have an active assignee responsible for investigation.', jiraFieldId: 'assignee', appliesTo: ['Spike'] },
+  { id: 'spike-linked-story', name: 'Most spikes are linked to related story', description: 'All Spikes are linked to the story or epic that triggered them.', jiraFieldId: undefined, appliesTo: ['Spike'] },
+  { id: 'spike-sprint-assigned', name: 'Most spikes have sprint assigned', description: 'All Spikes are assigned to a sprint for time-boxing.', jiraFieldId: 'sprint', appliesTo: ['Spike'] },
+];
+
+const dependencyPassedChecks: PassedCheck[] = [
+  { id: 'dependency-status-current', name: 'Most dependencies have status reflecting current state', description: 'All Dependencies have a status that reflects their current resolution state.', jiraFieldId: undefined, appliesTo: ['Dependency'] },
+  { id: 'dependency-linked-consumer', name: 'Most dependencies are linked to consumer story', description: 'All Dependencies are linked to the consuming story or feature.', jiraFieldId: undefined, appliesTo: ['Dependency'] },
+  { id: 'dependency-priority-set', name: 'Most dependencies have priority appropriately set', description: 'All Dependencies have priority set to a non-default value.', jiraFieldId: 'priority', appliesTo: ['Dependency'] },
+];
+
+const impedimentPassedChecks: PassedCheck[] = [
+  { id: 'impediment-owner-assigned', name: 'Most impediments have owner assigned', description: 'All Impediments have an active assignee responsible for resolution.', jiraFieldId: 'assignee', appliesTo: ['Impediment'] },
+  { id: 'impediment-linked-blocked', name: 'Most impediments are linked to blocked item', description: 'All Impediments are linked to the work item they are blocking.', jiraFieldId: undefined, appliesTo: ['Impediment'] },
+  { id: 'impediment-priority-set', name: 'Most impediments have priority appropriately set', description: 'All Impediments have priority set to a non-default value.', jiraFieldId: 'priority', appliesTo: ['Impediment'] },
+];
+
+const initiativePassedChecks: PassedCheck[] = [
+  { id: 'initiative-linked-features', name: 'Most initiatives are linked to child features', description: 'All Initiatives are linked to at least one child feature.', jiraFieldId: undefined, appliesTo: ['Initiative'] },
+  { id: 'initiative-owner-assigned', name: 'Most initiatives have owner assigned', description: 'All Initiatives have an active assignee responsible for delivery.', jiraFieldId: 'assignee', appliesTo: ['Initiative'] },
+  { id: 'initiative-status-current', name: 'Most initiatives have status reflecting current progress', description: 'All Initiatives have a status that reflects their current delivery state.', jiraFieldId: undefined, appliesTo: ['Initiative'] },
+];
+
+const crossFieldPassedChecks: PassedCheck[] = [
+  { id: 'cross-resolution-consistent', name: 'Most issues have resolution field consistent with status', description: 'Issues with "Done" status all have a resolution value set, and open issues have no resolution.', appliesTo: ['Story', 'Bug', 'Task'] },
+  { id: 'cross-workflow-sequence', name: 'Most issues follow defined workflow transition sequence', description: 'All status transitions follow the defined workflow paths — no backward jumps or skipped steps detected.', appliesTo: ['Story', 'Bug', 'Task', 'Epic'] },
 ];
 
 const storyCategory: IndicatorCategory = {
@@ -1703,6 +1927,8 @@ const storyCategory: IndicatorCategory = {
   issuesCount: 8,
   indicators: storyFindings,
   totalChecks: 12,
+  passedChecks: storyPassedChecks,
+  contextualIndicators: [staleFreshFindings[0], bulkUpdateFreshFindings[0]],
 };
 
 // ============================================
@@ -1710,49 +1936,49 @@ const storyCategory: IndicatorCategory = {
 // ============================================
 const bugFindings: IndicatorResult[] = [
   mkFinding(
-    'bug-description-hollow', 'Contains placeholder content (TBD, TODO)',
+    'bug-description-hollow', 'Most bugs have placeholder-free descriptions',
     'Percentage of Bug descriptions containing placeholder text that adds no real context for diagnosis.',
     'Bug descriptions without real content force developers to investigate from scratch — no reproduction context, no expected vs actual behavior.',
     0.27, '27%', '%', 0.10, '10%', 20, 'stable', false, 'description', ['Bug'],
   ),
   mkFinding(
-    'bug-stepsToReproduce-hollow', 'Contains placeholder or missing content',
+    'bug-stepsToReproduce-hollow', 'Most bugs have documented reproduction steps',
     'Bugs where Steps to Reproduce is empty, contains only placeholder text, or lacks actionable reproduction steps.',
     'Without clear steps to reproduce, bugs bounce between reporters and developers. Each round-trip adds days to resolution.',
     0.44, '44%', '%', 0.20, '20%', 15, 'improving', false, 'customfield_10023', ['Bug'],
   ),
   mkFinding(
-    'bug-stepsToReproduce-duplicate', 'Shares near-identical reproduction steps',
+    'bug-stepsToReproduce-duplicate', 'Most bugs have unique reproduction steps',
     'Bugs with Steps to Reproduce that are near-identical to other bugs, suggesting copy-paste or templated content without specific details.',
     'Identical reproduction steps across different bugs suggest either duplicate bugs or lazy documentation — neither helps developers.',
     0.18, '18%', '%', 0.08, '8%', 22, 'stable', false, 'customfield_10023', ['Bug'],
   ),
   mkFinding(
-    'bug-storyPoints-clustering', 'Most values cluster on a single number (3)',
+    'bug-storyPoints-clustering', 'Most bugs have distributed story point estimates',
     'Bug story point values cluster heavily on a single number, providing no differentiation between trivial and complex bugs.',
     'When most bugs get the same estimate, sprint planning cannot account for the difference between a typo fix and a race condition.',
     0.62, '62%', '%', 0.35, '35%', 12, 'declining', false, 'customfield_10002', ['Bug'],
   ),
   mkFinding(
-    'bug-priority-default', 'Left at system default (Medium)',
+    'bug-priority-default', 'Most bugs have explicitly set priority',
     'Bugs where Priority remains at the default "Medium", not reflecting actual severity or business impact.',
     'When half of bugs are "Medium," there is no way to distinguish a cosmetic issue from a data corruption bug. Triage queues become unworkable.',
     0.51, '51%', '%', 0.25, '25%', 12, 'stable', false, 'priority', ['Bug'],
   ),
   mkFinding(
-    'bug-environment-default', 'Left at system default',
+    'bug-environment-default', 'Most bugs have environment specified',
     'Bugs where Environment is left at the system default or not specified, providing no context about where the bug was observed.',
     'Without environment context, developers cannot reproduce bugs reliably. Was this production? Staging? A specific browser? Every missing detail adds investigation time.',
     0.73, '73%', '%', 0.40, '40%', 8, 'stable', false, 'customfield_10022', ['Bug'],
   ),
   mkFinding(
-    'bug-assignee-inactive', 'References inactive or departed users',
+    'bug-assignee-inactive', 'Most bugs are assigned to active team members',
     'Bugs assigned to users who are deactivated, suspended, or no longer in the project.',
     'Bugs assigned to departed users sit unresolved until someone notices. Critical bugs can fall through the cracks entirely.',
     0.11, '11%', '%', 0.04, '4%', 22, 'stable', false, 'assignee', ['Bug'],
   ),
   mkFinding(
-    'bug-components-empty', 'Empty or missing component selection',
+    'bug-components-empty', 'Most bugs have a component selected',
     'Bugs with no component selected, per your quality rule requiring at least one component for categorization.',
     'Without components, bugs cannot be routed to the right team or tracked by area. Bug triage relies on manual reading instead of filtering.',
     0.38, '38%', '%', 0.18, '18%', 16, 'stable', false, 'components', ['Bug'],
@@ -1770,6 +1996,8 @@ const bugCategory: IndicatorCategory = {
   issuesCount: 8,
   indicators: bugFindings,
   totalChecks: 12,
+  passedChecks: bugPassedChecks,
+  contextualIndicators: [staleFreshFindings[1], bulkUpdateFreshFindings[1]],
 };
 
 // ============================================
@@ -1777,37 +2005,37 @@ const bugCategory: IndicatorCategory = {
 // ============================================
 const taskFindings: IndicatorResult[] = [
   mkFinding(
-    'task-description-hollow', 'Contains placeholder content (TBD, TODO)',
+    'task-description-hollow', 'Most tasks have placeholder-free descriptions',
     'Percentage of Task descriptions containing placeholder text that adds no real context.',
     'Tasks with placeholder descriptions get started without clarity on scope, leading to inconsistent interpretation and rework.',
     0.42, '42%', '%', 0.18, '18%', 14, 'declining', false, 'description', ['Task'],
   ),
   mkFinding(
-    'task-description-short', 'Below minimum length (50 characters)',
+    'task-description-short', 'Most tasks meet description length minimum',
     'Tasks where the description is below the 50-character minimum defined in your quality rules.',
     'Ultra-short descriptions like "fix it" or "update config" give no context. Tasks need enough detail for anyone on the team to pick them up.',
     0.35, '35%', '%', 0.15, '15%', 18, 'stable', false, 'description', ['Task'],
   ),
   mkFinding(
-    'task-storyPoints-empty', 'Empty-equivalent value (0)',
+    'task-storyPoints-empty', 'Most tasks have meaningful story point values',
     'Tasks where Story Points is set to 0, which carries no planning information and distorts velocity calculations.',
     'A story point of 0 means either the work is trivial (so why track it?) or the estimate was skipped. Either way, it corrupts sprint capacity math.',
     0.22, '22%', '%', 0.08, '8%', 20, 'stable', false, 'customfield_10002', ['Task'],
   ),
   mkFinding(
-    'task-priority-default', 'Left at system default (Medium)',
+    'task-priority-default', 'Most tasks have explicitly set priority',
     'Tasks where Priority remains at the default "Medium", not reflecting actual urgency.',
     'When 64% of tasks are "Medium," priority-based views show a flat undifferentiated list. Teams cannot triage effectively.',
     0.64, '64%', '%', 0.30, '30%', 8, 'stable', false, 'priority', ['Task'],
   ),
   mkFinding(
-    'task-assignee-inactive', 'References inactive or departed users',
+    'task-assignee-inactive', 'Most tasks are assigned to active team members',
     'Tasks assigned to users who are deactivated or no longer in the project.',
     'Unowned tasks accumulate silently. Without a real assignee, accountability is absent and nothing moves forward.',
     0.07, '7%', '%', 0.03, '3%', 28, 'stable', false, 'assignee', ['Task'],
   ),
   mkFinding(
-    'task-duedate-empty', 'Empty or missing due date',
+    'task-duedate-empty', 'Most tasks have due date set',
     'Tasks with no due date set, providing no time boundary for planning or tracking overdue work.',
     'Tasks without due dates have no urgency signal. They drift indefinitely in the backlog with no trigger for review or escalation.',
     0.48, '48%', '%', 0.25, '25%', 15, 'improving', false, 'duedate', ['Task'],
@@ -1825,6 +2053,8 @@ const taskCategory: IndicatorCategory = {
   issuesCount: 6,
   indicators: taskFindings,
   totalChecks: 10,
+  passedChecks: taskPassedChecks,
+  contextualIndicators: [staleFreshFindings[2], bulkUpdateFreshFindings[2]],
 };
 
 // ============================================
@@ -1832,37 +2062,37 @@ const taskCategory: IndicatorCategory = {
 // ============================================
 const epicFindings: IndicatorResult[] = [
   mkFinding(
-    'epic-description-hollow', 'Contains placeholder content (TBD, TODO)',
+    'epic-description-hollow', 'Most epics have placeholder-free descriptions',
     'Percentage of Epic descriptions containing placeholder text instead of strategic context.',
     'Epics frame the "why" for dozens of stories. A placeholder epic description means an entire stream of work lacks strategic context.',
     0.19, '19%', '%', 0.08, '8%', 25, 'stable', false, 'description', ['Epic'],
   ),
   mkFinding(
-    'epic-description-duplicate', 'Shares near-identical content with other epics',
+    'epic-description-duplicate', 'Most epics have unique descriptions',
     'Epics with near-identical descriptions, suggesting copy-paste without unique strategic framing.',
     'Duplicate epic descriptions suggest the team is creating epics as containers rather than strategic units with distinct goals.',
     0.08, '8%', '%', 0.03, '3%', 30, 'stable', false, 'description', ['Epic'],
   ),
   mkFinding(
-    'epic-targetDate-empty', 'Empty or missing target date',
+    'epic-targetDate-empty', 'Most epics have target date set',
     'Epics with no Target Date set, providing no time boundary for strategic planning or roadmap alignment.',
     'Epics without target dates cannot appear on roadmaps or trigger escalation. Strategic visibility depends on knowing when epics are expected to land.',
     0.55, '55%', '%', 0.28, '28%', 12, 'stable', false, 'customfield_10015', ['Epic'],
   ),
   mkFinding(
-    'epic-businessPriority-cardinality', 'Low cardinality — few values used',
+    'epic-businessPriority-cardinality', 'Most epics use full range of business priority values',
     'Business Priority field uses only a small fraction of available values, providing minimal differentiation between epics.',
     'When all epics are "High" priority, nothing is actually high priority. Low cardinality means the field cannot support meaningful prioritization.',
     0.22, '0.22', 'ratio', 0.50, '0.50', 18, 'declining', true, 'customfield_10017', ['Epic'],
   ),
   mkFinding(
-    'epic-priority-default', 'Left at system default (Medium)',
+    'epic-priority-default', 'Most epics have explicitly set priority',
     'Epics where Priority remains at the default "Medium", not reflecting actual strategic importance.',
     'Epic priority drives portfolio-level decisions. Leaving it at default means leadership dashboards show no differentiation between critical and exploratory work.',
     0.61, '61%', '%', 0.30, '30%', 10, 'stable', false, 'priority', ['Epic'],
   ),
   mkFinding(
-    'epic-assignee-inactive', 'References inactive or departed users',
+    'epic-assignee-inactive', 'Most epics are assigned to active team members',
     'Epics assigned to users who are deactivated or no longer in the project.',
     'An epic without a real owner has no one driving it. Child stories continue, but strategic alignment and scope decisions stall.',
     0.05, '5%', '%', 0.02, '2%', 32, 'stable', false, 'assignee', ['Epic'],
@@ -1880,6 +2110,8 @@ const epicCategory: IndicatorCategory = {
   issuesCount: 6,
   indicators: epicFindings,
   totalChecks: 10,
+  passedChecks: epicPassedChecks,
+  contextualIndicators: [staleFreshFindings[3], bulkUpdateFreshFindings[3]],
 };
 
 // ============================================
@@ -1887,37 +2119,37 @@ const epicCategory: IndicatorCategory = {
 // ============================================
 const riskFindings: IndicatorResult[] = [
   mkFinding(
-    'risk-mitigationStrategy-hollow', 'Contains placeholder content (TBD, TODO)',
+    'risk-mitigationStrategy-hollow', 'Most risks have documented mitigation strategy',
     'Percentage of Risk Mitigation Strategy fields containing placeholder text instead of actionable mitigation plans.',
     'A mitigation strategy that says "TBD" means the risk was logged but never actually mitigated — it creates a false sense of risk management.',
     0.47, '47%', '%', 0.20, '20%', 14, 'stable', false, 'customfield_10037', ['Risk'],
   ),
   mkFinding(
-    'risk-probability-default', 'Left at system default',
+    'risk-probability-default', 'Most risks have probability explicitly assessed',
     'Risks where Probability remains at the system default, not reflecting actual assessed likelihood.',
     'When most risks share the same probability, risk prioritization matrices collapse into a flat list and high-probability risks hide in the noise.',
     0.52, '52%', '%', 0.25, '25%', 12, 'stable', false, 'customfield_10034', ['Risk'],
   ),
   mkFinding(
-    'risk-impact-default', 'Left at system default',
+    'risk-impact-default', 'Most risks have impact explicitly assessed',
     'Risks where Impact remains at the system default, not reflecting actual assessed severity.',
     'Default impact values mean the risk register cannot distinguish a minor inconvenience from a program-stopping event.',
     0.48, '48%', '%', 0.22, '22%', 14, 'stable', false, 'customfield_10035', ['Risk'],
   ),
   mkFinding(
-    'risk-riskScore-empty', 'Empty-equivalent value (0)',
+    'risk-riskScore-empty', 'Most risks have quantified risk score',
     'Risks where Risk Score is 0 or unset, providing no quantitative risk assessment for prioritization.',
     'A zero Risk Score means the risk was never quantified. Without scores, risk boards cannot sort or filter by severity.',
     0.38, '38%', '%', 0.15, '15%', 18, 'stable', false, 'customfield_10036', ['Risk'],
   ),
   mkFinding(
-    'risk-riskOwner-inactive', 'References inactive or departed users',
+    'risk-riskOwner-inactive', 'Most risks are assigned to active team members',
     'Risks assigned to a Risk Owner who is deactivated, suspended, or no longer in the project.',
     'A risk without an active owner has no one monitoring it. Mitigation actions stall and the risk escalates silently.',
     0.11, '11%', '%', 0.04, '4%', 25, 'stable', false, 'customfield_10038', ['Risk'],
   ),
   mkFinding(
-    'risk-riskCategory-concentration', 'One option dominates (>80%)',
+    'risk-riskCategory-concentration', 'Most risks have meaningfully distributed categories',
     'Risk Category field dominated by a single value, suggesting risks are not being categorized meaningfully.',
     'When 83% of risks are "Technical," the category field provides no signal for filtering or routing risks to the right stakeholders.',
     0.83, '83%', '%', 0.45, '45%', 10, 'declining', false, 'customfield_10033', ['Risk'],
@@ -1935,6 +2167,8 @@ const riskCategory: IndicatorCategory = {
   issuesCount: 6,
   indicators: riskFindings,
   totalChecks: 9,
+  passedChecks: riskPassedChecks,
+  contextualIndicators: [staleFreshFindings[4], bulkUpdateFreshFindings[4]],
 };
 
 // ============================================
@@ -1942,31 +2176,31 @@ const riskCategory: IndicatorCategory = {
 // ============================================
 const assumptionFindings: IndicatorResult[] = [
   mkFinding(
-    'assumption-impactIfWrong-hollow', 'Contains placeholder content (TBD, TODO)',
+    'assumption-impactIfWrong-hollow', 'Most assumptions have documented impact-if-wrong',
     'Percentage of Assumption Impact if Wrong fields containing placeholder text instead of concrete consequence descriptions.',
     'Without articulating what happens if the assumption is wrong, the team cannot prioritize which assumptions to validate first.',
     0.55, '55%', '%', 0.25, '25%', 12, 'stable', false, 'customfield_10042', ['Assumption'],
   ),
   mkFinding(
-    'assumption-confidenceLevel-default', 'Left at system default',
+    'assumption-confidenceLevel-default', 'Most assumptions have confidence level assessed',
     'Assumptions where Confidence Level remains at the system default.',
     'Default confidence levels mean no one has assessed how confident they actually are — making validation prioritization impossible.',
     0.61, '61%', '%', 0.30, '30%', 10, 'stable', false, 'customfield_10039', ['Assumption'],
   ),
   mkFinding(
-    'assumption-validationStatus-default', 'Left at system default',
+    'assumption-validationStatus-default', 'Most assumptions have validation status reflecting progress',
     'Assumptions where Validation Status remains at the system default instead of reflecting actual validation progress.',
     'When validation status never changes from default, there is no way to distinguish validated assumptions from untested ones.',
     0.58, '58%', '%', 0.28, '28%', 12, 'stable', false, 'customfield_10040', ['Assumption'],
   ),
   mkFinding(
-    'assumption-validationDate-empty', 'Empty or missing validation date',
+    'assumption-validationDate-empty', 'Most assumptions have validation date set',
     'Assumptions with no Validation Date set, providing no timeline for when the assumption was or should be validated.',
     'Without a validation date, assumptions drift indefinitely without review. Critical assumptions may remain untested through delivery.',
     0.44, '44%', '%', 0.20, '20%', 16, 'improving', false, 'customfield_10041', ['Assumption'],
   ),
   mkFinding(
-    'assumption-related-missing', 'Expected link to parent absent',
+    'assumption-related-missing', 'Most assumptions are linked to related feature or risk',
     'Assumptions that should link to a parent feature, epic, or risk but don\'t have any related links.',
     'Unlinked assumptions float in isolation — no one knows which feature depends on them or which risk they relate to.',
     0.35, '35%', '%', 0.15, '15%', 20, 'stable', false, undefined, ['Assumption'],
@@ -1984,6 +2218,8 @@ const assumptionCategory: IndicatorCategory = {
   issuesCount: 5,
   indicators: assumptionFindings,
   totalChecks: 8,
+  passedChecks: assumptionPassedChecks,
+  contextualIndicators: [staleFreshFindings[5], bulkUpdateFreshFindings[5]],
 };
 
 // ============================================
@@ -1991,37 +2227,37 @@ const assumptionCategory: IndicatorCategory = {
 // ============================================
 const featureFindings: IndicatorResult[] = [
   mkFinding(
-    'feature-benefitHypothesis-hollow', 'Contains placeholder content (TBD, TODO)',
+    'feature-benefitHypothesis-hollow', 'Most features have documented benefit hypothesis',
     'Percentage of Feature Benefit Hypothesis fields containing placeholder text instead of testable value propositions.',
     'A feature without a real benefit hypothesis has no definition of success — the team builds something but cannot measure if it delivered value.',
     0.42, '42%', '%', 0.18, '18%', 16, 'stable', false, 'customfield_10043', ['Feature'],
   ),
   mkFinding(
-    'feature-benefitHypothesis-duplicate', 'Shares near-identical content with other features',
+    'feature-benefitHypothesis-duplicate', 'Most features have unique benefit hypothesis',
     'Features with near-identical Benefit Hypothesis text, suggesting copy-paste without tailoring the value proposition.',
     'Duplicate benefit hypotheses suggest features are being created as containers rather than distinct value increments.',
     0.15, '15%', '%', 0.06, '6%', 22, 'stable', false, 'customfield_10043', ['Feature'],
   ),
   mkFinding(
-    'feature-wsjfScore-empty', 'Empty-equivalent value (0)',
+    'feature-wsjfScore-empty', 'Most features have quantified WSJF score',
     'Features where WSJF Score is 0 or unset, providing no basis for economic prioritization.',
     'Without WSJF scores, feature prioritization becomes opinion-based rather than value-driven. The most vocal stakeholder wins.',
     0.33, '33%', '%', 0.12, '12%', 18, 'stable', false, 'customfield_10044', ['Feature'],
   ),
   mkFinding(
-    'feature-targetPI-default', 'Left at system default',
+    'feature-targetPI-default', 'Most features have target PI explicitly set',
     'Features where Target PI remains at the system default, not aligned to a specific planning increment.',
     'Features without a target PI cannot appear on PI roadmaps or be tracked for delivery commitment.',
     0.45, '45%', '%', 0.22, '22%', 14, 'stable', false, 'customfield_10045', ['Feature'],
   ),
   mkFinding(
-    'feature-featureSize-default', 'Left at system default',
+    'feature-featureSize-default', 'Most features have feature size explicitly set',
     'Features where Feature Size remains at the system default, not reflecting actual scope assessment.',
     'Default feature sizes make capacity planning unreliable — teams cannot forecast how many features fit in a PI.',
     0.51, '51%', '%', 0.25, '25%', 12, 'stable', false, 'customfield_10046', ['Feature'],
   ),
   mkFinding(
-    'feature-description-short', 'Below minimum length (50 characters)',
+    'feature-description-short', 'Most features meet description length minimum',
     'Features where the description is below the minimum length threshold for meaningful context.',
     'Features need enough description context for multiple teams to understand scope and dependencies.',
     0.28, '28%', '%', 0.12, '12%', 20, 'improving', false, 'description', ['Feature'],
@@ -2039,6 +2275,8 @@ const featureCategory: IndicatorCategory = {
   issuesCount: 6,
   indicators: featureFindings,
   totalChecks: 9,
+  passedChecks: featurePassedChecks,
+  contextualIndicators: [staleFreshFindings[6], bulkUpdateFreshFindings[6]],
 };
 
 // ============================================
@@ -2046,31 +2284,31 @@ const featureCategory: IndicatorCategory = {
 // ============================================
 const spikeFindings: IndicatorResult[] = [
   mkFinding(
-    'spike-researchQuestion-hollow', 'Contains placeholder content (TBD, TODO)',
+    'spike-researchQuestion-hollow', 'Most spikes have clearly defined research question',
     'Percentage of Spike Research Question fields containing placeholder text instead of a clear investigative question.',
     'A spike without a real research question is time-boxed wandering — the team investigates without knowing what answer they need.',
     0.39, '39%', '%', 0.18, '18%', 16, 'stable', false, 'customfield_10047', ['Spike'],
   ),
   mkFinding(
-    'spike-timebox-empty', 'Empty-equivalent value (0)',
+    'spike-timebox-empty', 'Most spikes have time-box set',
     'Spikes where Time-box is 0 or unset, providing no time boundary for research.',
     'Unbounded spikes expand to fill available time. Without a time-box, research becomes open-ended and delays delivery commitments.',
     0.45, '45%', '%', 0.20, '20%', 14, 'stable', false, 'customfield_10048', ['Spike'],
   ),
   mkFinding(
-    'spike-findings-hollow', 'Contains placeholder content (TBD, TODO)',
+    'spike-findings-hollow', 'Most spikes have documented findings',
     'Spikes where the Findings field contains placeholder text instead of actual research outcomes.',
     'Spikes that end without documented findings waste the investment — the same questions get re-investigated next quarter.',
     0.58, '58%', '%', 0.28, '28%', 12, 'declining', false, 'customfield_10049', ['Spike'],
   ),
   mkFinding(
-    'spike-decision-default', 'Left at system default',
+    'spike-decision-default', 'Most spikes have decision recorded',
     'Spikes where Decision remains at the system default, not recording the outcome of the investigation.',
     'A spike without a recorded decision means the research happened but no one documented what was decided.',
     0.52, '52%', '%', 0.25, '25%', 14, 'stable', false, 'customfield_10050', ['Spike'],
   ),
   mkFinding(
-    'spike-description-short', 'Below minimum length (50 characters)',
+    'spike-description-short', 'Most spikes meet description length minimum',
     'Spikes where the description is below the minimum length threshold.',
     'Spikes need enough context for the investigator to understand what problem they are solving and why.',
     0.31, '31%', '%', 0.14, '14%', 20, 'stable', false, 'description', ['Spike'],
@@ -2088,6 +2326,8 @@ const spikeCategory: IndicatorCategory = {
   issuesCount: 5,
   indicators: spikeFindings,
   totalChecks: 8,
+  passedChecks: spikePassedChecks,
+  contextualIndicators: [staleFreshFindings[7], bulkUpdateFreshFindings[7]],
 };
 
 // ============================================
@@ -2095,31 +2335,31 @@ const spikeCategory: IndicatorCategory = {
 // ============================================
 const dependencyFindings: IndicatorResult[] = [
   mkFinding(
-    'dependency-neededByDate-empty', 'Empty or missing needed-by date',
+    'dependency-neededByDate-empty', 'Most dependencies have needed-by date set',
     'Dependencies with no Needed By Date set, providing no timeline for when the dependency must be resolved.',
     'A dependency without a needed-by date has no urgency signal — provider teams cannot prioritize it against their own work.',
     0.41, '41%', '%', 0.18, '18%', 16, 'stable', false, 'customfield_10054', ['Dependency'],
   ),
   mkFinding(
-    'dependency-providerTeam-default', 'Left at system default',
+    'dependency-providerTeam-default', 'Most dependencies have provider team identified',
     'Dependencies where Provider Team remains at the system default, not identifying who must deliver.',
     'Without a provider team, the dependency has no owner. It shows up in tracking reports but nobody is accountable for resolving it.',
     0.55, '55%', '%', 0.28, '28%', 12, 'stable', false, 'customfield_10052', ['Dependency'],
   ),
   mkFinding(
-    'dependency-consumerTeam-default', 'Left at system default',
+    'dependency-consumerTeam-default', 'Most dependencies have consumer team identified',
     'Dependencies where Consumer Team remains at the system default, not identifying who is waiting.',
     'Without a consumer team, there is no way to assess the blast radius if the dependency is not delivered on time.',
     0.49, '49%', '%', 0.24, '24%', 14, 'stable', false, 'customfield_10053', ['Dependency'],
   ),
   mkFinding(
-    'dependency-dependencyType-default', 'Left at system default',
+    'dependency-dependencyType-default', 'Most dependencies have type classified',
     'Dependencies where Dependency Type remains at the system default, not categorizing the nature of the dependency.',
     'Dependency type (API, data, infrastructure, process) determines resolution approach. Default types make it impossible to route and prioritize.',
     0.62, '62%', '%', 0.30, '30%', 10, 'declining', false, 'customfield_10051', ['Dependency'],
   ),
   mkFinding(
-    'dependency-description-hollow', 'Contains placeholder content (TBD, TODO)',
+    'dependency-description-hollow', 'Most dependencies have documented description',
     'Dependencies where the description contains placeholder text instead of concrete dependency details.',
     'A dependency logged as "TBD" is invisible to the provider team — they cannot begin work without understanding what is needed.',
     0.36, '36%', '%', 0.15, '15%', 18, 'stable', false, 'description', ['Dependency'],
@@ -2137,6 +2377,8 @@ const dependencyCategory: IndicatorCategory = {
   issuesCount: 5,
   indicators: dependencyFindings,
   totalChecks: 8,
+  passedChecks: dependencyPassedChecks,
+  contextualIndicators: [staleFreshFindings[8], bulkUpdateFreshFindings[8]],
 };
 
 // ============================================
@@ -2144,31 +2386,31 @@ const dependencyCategory: IndicatorCategory = {
 // ============================================
 const impedimentFindings: IndicatorResult[] = [
   mkFinding(
-    'impediment-resolutionPlan-hollow', 'Contains placeholder content (TBD, TODO)',
+    'impediment-resolutionPlan-hollow', 'Most impediments have documented resolution plan',
     'Percentage of Impediment Resolution Plan fields containing placeholder text instead of actionable resolution steps.',
     'An impediment without a resolution plan is just a complaint logged in Jira — it will not get resolved without concrete next steps.',
     0.44, '44%', '%', 0.20, '20%', 14, 'stable', false, 'customfield_10057', ['Impediment'],
   ),
   mkFinding(
-    'impediment-severity-default', 'Left at system default',
+    'impediment-severity-default', 'Most impediments have severity explicitly set',
     'Impediments where Severity remains at the system default, not reflecting actual blocking impact.',
     'When all impediments are the same severity, escalation paths cannot differentiate a minor inconvenience from a full team block.',
     0.57, '57%', '%', 0.28, '28%', 12, 'stable', false, 'customfield_10030', ['Impediment'],
   ),
   mkFinding(
-    'impediment-escalationLevel-default', 'Left at system default',
+    'impediment-escalationLevel-default', 'Most impediments have escalation level explicitly set',
     'Impediments where Escalation Level remains at the system default, not indicating who should act.',
     'Default escalation levels mean impediments sit at the wrong level — team-level blocks that need management attention never get escalated.',
     0.63, '63%', '%', 0.32, '32%', 10, 'stable', false, 'customfield_10056', ['Impediment'],
   ),
   mkFinding(
-    'impediment-affectedTeams-empty', 'Empty — no values selected',
+    'impediment-affectedTeams-empty', 'Most impediments have affected teams identified',
     'Impediments with no Affected Teams selected, making blast radius assessment impossible.',
     'Without knowing which teams are affected, impediment resolution cannot be prioritized by organizational impact.',
     0.38, '38%', '%', 0.16, '16%', 18, 'stable', false, 'customfield_10062', ['Impediment'],
   ),
   mkFinding(
-    'impediment-description-short', 'Below minimum length (50 characters)',
+    'impediment-description-short', 'Most impediments meet description length minimum',
     'Impediments where the description is below the minimum length threshold.',
     'Short impediment descriptions lack the context needed for someone outside the team to understand and help resolve the block.',
     0.32, '32%', '%', 0.14, '14%', 20, 'improving', false, 'description', ['Impediment'],
@@ -2186,6 +2428,8 @@ const impedimentCategory: IndicatorCategory = {
   issuesCount: 5,
   indicators: impedimentFindings,
   totalChecks: 8,
+  passedChecks: impedimentPassedChecks,
+  contextualIndicators: [staleFreshFindings[9], bulkUpdateFreshFindings[9]],
 };
 
 // ============================================
@@ -2193,37 +2437,37 @@ const impedimentCategory: IndicatorCategory = {
 // ============================================
 const initiativeFindings: IndicatorResult[] = [
   mkFinding(
-    'initiative-businessOutcome-hollow', 'Contains placeholder content (TBD, TODO)',
+    'initiative-businessOutcome-hollow', 'Most initiatives have documented business outcome',
     'Percentage of Initiative Business Outcome fields containing placeholder text instead of measurable outcomes.',
     'An initiative without a real business outcome has no definition of success — portfolio reviews cannot assess whether the investment delivered.',
     0.40, '40%', '%', 0.18, '18%', 16, 'stable', false, 'customfield_10059', ['Initiative'],
   ),
   mkFinding(
-    'initiative-strategicTheme-default', 'Left at system default',
+    'initiative-strategicTheme-default', 'Most initiatives have strategic theme aligned',
     'Initiatives where Strategic Theme remains at the system default, not aligned to organizational strategy.',
     'Initiatives without strategic themes cannot be grouped or evaluated against the organization\'s strategic pillars.',
     0.55, '55%', '%', 0.26, '26%', 12, 'stable', false, 'customfield_10058', ['Initiative'],
   ),
   mkFinding(
-    'initiative-targetQuarter-default', 'Left at system default',
+    'initiative-targetQuarter-default', 'Most initiatives have target quarter committed',
     'Initiatives where Target Quarter remains at the system default, not committed to a delivery timeline.',
     'Without a target quarter, initiatives have no delivery commitment and cannot be tracked on portfolio roadmaps.',
     0.48, '48%', '%', 0.22, '22%', 14, 'stable', false, 'customfield_10060', ['Initiative'],
   ),
   mkFinding(
-    'initiative-revenueImpact-empty', 'Empty-equivalent value (0)',
+    'initiative-revenueImpact-empty', 'Most initiatives have revenue impact estimated',
     'Initiatives where Expected Revenue Impact is 0 or unset, providing no financial justification.',
     'Initiatives without revenue impact estimates cannot be prioritized by ROI — investment decisions become purely political.',
     0.52, '52%', '%', 0.25, '25%', 12, 'stable', false, 'customfield_10061', ['Initiative'],
   ),
   mkFinding(
-    'initiative-description-hollow', 'Contains placeholder content (TBD, TODO)',
+    'initiative-description-hollow', 'Most initiatives have strategic context in description',
     'Initiatives where the description contains placeholder text instead of strategic context.',
     'Portfolio-level items with placeholder descriptions mean leadership is making investment decisions without understanding what they are funding.',
     0.35, '35%', '%', 0.14, '14%', 18, 'stable', false, 'description', ['Initiative'],
   ),
   mkFinding(
-    'initiative-description-duplicate', 'Shares near-identical content with other initiatives',
+    'initiative-description-duplicate', 'Most initiatives have unique descriptions',
     'Initiatives with near-identical descriptions, suggesting copy-paste without unique strategic framing.',
     'Duplicate initiative descriptions suggest the portfolio is not being managed with distinct strategic intent per initiative.',
     0.10, '10%', '%', 0.04, '4%', 28, 'stable', false, 'description', ['Initiative'],
@@ -2241,6 +2485,8 @@ const initiativeCategory: IndicatorCategory = {
   issuesCount: 6,
   indicators: initiativeFindings,
   totalChecks: 9,
+  passedChecks: initiativePassedChecks,
+  contextualIndicators: [staleFreshFindings[10], bulkUpdateFreshFindings[10]],
 };
 
 // ============================================
@@ -2248,25 +2494,25 @@ const initiativeCategory: IndicatorCategory = {
 // ============================================
 const crossFieldFindings: IndicatorResult[] = [
   mkFinding(
-    'cross-status-field-conflicts', 'Status contradicts field values',
+    'cross-status-field-conflicts', 'Most issues have status consistent with field values',
     'Issues where workflow status conflicts with other field values — "Done" with no assignee, "In Progress" with no estimate, released version on an open issue.',
     'Conflicting signals between status and fields make it impossible to trust any single field for reporting or decision-making.',
     0.22, '22%', '%', 0.10, '10%', 15, 'declining', false, undefined, ['Story', 'Bug', 'Task'],
   ),
   mkFinding(
-    'cross-hierarchy-inconsistency', 'Parent data contradicts aggregated child data',
+    'cross-hierarchy-inconsistency', 'Most issues have parent data aligned with child data',
     'Parent issues (epics, initiatives) where child data contradicts parent-level fields — epic "On Track" with 80% blocked children, parent estimate smaller than sum of children.',
     'Hierarchy inconsistencies mean leadership dashboards show a different reality than what individual contributors experience.',
     0.33, '33%', '%', 0.15, '15%', 18, 'stable', false, undefined, ['Epic'],
   ),
   mkFinding(
-    'cross-date-sequence-violations', 'Cross-field date ordering is impossible',
+    'cross-date-sequence-violations', 'Most issues have date fields in logical order',
     'Issues where date fields violate logical ordering — due dates before start dates, resolution before creation, or custom date fields with impossible sequences.',
     'Impossible date sequences indicate data entry errors or retroactive changes that corrupt timeline analysis and make Gantt charts unreliable.',
     0.08, '8%', '%', 0.03, '3%', 30, 'stable', false, undefined, ['Story', 'Bug', 'Task'],
   ),
   mkFinding(
-    'cross-orphaned-references', 'Links point to deleted, moved, or stale targets',
+    'cross-orphaned-references', 'Most issues have links pointing to valid targets',
     'Issue links pointing to targets that no longer exist, have been moved to inaccessible projects, or where the linked issue has been closed for 90+ days.',
     'Orphaned and decayed links create noise in dependency tracking and make it impossible to trace the full picture of related work.',
     0.13, '13%', '%', 0.05, '5%', 24, 'stable', false, undefined, ['Story', 'Bug', 'Task'],
@@ -2275,8 +2521,8 @@ const crossFieldFindings: IndicatorResult[] = [
 
 const crossFieldCategory: IndicatorCategory = {
   id: 'crossField',
-  name: 'Structural findings that span fields and issue types',
-  shortName: 'Cross-Field',
+  name: 'Cross-cutting patterns that span fields and issue types',
+  shortName: 'Cross-Cutting',
   description: 'Integrity findings that cannot be attributed to a single field — status conflicts, hierarchy mismatches, date violations, and orphaned links.',
   rationale: 'Individual fields can look fine in isolation but tell conflicting stories together. These cross-field checks reveal structural contradictions in your data.',
   statusColor: '#FFFAE6',
@@ -2284,6 +2530,7 @@ const crossFieldCategory: IndicatorCategory = {
   issuesCount: 4,
   indicators: crossFieldFindings,
   totalChecks: 6,
+  passedChecks: crossFieldPassedChecks,
 };
 
 

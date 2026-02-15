@@ -48,6 +48,8 @@ import SetupCompleteScreen from './components/SetupCompleteScreen';
 import { ImprovementPlanWizardPage, PlanDetailPage } from './components/plans';
 import { ImprovementPlan, PlayStatus } from './types/improvementPlan';
 import { savePlanToStorage, loadPlanFromStorage, updatePlayStatus } from './utils/improvementPlanUtils';
+import DataIntegrityCategoryDetailPage from './components/assessment/dataIntegrity/DataIntegrityCategoryDetailPage';
+import { mockIntegrityDimensionResult } from './constants/mockAssessmentData';
 
 type AppView =
   | 'creator-home'
@@ -63,7 +65,8 @@ type AppView =
   | 'admin-team-attributes-wizard'
   | 'setup-complete'
   | 'improvement-plan-wizard'
-  | 'improvement-plan-detail';
+  | 'improvement-plan-detail'
+  | 'data-integrity-category-detail';
 
 // Get initial app view based on stored persona
 const getInitialAppView = (): AppView => {
@@ -121,6 +124,9 @@ const App: React.FC = () => {
 
   // Track if we came from an outcome page (for back navigation)
   const [returnToOutcomeId, setReturnToOutcomeId] = useState<OutcomeAreaId | null>(null);
+
+  // Data Integrity category detail state
+  const [selectedIntegrityCategoryIndex, setSelectedIntegrityCategoryIndex] = useState<number | null>(null);
 
   // Comparison modal state (for outcome detail page)
   const [isComparisonModalOpen, setIsComparisonModalOpen] = useState(false);
@@ -428,6 +434,18 @@ const App: React.FC = () => {
     };
     savePlanToStorage(updatedPlan);
     setCurrentViewingPlan(null);
+    setAppView('assessment-results');
+  };
+
+  // Data Integrity category detail handlers
+  const handleCategoryDetail = (categoryIndex: number) => {
+    setSelectedIntegrityCategoryIndex(categoryIndex);
+    setAppView('data-integrity-category-detail');
+  };
+
+  const handleBackFromCategoryDetail = () => {
+    setSelectedIntegrityCategoryIndex(null);
+    setReturnToDimensionIndex(0); // Data Integrity is dimension 0
     setAppView('assessment-results');
   };
 
@@ -1050,6 +1068,21 @@ const App: React.FC = () => {
           assessmentName={assessmentName}
         />
       );
+    }
+
+    // Data Integrity category detail view
+    if (appView === 'data-integrity-category-detail' && selectedIntegrityCategoryIndex != null) {
+      const category = mockIntegrityDimensionResult.categories[selectedIntegrityCategoryIndex];
+      if (category) {
+        return (
+          <DataIntegrityCategoryDetailPage
+            category={category}
+            dimensionName="Data Integrity"
+            onBack={handleBackFromCategoryDetail}
+            onIndicatorDrillDown={handleIndicatorDrillDown}
+          />
+        );
+      }
     }
 
     // Indicator drill-down view

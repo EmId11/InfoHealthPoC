@@ -97,6 +97,14 @@ export interface IndicatorResult {
   appliesTo?: string[];  // Issue types this indicator is analyzed for (e.g., ['Story', 'Bug'])
 }
 
+export interface PassedCheck {
+  id: string;
+  name: string;           // e.g. "Description meets minimum length"
+  description: string;    // What this check verifies
+  jiraFieldId?: string;   // For field-grouped table placement
+  appliesTo?: string[];
+}
+
 export interface IndicatorCategory {
   id: string;
   name: string;
@@ -108,6 +116,8 @@ export interface IndicatorCategory {
   issuesCount: number;      // Number of indicators flagged as concerning
   indicators: IndicatorResult[];
   totalChecks?: number;     // Total antipatterns scanned for (Data Integrity); detected = indicators.length
+  passedChecks?: PassedCheck[];  // Checks that passed cleanly (no antipattern detected)
+  contextualIndicators?: IndicatorResult[];  // Secondary signals rendered separately from field findings
 }
 
 export interface Recommendation {
@@ -402,6 +412,29 @@ export type DataIntegrityIndicatorId =
   | 'initiative-revenueImpact-empty'
   | 'initiative-description-hollow'
   | 'initiative-description-duplicate'
+  // Data freshness / provenance findings (per issue type)
+  | 'freshness-story-stale'
+  | 'freshness-story-bulkUpdated'
+  | 'freshness-bug-stale'
+  | 'freshness-bug-bulkUpdated'
+  | 'freshness-task-stale'
+  | 'freshness-task-bulkUpdated'
+  | 'freshness-epic-stale'
+  | 'freshness-epic-bulkUpdated'
+  | 'freshness-risk-stale'
+  | 'freshness-risk-bulkUpdated'
+  | 'freshness-assumption-stale'
+  | 'freshness-assumption-bulkUpdated'
+  | 'freshness-feature-stale'
+  | 'freshness-feature-bulkUpdated'
+  | 'freshness-spike-stale'
+  | 'freshness-spike-bulkUpdated'
+  | 'freshness-dependency-stale'
+  | 'freshness-dependency-bulkUpdated'
+  | 'freshness-impediment-stale'
+  | 'freshness-impediment-bulkUpdated'
+  | 'freshness-initiative-stale'
+  | 'freshness-initiative-bulkUpdated'
   // Cross-field structural findings
   | 'cross-status-field-conflicts'
   | 'cross-hierarchy-inconsistency'
