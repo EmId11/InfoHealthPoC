@@ -7,36 +7,33 @@ interface LensCardsRowProps {
   lensResults: AssessmentLensResults;
   activeLens?: LensType;
   onLensClick?: (lens: LensType) => void;
+  embedded?: boolean;
 }
 
-const LensCardsRow: React.FC<LensCardsRowProps> = ({ lensResults, activeLens, onLensClick }) => {
+const LENSES: LensType[] = ['coverage', 'integrity', 'timing', 'behavioral'];
+
+const LensCardsRow: React.FC<LensCardsRowProps> = ({ lensResults, activeLens, onLensClick, embedded }) => {
   return (
-    <div style={styles.container}>
-      <LensCard
-        lens="coverage"
-        coverageData={lensResults.coverage}
-        isActive={activeLens === 'coverage'}
-        onClick={() => onLensClick?.('coverage')}
-      />
-      <LensCard
-        lens="integrity"
-        lensResult={lensResults.integrity}
-        integrityScore={mockIntegrityDimensionResult.healthScore}
-        isActive={activeLens === 'integrity'}
-        onClick={() => onLensClick?.('integrity')}
-      />
-      <LensCard
-        lens="timing"
-        lensResult={lensResults.timing}
-        isActive={activeLens === 'timing'}
-        onClick={() => onLensClick?.('timing')}
-      />
-      <LensCard
-        lens="behavioral"
-        lensResult={lensResults.behavioral}
-        isActive={activeLens === 'behavioral'}
-        onClick={() => onLensClick?.('behavioral')}
-      />
+    <div style={{
+      ...styles.container,
+      ...(embedded ? { gap: 0, marginBottom: 0 } : {}),
+    }}>
+      {LENSES.map((lens, index) => (
+        <React.Fragment key={lens}>
+          {embedded && index > 0 && (
+            <div style={{ width: '1px', backgroundColor: '#E4E6EB', alignSelf: 'stretch' }} />
+          )}
+          <LensCard
+            lens={lens}
+            coverageData={lens === 'coverage' ? lensResults.coverage : undefined}
+            lensResult={lens !== 'coverage' ? lensResults[lens] : undefined}
+            integrityScore={lens === 'integrity' ? mockIntegrityDimensionResult.healthScore : undefined}
+            isActive={activeLens === lens}
+            onClick={() => onLensClick?.(lens)}
+            embedded={embedded}
+          />
+        </React.Fragment>
+      ))}
     </div>
   );
 };
@@ -46,7 +43,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     gap: '16px',
     width: '100%',
-    marginBottom: '20px',
+    marginBottom: '12px',
   },
 };
 

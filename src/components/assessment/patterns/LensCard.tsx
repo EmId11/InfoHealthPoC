@@ -8,6 +8,7 @@ interface LensCardProps {
   integrityScore?: number;
   onClick?: () => void;
   isActive?: boolean;
+  embedded?: boolean;
 }
 
 const LENS_CONFIG: Record<LensType, { label: string; icon: string; description: string }> = {
@@ -29,7 +30,7 @@ function getCoverageSeverity(percent: number): OverallSeverity {
   return 'critical';
 }
 
-const LensCard: React.FC<LensCardProps> = ({ lens, coverageData, lensResult, integrityScore, onClick, isActive }) => {
+const LensCard: React.FC<LensCardProps> = ({ lens, coverageData, lensResult, integrityScore, onClick, isActive, embedded }) => {
   const config = LENS_CONFIG[lens];
 
   const isCoverage = lens === 'coverage';
@@ -41,58 +42,98 @@ const LensCard: React.FC<LensCardProps> = ({ lens, coverageData, lensResult, int
       : (lensResult?.overallSeverity ?? 'clean');
   const severityStyle = SEVERITY_STYLES[severity];
 
+  // When embedded, treat cards as always "visually active" (full opacity, colored)
+  // since they serve as navigation tiles on the summary page
+  const embeddedActive = embedded ? true : isActive;
+
+  const embeddedCardStyle: React.CSSProperties = embedded ? {
+    border: 'none',
+    borderRadius: 0,
+    boxShadow: 'none',
+    backgroundColor: isActive ? '#F7FAFF' : 'transparent',
+    opacity: 1,
+    position: 'relative' as const,
+  } : {};
+
   return (
-    <button
-      style={{
-        ...styles.card,
-        ...(isActive ? styles.cardActive : {}),
-        borderColor: isActive ? '#0052CC' : '#E4E6EB',
-      }}
-      onClick={onClick}
-    >
-      {/* Lens Icon + Label */}
-      <div style={styles.header}>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="#6B778C">
-          <path d={config.icon} />
-        </svg>
-        <span style={styles.label}>{config.label}</span>
-      </div>
-      <span style={styles.description}>{config.description}</span>
-
-      {/* Main Metric */}
-      <div style={styles.metric}>
-        {isCoverage ? (
-          <>
-            <span style={styles.metricValue}>{coverageData?.coveragePercent ?? 0}%</span>
-            <span style={styles.metricUnit}>complete</span>
-          </>
-        ) : isIntegrity ? (
-          <>
-            <span style={styles.metricValue}>{integrityScore}</span>
-            <span style={styles.metricUnit}>/100</span>
-          </>
-        ) : (
-          <>
-            <span style={styles.metricValue}>
-              {lensResult?.patternsDetected ?? 0} of {lensResult?.patternsChecked ?? 0}
-            </span>
-            <span style={styles.metricUnit}>detected</span>
-          </>
+    <div style={{ position: 'relative' as const, flex: 1, minWidth: '140px' }}>
+      <button
+        style={{
+          ...styles.card,
+          ...(embedded ? {} : (isActive ? styles.cardActive : styles.cardInactive)),
+          ...(embedded ? {} : { borderColor: isActive ? '#0052CC' : '#E4E6EB' }),
+          ...embeddedCardStyle,
+        }}
+        onClick={onClick}
+      >
+        {/* Blue top accent bar for active embedded card */}
+        {embedded && isActive && (
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: '3px',
+            backgroundColor: '#0052CC',
+          }} />
         )}
-      </div>
+        {/* Lens Icon + Label */}
+        <div style={styles.header}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill={embeddedActive ? '#0052CC' : '#A5ADBA'}>
+            <path d={config.icon} />
+          </svg>
+          <span style={{ ...styles.label, color: embeddedActive ? '#0052CC' : '#A5ADBA' }}>{config.label}</span>
+        </div>
+        <span style={{ ...styles.description, color: embeddedActive ? '#8993A4' : '#C1C7D0' }}>{config.description}</span>
 
-      {/* Severity Badge */}
-      <div style={{ ...styles.badge, backgroundColor: severityStyle.bgColor, color: severityStyle.color }}>
-        <span>{severityStyle.icon}</span>
-        <span>{severityStyle.label}</span>
-      </div>
-    </button>
+        {/* Main Metric */}
+        <div style={styles.metric}>
+          {isCoverage ? (
+            <>
+              <span style={{ ...styles.metricValue, color: embeddedActive ? '#172B4D' : '#A5ADBA' }}>{coverageData?.coveragePercent ?? 0}%</span>
+              <span style={{ ...styles.metricUnit, color: embeddedActive ? '#6B778C' : '#C1C7D0' }}>complete</span>
+            </>
+          ) : isIntegrity ? (
+            <>
+              <span style={{ ...styles.metricValue, color: embeddedActive ? '#172B4D' : '#A5ADBA' }}>{integrityScore}</span>
+              <span style={{ ...styles.metricUnit, color: embeddedActive ? '#6B778C' : '#C1C7D0' }}>/100</span>
+            </>
+          ) : (
+            <>
+              <span style={{ ...styles.metricValue, color: embeddedActive ? '#172B4D' : '#A5ADBA' }}>
+                {lensResult?.patternsDetected ?? 0} of {lensResult?.patternsChecked ?? 0}
+              </span>
+              <span style={{ ...styles.metricUnit, color: embeddedActive ? '#6B778C' : '#C1C7D0' }}>detected</span>
+            </>
+          )}
+        </div>
+
+        {/* Severity Badge */}
+        <div style={{
+          ...styles.badge,
+          backgroundColor: embeddedActive ? severityStyle.bgColor : '#F4F5F7',
+          color: embeddedActive ? severityStyle.color : '#A5ADBA',
+        }}>
+          <span>{severityStyle.icon}</span>
+          <span>{severityStyle.label}</span>
+        </div>
+      </button>
+
+      {/* Downward pointer connecting active card to content */}
+      {isActive && !embedded && (
+        <div style={styles.pointer}>
+          <svg width="20" height="10" viewBox="0 0 20 10">
+            <polygon points="0,0 10,10 20,0" fill="#0052CC" />
+          </svg>
+        </div>
+      )}
+    </div>
   );
 };
 
 const styles: Record<string, React.CSSProperties> = {
   card: {
-    flex: 1,
+    width: '100%',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
@@ -103,12 +144,25 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '12px',
     cursor: 'pointer',
     transition: 'all 0.15s ease',
-    minWidth: '140px',
     fontFamily: 'inherit',
   },
   cardActive: {
     boxShadow: '0 2px 8px rgba(0, 82, 204, 0.15)',
     backgroundColor: '#F7FAFF',
+    borderBottomLeftRadius: '4px',
+    borderBottomRightRadius: '4px',
+  },
+  cardInactive: {
+    backgroundColor: '#FAFBFC',
+    opacity: 0.75,
+  },
+  pointer: {
+    position: 'absolute' as const,
+    bottom: '-10px',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    zIndex: 1,
+    lineHeight: 0,
   },
   header: {
     display: 'flex',

@@ -49,6 +49,8 @@ import { ImprovementPlanWizardPage, PlanDetailPage } from './components/plans';
 import { ImprovementPlan, PlayStatus } from './types/improvementPlan';
 import { savePlanToStorage, loadPlanFromStorage, updatePlayStatus } from './utils/improvementPlanUtils';
 import DataIntegrityCategoryDetailPage from './components/assessment/dataIntegrity/DataIntegrityCategoryDetailPage';
+import LensDetailPage from './components/assessment/patterns/LensDetailPage';
+import { LensType } from './types/patterns';
 import { mockIntegrityDimensionResult } from './constants/mockAssessmentData';
 
 type AppView =
@@ -66,7 +68,8 @@ type AppView =
   | 'setup-complete'
   | 'improvement-plan-wizard'
   | 'improvement-plan-detail'
-  | 'data-integrity-category-detail';
+  | 'data-integrity-category-detail'
+  | 'lens-detail';
 
 // Get initial app view based on stored persona
 const getInitialAppView = (): AppView => {
@@ -127,6 +130,9 @@ const App: React.FC = () => {
 
   // Data Integrity category detail state
   const [selectedIntegrityCategoryIndex, setSelectedIntegrityCategoryIndex] = useState<number | null>(null);
+
+  // Lens detail state
+  const [selectedLens, setSelectedLens] = useState<LensType | null>(null);
 
   // Comparison modal state (for outcome detail page)
   const [isComparisonModalOpen, setIsComparisonModalOpen] = useState(false);
@@ -446,6 +452,17 @@ const App: React.FC = () => {
   const handleBackFromCategoryDetail = () => {
     setSelectedIntegrityCategoryIndex(null);
     setReturnToDimensionIndex(0); // Data Integrity is dimension 0
+    setAppView('assessment-results');
+  };
+
+  // Lens detail navigation handlers
+  const handleLensClick = (lens: LensType) => {
+    setSelectedLens(lens);
+    setAppView('lens-detail');
+  };
+
+  const handleBackFromLensDetail = () => {
+    setSelectedLens(null);
     setAppView('assessment-results');
   };
 
@@ -1168,6 +1185,20 @@ const App: React.FC = () => {
       );
     }
 
+    // Lens detail view
+    if (appView === 'lens-detail' && assessmentResult && selectedLens) {
+      return (
+        <LensDetailPage
+          lens={selectedLens}
+          assessmentResult={assessmentResult}
+          wizardState={wizardState}
+          onBack={handleBackFromLensDetail}
+          onIndicatorDrillDown={handleIndicatorDrillDown}
+          onCategoryDetail={handleCategoryDetail}
+        />
+      );
+    }
+
     // Assessment results view
     if (appView === 'assessment-results' && assessmentResult) {
       const isOwner = currentAssessmentId
@@ -1188,6 +1219,7 @@ const App: React.FC = () => {
             wizardState={wizardState}
             onBackToSetup={handleEditSettings}
             onBackToHome={handleBackToHome}
+            onLensClick={handleLensClick}
             onRerun={handleRerunAssessment}
             onShare={() => {
               const assessment = myAssessments.find(a => a.id === currentAssessmentId);
