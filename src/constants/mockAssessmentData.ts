@@ -1768,6 +1768,78 @@ const staleFreshFindings: IndicatorResult[] = [
 // ============================================
 // Data Freshness — Bulk update findings (per issue type)
 // ============================================
+// ============================================
+// Data Freshness — Update Activity findings (per issue type)
+// ============================================
+const updateActivityFreshFindings: IndicatorResult[] = [
+  mkFinding(
+    'freshness-story-updateActivity', 'Stories: avg 3.2 days between updates',
+    'Average number of days between successive updates for Story issues. Higher values indicate less frequent maintenance of story data.',
+    'When stories go days without updates, their field values drift from reality. Real-time updates keep data accurate for sprint planning and velocity tracking.',
+    3.2, '3.2 days', 'days', 1.5, '1.5 days', 18, 'stable', false, 'updateActivity', ['Story'],
+  ),
+  mkFinding(
+    'freshness-bug-updateActivity', 'Bugs: avg 2.1 days between updates',
+    'Average number of days between successive updates for Bug issues. Higher values indicate less frequent maintenance of bug data.',
+    'Bugs require rapid triage and resolution. Long gaps between updates suggest bugs are being filed and forgotten rather than actively tracked.',
+    2.1, '2.1 days', 'days', 1.5, '1.5 days', 30, 'stable', false, 'updateActivity', ['Bug'],
+  ),
+  mkFinding(
+    'freshness-task-updateActivity', 'Tasks: avg 4.5 days between updates',
+    'Average number of days between successive updates for Task issues. Higher values indicate less frequent maintenance of task data.',
+    'Tasks with infrequent updates often represent work done outside Jira. The longer the gap, the less reliable task status and assignment data becomes.',
+    4.5, '4.5 days', 'days', 1.5, '1.5 days', 10, 'declining', false, 'updateActivity', ['Task'],
+  ),
+  mkFinding(
+    'freshness-epic-updateActivity', 'Epics: avg 8.0 days between updates',
+    'Average number of days between successive updates for Epic issues. Higher values indicate less frequent maintenance of epic data.',
+    'Epics drive roadmap planning. When they go a week without updates, leadership makes decisions based on outdated progress information.',
+    8.0, '8.0 days', 'days', 3.0, '3.0 days', 8, 'declining', false, 'updateActivity', ['Epic'],
+  ),
+  mkFinding(
+    'freshness-risk-updateActivity', 'Risks: avg 5.5 days between updates',
+    'Average number of days between successive updates for Risk issues. Higher values indicate less frequent maintenance of risk data.',
+    'Risk items require active monitoring. Infrequent updates mean risks may materialize before anyone notices the warning signs.',
+    5.5, '5.5 days', 'days', 2.0, '2.0 days', 12, 'stable', false, 'updateActivity', ['Risk'],
+  ),
+  mkFinding(
+    'freshness-assumption-updateActivity', 'Assumptions: avg 7.0 days between updates',
+    'Average number of days between successive updates for Assumption issues. Higher values indicate less frequent maintenance of assumption data.',
+    'Assumptions need regular validation. Without frequent check-ins, invalid assumptions persist and drive decisions in the wrong direction.',
+    7.0, '7.0 days', 'days', 2.5, '2.5 days', 6, 'declining', false, 'updateActivity', ['Assumption'],
+  ),
+  mkFinding(
+    'freshness-feature-updateActivity', 'Features: avg 6.0 days between updates',
+    'Average number of days between successive updates for Feature issues. Higher values indicate less frequent maintenance of feature data.',
+    'Features represent customer-facing value. Long update gaps mean product managers lose visibility into delivery progress.',
+    6.0, '6.0 days', 'days', 2.5, '2.5 days', 14, 'stable', false, 'updateActivity', ['Feature'],
+  ),
+  mkFinding(
+    'freshness-spike-updateActivity', 'Spikes: avg 2.5 days between updates',
+    'Average number of days between successive updates for Spike issues. Higher values indicate less frequent maintenance of spike data.',
+    'Spikes are time-boxed investigations. Frequent updates ensure findings are captured incrementally rather than dumped at the end.',
+    2.5, '2.5 days', 'days', 1.5, '1.5 days', 28, 'improving', false, 'updateActivity', ['Spike'],
+  ),
+  mkFinding(
+    'freshness-dependency-updateActivity', 'Dependencies: avg 5.0 days between updates',
+    'Average number of days between successive updates for Dependency issues. Higher values indicate less frequent maintenance of dependency data.',
+    'Dependencies are blocking risks. When they go days without updates, downstream teams cannot plan accurately.',
+    5.0, '5.0 days', 'days', 2.0, '2.0 days', 10, 'stable', false, 'updateActivity', ['Dependency'],
+  ),
+  mkFinding(
+    'freshness-impediment-updateActivity', 'Impediments: avg 3.5 days between updates',
+    'Average number of days between successive updates for Impediment issues. Higher values indicate less frequent maintenance of impediment data.',
+    'Impediments block progress. Without frequent updates, blockers persist longer than necessary and their resolution status becomes unclear.',
+    3.5, '3.5 days', 'days', 1.5, '1.5 days', 16, 'stable', false, 'updateActivity', ['Impediment'],
+  ),
+  mkFinding(
+    'freshness-initiative-updateActivity', 'Initiatives: avg 10.0 days between updates',
+    'Average number of days between successive updates for Initiative issues. Higher values indicate less frequent maintenance of initiative data.',
+    'Initiatives guide portfolio-level planning. When they go 10+ days without updates, executives lose confidence in the data and revert to manual status collection.',
+    10.0, '10.0 days', 'days', 3.0, '3.0 days', 5, 'declining', false, 'updateActivity', ['Initiative'],
+  ),
+];
+
 const bulkUpdateFreshFindings: IndicatorResult[] = [
   mkFinding(
     'freshness-story-bulkUpdated', 'Stories: 18% of field changes applied in bulk',
@@ -3527,17 +3599,17 @@ export const mockDimension5Result: DimensionResult = {
 
 const dataFreshnessCategory: IndicatorCategory = {
   id: 'dataFreshness',
-  name: 'Data Freshness & Staleness',
+  name: 'Data Freshness',
   shortName: 'Data Freshness',
-  description: 'Does the data in Jira represent an up-to-date view of the work?',
+  description: 'Is Jira data being kept current across all issue types?',
   rationale: `
-    <strong>Data freshness</strong> measures whether your Jira data accurately reflects the current state
-    of work. Stale data leads to inaccurate reporting, missed deadlines, and poor decision-making.
-    Teams with fresh data can respond quickly to changes and maintain accurate forecasts.
+    <strong>Data Freshness</strong> measures whether work items are being kept up to date through
+    regular updates, whether changes are made in real-time or retroactively, and whether Jira
+    is being used as the system of record for tracking work.
   `,
   statusColor: '#FFEBE6',
   status: 'high',
-  issuesCount: 6,
+  issuesCount: 8,
   indicators: [
     {
       id: 'staleWorkItems',
@@ -3592,58 +3664,6 @@ const dataFreshnessCategory: IndicatorCategory = {
       distribution: { min: 5, max: 45, otherTeamValues: [8, 12, 18, 22, 28, 32, 38, 42] },
     },
     {
-      id: 'epicsWithUnresolvedChildren',
-      name: 'Done Epics with Unresolved Children',
-      description: 'Percentage of Epics moved to Done that still had child work items not specified or resolved.',
-      value: 80,
-      unit: '%',
-      displayValue: '80%',
-      benchmarkValue: 15,
-      benchmarkDisplayValue: '15%',
-      benchmarkComparison: 'bottom 5% of the comparison group',
-      benchmarkPercentile: 5,
-      trend: 'stable',
-      higherIsBetter: false,
-      trendData: [
-        { period: '2024-03', value: 76, benchmarkValue: 15 },
-        { period: '2024-04', value: 77, benchmarkValue: 15 },
-        { period: '2024-05', value: 77, benchmarkValue: 15 },
-        { period: '2024-06', value: 78, benchmarkValue: 15 },
-        { period: '2024-07', value: 79, benchmarkValue: 15 },
-        { period: '2024-08', value: 80, benchmarkValue: 15 },
-        { period: '2024-09', value: 80, benchmarkValue: 15 },
-        { period: '2024-10', value: 80, benchmarkValue: 15 },
-        { period: '2024-11', value: 80, benchmarkValue: 15 },
-      ],
-      distribution: { min: 5, max: 85, otherTeamValues: [10, 18, 25, 35, 45, 55, 65, 75, 82] },
-    },
-    {
-      id: 'bulkChanges',
-      name: 'Bulk Changes',
-      description: 'Percentage of changes that happened to work items that were done in bulk (multiple items at the same time).',
-      value: 20,
-      unit: '%',
-      displayValue: '20%',
-      benchmarkValue: 5,
-      benchmarkDisplayValue: '5%',
-      benchmarkComparison: 'bottom 8% of the comparison group',
-      benchmarkPercentile: 8,
-      trend: 'declining',
-      higherIsBetter: false,
-      trendData: [
-        { period: '2024-03', value: 12, benchmarkValue: 5 },
-        { period: '2024-04', value: 13, benchmarkValue: 5 },
-        { period: '2024-05', value: 14, benchmarkValue: 5 },
-        { period: '2024-06', value: 15, benchmarkValue: 5 },
-        { period: '2024-07', value: 16, benchmarkValue: 5 },
-        { period: '2024-08', value: 17, benchmarkValue: 5 },
-        { period: '2024-09', value: 18, benchmarkValue: 5 },
-        { period: '2024-10', value: 19, benchmarkValue: 5 },
-        { period: '2024-11', value: 20, benchmarkValue: 5 },
-      ],
-      distribution: { min: 2, max: 35, otherTeamValues: [3, 5, 8, 12, 16, 20, 25, 30] },
-    },
-    {
       id: 'parentNotDoneAfterChildren',
       name: 'Stories Not Done After Sub-tasks Complete',
       description: 'Percentage of issues with sub-tasks that were still not marked done for at least a week after all sub-tasks completed.',
@@ -3694,6 +3714,58 @@ const dataFreshnessCategory: IndicatorCategory = {
         { period: '2024-11', value: 30, benchmarkValue: 10 },
       ],
       distribution: { min: 5, max: 50, otherTeamValues: [8, 12, 18, 22, 28, 35, 42, 48] },
+    },
+    {
+      id: 'epicsWithUnresolvedChildren',
+      name: 'Done Epics with Unresolved Children',
+      description: 'Percentage of Epics moved to Done that still had child work items not specified or resolved.',
+      value: 80,
+      unit: '%',
+      displayValue: '80%',
+      benchmarkValue: 15,
+      benchmarkDisplayValue: '15%',
+      benchmarkComparison: 'bottom 5% of the comparison group',
+      benchmarkPercentile: 5,
+      trend: 'stable',
+      higherIsBetter: false,
+      trendData: [
+        { period: '2024-03', value: 76, benchmarkValue: 15 },
+        { period: '2024-04', value: 77, benchmarkValue: 15 },
+        { period: '2024-05', value: 77, benchmarkValue: 15 },
+        { period: '2024-06', value: 78, benchmarkValue: 15 },
+        { period: '2024-07', value: 79, benchmarkValue: 15 },
+        { period: '2024-08', value: 80, benchmarkValue: 15 },
+        { period: '2024-09', value: 80, benchmarkValue: 15 },
+        { period: '2024-10', value: 80, benchmarkValue: 15 },
+        { period: '2024-11', value: 80, benchmarkValue: 15 },
+      ],
+      distribution: { min: 5, max: 85, otherTeamValues: [10, 18, 25, 35, 45, 55, 65, 75, 82] },
+    },
+    {
+      id: 'bulkChanges',
+      name: 'Bulk Changes',
+      description: 'Percentage of changes that happened to work items that were done in bulk (multiple items at the same time).',
+      value: 20,
+      unit: '%',
+      displayValue: '20%',
+      benchmarkValue: 5,
+      benchmarkDisplayValue: '5%',
+      benchmarkComparison: 'bottom 8% of the comparison group',
+      benchmarkPercentile: 8,
+      trend: 'declining',
+      higherIsBetter: false,
+      trendData: [
+        { period: '2024-03', value: 12, benchmarkValue: 5 },
+        { period: '2024-04', value: 13, benchmarkValue: 5 },
+        { period: '2024-05', value: 14, benchmarkValue: 5 },
+        { period: '2024-06', value: 15, benchmarkValue: 5 },
+        { period: '2024-07', value: 16, benchmarkValue: 5 },
+        { period: '2024-08', value: 17, benchmarkValue: 5 },
+        { period: '2024-09', value: 18, benchmarkValue: 5 },
+        { period: '2024-10', value: 19, benchmarkValue: 5 },
+        { period: '2024-11', value: 20, benchmarkValue: 5 },
+      ],
+      distribution: { min: 2, max: 35, otherTeamValues: [3, 5, 8, 12, 16, 20, 25, 30] },
     },
     {
       id: 'jiraUpdateFrequency',
@@ -6237,3 +6309,8 @@ export const generateImprovingTeamAssessment = (wizardState?: WizardState): Asse
 export const generateDecliningTeamAssessment = (wizardState?: WizardState): AssessmentResult => {
   return generateScenarioAssessment(SCENARIO_DECLINING_TEAM, wizardState);
 };
+
+// ============================================
+// Export freshness findings arrays for DataFreshnessSummaryTable
+// ============================================
+export { staleFreshFindings, bulkUpdateFreshFindings, updateActivityFreshFindings };

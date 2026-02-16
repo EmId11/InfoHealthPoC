@@ -4,7 +4,7 @@ import { LensType } from '../../../types/patterns';
 import { WizardState } from '../../../types/wizard';
 import { getIndicatorTier, INDICATOR_TIERS } from '../../../types/indicatorTiers';
 import { getDimensionDescription } from '../../../constants/clusterDescriptions';
-import { mockIntegrityDimensionResult } from '../../../constants/mockAssessmentData';
+import { mockIntegrityDimensionResult, mockDimension6Result } from '../../../constants/mockAssessmentData';
 import { DIMENSION_EXPLANATION } from '../../../constants/pageExplanations';
 import NavigationBar from '../common/NavigationBar';
 import TrendChart from '../common/TrendChart';
@@ -65,6 +65,7 @@ const LensDetailPage: React.FC<LensDetailPageProps> = ({
   // Score history modals
   const [showScoreHistory, setShowScoreHistory] = useState(false);
   const [showIntegrityScoreHistory, setShowIntegrityScoreHistory] = useState(false);
+  const [showFreshnessScoreHistory, setShowFreshnessScoreHistory] = useState(false);
 
   const openComparisonModal = (dimensionIndex?: number) => {
     if (dimensionIndex !== undefined && assessmentResult.dimensions[dimensionIndex]) {
@@ -634,6 +635,281 @@ const LensDetailPage: React.FC<LensDetailPageProps> = ({
     );
   };
 
+  const renderFreshnessDetail = () => {
+    const dimension = mockDimension6Result;
+    const freshnessTier = getIndicatorTier(dimension.healthScore ?? dimension.overallPercentile);
+
+    // Generate mock comparison team positions
+    const freshSeed = dimension.dimensionKey.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
+    const freshComparisonPositions: number[] = [];
+    for (let i = 0; i < assessmentResult.comparisonTeamCount; i++) {
+      const pseudoRandom = Math.sin(freshSeed * (i + 1) * 9999) * 10000;
+      const normalized = (pseudoRandom - Math.floor(pseudoRandom));
+      freshComparisonPositions.push(Math.max(5, Math.min(95, normalized * 100)));
+    }
+    const freshYourPosition = dimension.healthScore ?? dimension.overallPercentile;
+
+    return (
+      <>
+        <div style={{...styles.dimensionBlueBanner, background: freshnessTier.bgColor, borderColor: freshnessTier.borderColor}}>
+          <div style={styles.heroCenterFlow}>
+            {/* Title row with info button */}
+            <div style={styles.heroTitleRow}>
+              <span style={styles.heroSubtitle}>Health Score</span>
+              <span style={styles.heroInfoInline}>
+                <HeroInfoButton title={`About ${dimension.dimensionName}`}>
+                  <div style={styles.infoModalBody}>
+                    <div style={styles.infoSection}>
+                      <h4 style={styles.infoSectionTitle}>What This Shows</h4>
+                      <p style={styles.infoText}>
+                        We identify stale items, look for bulk updates that suggest catch-up sessions, and check whether parent-child relationships stay in sync.
+                      </p>
+                    </div>
+                    <div style={styles.infoSection}>
+                      <h4 style={styles.infoSectionTitle}>Why It Matters</h4>
+                      <p style={styles.infoText}>
+                        Stale data leads to bad decisions. If Jira does not reflect reality, standups become status-gathering sessions, and managers make plans based on outdated information.
+                      </p>
+                    </div>
+                    <div style={styles.infoSection}>
+                      <h4 style={styles.infoSectionTitle}>What You Can Do</h4>
+                      <p style={styles.infoText}>
+                        Encourage real-time updates as part of the workflow. Consider automation that prompts updates when items have been unchanged too long.
+                      </p>
+                    </div>
+                    <div style={styles.infoSection}>
+                      <h4 style={styles.infoSectionTitle}>Key Metrics</h4>
+                      <ul style={styles.infoList}>
+                        <li><strong>Score:</strong> {DIMENSION_EXPLANATION.keyMetrics.score}</li>
+                        <li><strong>Rating:</strong> {DIMENSION_EXPLANATION.keyMetrics.rating}</li>
+                        <li><strong>Trend:</strong> {DIMENSION_EXPLANATION.keyMetrics.trend}</li>
+                      </ul>
+                    </div>
+                    <div style={styles.infoSection}>
+                      <h4 style={styles.infoSectionTitle}>Health Categories</h4>
+                      <p style={styles.infoText}>
+                        Your score maps to one of five health categories.
+                      </p>
+                      <div style={styles.healthCategoriesList}>
+                        {[...INDICATOR_TIERS].reverse().map(t => (
+                          <div key={t.level} style={styles.healthCategoryRow}>
+                            <div style={styles.healthCategoryHeader}>
+                              <span style={{...styles.healthCategoryName, color: t.color}}>{t.name}</span>
+                              <span style={styles.healthCategoryRange}>{t.minPercentile}–{t.maxPercentile}</span>
+                            </div>
+                            <p style={styles.healthCategoryDesc}>{t.detailedDescription}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </HeroInfoButton>
+              </span>
+            </div>
+
+            {/* Giant score */}
+            {(() => {
+              let freshOverallTrend: 'up' | 'down' | 'stable' = 'stable';
+              if (dimension.trendData && dimension.trendData.length >= 2) {
+                const firstHS = dimension.trendData[0].healthScore ?? dimension.trendData[0].value;
+                const lastHS = dimension.trendData[dimension.trendData.length - 1].healthScore ?? (dimension.healthScore ?? dimension.overallPercentile);
+                const firstT = getIndicatorTier(firstHS).level;
+                const lastT = getIndicatorTier(lastHS).level;
+                if (lastT > firstT) freshOverallTrend = 'up';
+                else if (lastT < firstT) freshOverallTrend = 'down';
+              }
+              const healthScore = dimension.healthScore ?? Math.round(dimension.overallPercentile);
+              const trendLabel = freshOverallTrend === 'up' ? 'Improving' : freshOverallTrend === 'down' ? 'Declining' : 'Stable';
+              const trendColor = freshOverallTrend === 'up' ? '#36B37E' : freshOverallTrend === 'down' ? '#DE350B' : '#6B778C';
+              const trendArrowPath = freshOverallTrend === 'up'
+                ? 'M3,10 L7,3 L11,10 L9,10 L9,12 L5,12 L5,10 Z'
+                : 'M3,5 L7,12 L11,5 L9,5 L9,3 L5,3 L5,5 Z';
+              const sparkTrend = freshOverallTrend === 'up' ? 'improving' as const : freshOverallTrend === 'down' ? 'declining' as const : 'stable' as const;
+              const hasTrendData = dimension.trendData && dimension.trendData.length >= 2;
+
+              return (
+                <>
+                  <div style={styles.heroScoreBlock}>
+                    <span style={{...styles.heroBigNumber, color: freshnessTier.color}}>{healthScore}</span>
+                    <span style={styles.heroBigDenom}>/100</span>
+                  </div>
+
+                  <button
+                    style={{
+                      ...styles.heroStatusChip,
+                      backgroundColor: `${freshnessTier.color}18`,
+                      border: `1.5px solid ${freshnessTier.color}40`,
+                      cursor: hasTrendData ? 'pointer' : 'default',
+                    }}
+                    onClick={hasTrendData ? () => setShowFreshnessScoreHistory(true) : undefined}
+                    title={hasTrendData ? 'View score history' : undefined}
+                  >
+                    <span style={{...styles.heroStatusDot, backgroundColor: freshnessTier.color}} />
+                    <span style={{...styles.heroStatusTier, color: freshnessTier.color}}>{freshnessTier.name}</span>
+                    <span style={styles.heroStatusDivider} />
+                    {freshOverallTrend === 'stable' ? (
+                      <span style={{ display: 'inline-flex', flexShrink: 0 }}>
+                        <MediaServicesActualSizeIcon label="" size="small" primaryColor={trendColor} />
+                      </span>
+                    ) : (
+                      <svg width="12" height="12" viewBox="0 0 14 14" style={{ flexShrink: 0 }}>
+                        <path d={trendArrowPath} fill={trendColor} />
+                      </svg>
+                    )}
+                    <span style={{...styles.heroStatusTrend, color: trendColor}}>
+                      {trendLabel}
+                    </span>
+                    {hasTrendData && (
+                      <>
+                        <span style={styles.heroStatusDivider} />
+                        <span style={styles.heroSparklineWrap}>
+                          <Sparkline
+                            data={dimension.trendData!}
+                            trend={sparkTrend}
+                            width={56}
+                            height={20}
+                          />
+                        </span>
+                      </>
+                    )}
+                  </button>
+
+                  {/* Score history modal */}
+                  {showFreshnessScoreHistory && dimension.trendData && dimension.trendData.length >= 2 && (
+                    <div style={styles.scoreHistoryOverlay} onClick={() => setShowFreshnessScoreHistory(false)}>
+                      <div style={styles.scoreHistoryModal} onClick={(e) => e.stopPropagation()}>
+                        <div style={styles.scoreHistoryHeader}>
+                          <h3 style={styles.scoreHistoryTitle}>Score History</h3>
+                          <button onClick={() => setShowFreshnessScoreHistory(false)} style={styles.scoreHistoryClose}>{'\u2715'}</button>
+                        </div>
+                        <div style={styles.scoreHistoryBody}>
+                          <TrendChart
+                            data={dimension.trendData}
+                            height={280}
+                            dimensionName="Data Freshness"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
+
+            {/* Description */}
+            <p style={styles.heroDescription}>
+              {dimension.verdictDescription}
+            </p>
+
+            {/* Inline peer comparison spectrum */}
+            {assessmentResult.comparisonTeamCount > 0 && (
+              <div style={styles.inlineSpectrumContainer}>
+                <div style={styles.inlineSpectrumHeader}>
+                  <span style={styles.inlineSpectrumTitle}>Peer Comparison</span>
+                  <button
+                    style={styles.inlineSpectrumLink}
+                    onClick={() => {
+                      setComparisonModalContext({
+                        yourRank: Math.round((1 - freshYourPosition / 100) * assessmentResult.comparisonTeamCount) + 1,
+                        dimensionName: dimension.dimensionName,
+                      });
+                      setIsComparisonModalOpen(true);
+                    }}
+                  >
+                    vs {assessmentResult.comparisonTeamCount} similar teams &rarr;
+                  </button>
+                </div>
+                {(() => {
+                  const sortedPositions = [...freshComparisonPositions].sort((a, b) => a - b);
+                  const peerMin = sortedPositions[0] ?? 0;
+                  const peerMax = sortedPositions[sortedPositions.length - 1] ?? 100;
+                  const peerMedian = sortedPositions.length > 0
+                    ? sortedPositions[Math.floor(sortedPositions.length / 2)]
+                    : 50;
+                  return (
+                    <div style={styles.inlineSpectrumBar}>
+                      <div style={styles.inlineSpectrumTrack} />
+                      <span style={styles.inlineSpectrumMin}>0</span>
+                      <span style={styles.inlineSpectrumMax}>100</span>
+                      <div
+                        style={{
+                          ...styles.inlinePeerRangeBand,
+                          left: `${peerMin}%`,
+                          width: `${peerMax - peerMin}%`,
+                        }}
+                        onMouseEnter={(e) => {
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          setTooltip({
+                            visible: true,
+                            x: rect.left + rect.width / 2,
+                            y: rect.top,
+                            label: `${assessmentResult.comparisonTeamCount} teams`,
+                            value: `Range: ${Math.round(peerMin)}\u2013${Math.round(peerMax)} \u00B7 Median: ${Math.round(peerMedian)}`,
+                          });
+                        }}
+                        onMouseLeave={() => setTooltip(prev => ({ ...prev, visible: false }))}
+                      />
+                      <div
+                        style={{
+                          ...styles.inlinePeerMedianTick,
+                          left: `${peerMedian}%`,
+                        }}
+                      />
+                      <div
+                        style={{
+                          ...styles.inlineYourTeamMarker,
+                          left: `${freshYourPosition}%`,
+                          backgroundColor: freshnessTier.color,
+                          boxShadow: `0 0 0 3px ${freshnessTier.color}40`,
+                        }}
+                        onMouseEnter={(e) => {
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          setTooltip({
+                            visible: true,
+                            x: rect.left + rect.width / 2,
+                            y: rect.top,
+                            label: 'Your Team',
+                            value: `Score: ${dimension.healthScore ?? Math.round(dimension.overallPercentile)}`,
+                          });
+                        }}
+                        onMouseLeave={() => setTooltip(prev => ({ ...prev, visible: false }))}
+                      />
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+
+            {/* Tooltip */}
+            {tooltip.visible && (
+              <div style={{
+                ...styles.tooltip,
+                left: tooltip.x,
+                top: tooltip.y - 8,
+              }}>
+                <div style={styles.tooltipLabel}>{tooltip.label}</div>
+                <div style={styles.tooltipValue}>{tooltip.value}</div>
+                <div style={styles.tooltipArrow} />
+              </div>
+            )}
+
+          </div>
+        </div>
+
+        {/* Indicators */}
+        <div style={styles.dimensionContentSection}>
+          <IndicatorsTab
+            dimension={mockDimension6Result}
+            dimensionIndex={0}
+            onIndicatorDrillDown={onIndicatorDrillDown}
+            comparisonTeamCount={assessmentResult.comparisonTeamCount}
+            comparisonTeamNames={assessmentResult.comparisonTeams.map(t => t.name)}
+          />
+        </div>
+      </>
+    );
+  };
+
   const renderLensContent = () => {
     switch (lens) {
       case 'coverage':
@@ -645,9 +921,7 @@ const LensDetailPage: React.FC<LensDetailPageProps> = ({
           <PatternLensDetailView lensResult={assessmentResult.lensResults.timing} />
         ) : null;
       case 'behavioral':
-        return assessmentResult.lensResults ? (
-          <PatternLensDetailView lensResult={assessmentResult.lensResults.behavioral} />
-        ) : null;
+        return renderFreshnessDetail();
       default:
         return null;
     }

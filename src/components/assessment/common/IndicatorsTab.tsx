@@ -15,6 +15,7 @@ import DistributionSpectrum from './DistributionSpectrum';
 import Sparkline from './Sparkline';
 import FieldCompletenessChart from './FieldCompletenessChart';
 import DataIntegritySummaryTable from './DataIntegritySummaryTable';
+import DataFreshnessSummaryTable from './DataFreshnessSummaryTable';
 import FieldCompletenessSummaryTable from './FieldCompletenessSummaryTable';
 
 // Field name lookup from field definitions
@@ -557,6 +558,11 @@ const IndicatorsTab: React.FC<IndicatorsTabProps> = ({ dimension, dimensionIndex
         <DataIntegritySummaryTable dimension={dimension} />
       )}
 
+      {/* Data Freshness: indicator summary table */}
+      {dimension.dimensionKey === 'dataFreshness' && (
+        <DataFreshnessSummaryTable dimension={dimension} />
+      )}
+
       {/* Field Completeness: summary table */}
       {dimension.dimensionKey === 'ticketReadiness' && (
         <FieldCompletenessSummaryTable
@@ -832,7 +838,7 @@ const IndicatorsTab: React.FC<IndicatorsTabProps> = ({ dimension, dimensionIndex
       )}
 
       {/* Active Category Table for horizontal layout (no redundant header) */}
-      {activeCategory && !useVerticalTabs && dimension.dimensionKey !== 'ticketReadiness' && (
+      {activeCategory && !useVerticalTabs && dimension.dimensionKey !== 'ticketReadiness' && dimension.dimensionKey !== 'dataFreshness' && (
         <CategorySection
           key={activeCategory.id}
           category={activeCategory}
