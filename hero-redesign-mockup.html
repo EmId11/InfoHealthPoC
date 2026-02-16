@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hero Redesign — Wild</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background: #F4F5F7;
+    padding: 32px 40px;
+    color: #172B4D;
+  }
+
+  /* ── Card Shell ── */
+  .hero-card {
+    position: relative;
+    background: #FFFFFF;
+    border-radius: 16px;
+    border: 1px solid #E4E6EB;
+    overflow: hidden;
+    max-width: 1020px;
+    margin: 0 auto;
+  }
+  .accent-bar {
+    height: 5px;
+    background: linear-gradient(90deg, #FF8B00, #FFAB00);
+  }
+
+  /* ── Hero Top: Chart backdrop + floating score ── */
+  .hero-top {
+    position: relative;
+    min-height: 290px;
+    overflow: hidden;
+  }
+  .chart-backdrop {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* ── Floating Score ── */
+  .score-float {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 0 12px;
+  }
+  .score-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #8993A4;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .score-disc {
+    position: relative;
+    width: 186px;
+    height: 186px;
+  }
+  .score-disc-bg {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 6px 40px rgba(9, 30, 66, 0.10), 0 0 0 1px rgba(9, 30, 66, 0.04);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .score-ring {
+    display: block;
+    position: relative;
+    z-index: 1;
+  }
+  .score-content {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+  }
+  .score-number {
+    font-size: 64px;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -3px;
+    color: #FF8B00;
+  }
+
+  /* ── Badges ── */
+  .badge-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 11.5px;
+    font-weight: 600;
+    white-space: nowrap;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+  .badge-level {
+    background: rgba(255, 139, 0, 0.12);
+    border: 1.5px solid rgba(255, 139, 0, 0.3);
+    color: #FF8B00;
+  }
+  .badge-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #FF8B00;
+  }
+  .badge-trend {
+    background: rgba(255, 255, 255, 0.7);
+    border: 1.5px solid rgba(9, 30, 66, 0.1);
+    color: #44546F;
+  }
+
+  /* ── Insight Callout ── */
+  .insight-bar {
+    position: relative;
+    z-index: 1;
+    margin: 0 28px 0;
+    padding: 10px 16px;
+    background: rgba(255, 247, 237, 0.95);
+    border-left: 3px solid #FF8B00;
+    border-radius: 0 8px 8px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+  .insight-icon {
+    flex-shrink: 0;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: #FF8B00;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .insight-text {
+    font-size: 13px;
+    font-weight: 500;
+    color: #44546F;
+    line-height: 1.4;
+  }
+  .insight-text .hl { font-weight: 700; color: #FF8B00; }
+
+  /* ── Month labels row ── */
+  .month-row {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 48px 14px;
+  }
+  .month-label {
+    font-size: 9.5px;
+    font-weight: 500;
+    color: #8993A4;
+  }
+
+  /* ── Divider ── */
+  .section-divider {
+    height: 1px;
+    background: #EBECF0;
+    margin: 0;
+  }
+
+  /* ── Confidence Section ── */
+  .confidence-section {
+    padding: 18px 32px 22px;
+    background: #FAFBFC;
+  }
+  .confidence-title {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #44546F;
+    margin-bottom: 16px;
+    text-align: center;
+  }
+
+  /* ── Gauge Row ── */
+  .gauge-row {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+  }
+  .gauge-tile {
+    flex: 1;
+    max-width: 128px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 3px;
+    padding: 12px 6px 10px;
+    border-radius: 12px;
+    border: 1px solid transparent;
+  }
+  .gauge-tile.high {
+    background: rgba(0, 135, 90, 0.04);
+    border-color: rgba(0, 135, 90, 0.08);
+  }
+  .gauge-tile.moderate {
+    background: rgba(255, 139, 0, 0.04);
+    border-color: rgba(255, 139, 0, 0.08);
+  }
+  .gauge-tile.low {
+    background: rgba(222, 53, 11, 0.04);
+    border-color: rgba(222, 53, 11, 0.08);
+  }
+  .gauge-tile.vlow {
+    background: rgba(191, 38, 0, 0.04);
+    border-color: rgba(191, 38, 0, 0.06);
+  }
+  .gauge-svg { display: block; }
+  .gauge-pct {
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1;
+    margin-top: -1px;
+  }
+  .gauge-name {
+    font-size: 10.5px;
+    font-weight: 600;
+    color: #172B4D;
+    line-height: 1.25;
+    min-height: 26px;
+    display: flex;
+    align-items: center;
+  }
+  .gauge-status {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+</style>
+</head>
+<body>
+
+<div class="hero-card">
+  <div class="accent-bar"></div>
+
+  <div class="hero-top">
+
+    <!-- ── Chart as full-bleed backdrop ── -->
+    <svg class="chart-backdrop" viewBox="0 0 800 290" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- Severity bands — very subtle ambient color -->
+      <rect x="0" y="0"   width="800" height="26"  fill="#E3FCEF" opacity="0.35"/>
+      <rect x="0" y="26"  width="800" height="40"  fill="#E3FCEF" opacity="0.2"/>
+      <rect x="0" y="66"  width="800" height="72"  fill="#DEEBFF" opacity="0.18"/>
+      <rect x="0" y="138" width="800" height="72"  fill="#FFF0E0" opacity="0.25"/>
+      <rect x="0" y="210" width="800" height="80"  fill="#FFEBE6" opacity="0.15"/>
+      <!-- Dashed zone lines -->
+      <line x1="0" y1="26"  x2="800" y2="26"  stroke="#DFE1E6" stroke-width="0.5" stroke-dasharray="6,4" opacity="0.5"/>
+      <line x1="0" y1="66"  x2="800" y2="66"  stroke="#DFE1E6" stroke-width="0.5" stroke-dasharray="6,4" opacity="0.5"/>
+      <line x1="0" y1="138" x2="800" y2="138" stroke="#DFE1E6" stroke-width="0.5" stroke-dasharray="6,4" opacity="0.5"/>
+      <line x1="0" y1="210" x2="800" y2="210" stroke="#DFE1E6" stroke-width="0.5" stroke-dasharray="6,4" opacity="0.5"/>
+      <!-- Zone labels — very faint -->
+      <text x="780" y="14"  font-size="10" fill="#006644" font-weight="600" text-anchor="end" opacity="0.25">Optimal</text>
+      <text x="780" y="47"  font-size="10" fill="#00875A" font-weight="600" text-anchor="end" opacity="0.22">Healthy</text>
+      <text x="780" y="100" font-size="10" fill="#2684FF" font-weight="600" text-anchor="end" opacity="0.22">Fair</text>
+      <text x="780" y="176" font-size="11" fill="#FF8B00" font-weight="700" text-anchor="end" opacity="0.35">At Risk</text>
+      <text x="780" y="245" font-size="10" fill="#DE350B" font-weight="600" text-anchor="end" opacity="0.22">Critical</text>
+      <!-- Area gradient -->
+      <defs>
+        <linearGradient id="ag" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#FF8B00" stop-opacity="0.12"/>
+          <stop offset="100%" stop-color="#FF8B00" stop-opacity="0.01"/>
+        </linearGradient>
+      </defs>
+      <!-- Data: 38,36,39,42,41,44,43,48  Y=290*(1-v/100) -->
+      <!-- Y: 179.8, 185.6, 176.9, 168.2, 171.1, 162.4, 165.3, 150.8 -->
+      <!-- X: 8 points from 48 to 752 (step 100.6) -->
+      <polygon points="48,179.8 148.6,185.6 249.1,176.9 349.7,168.2 450.3,171.1 550.9,162.4 651.4,165.3 752,150.8 752,270 48,270"
+        fill="url(#ag)"/>
+      <polyline points="48,179.8 148.6,185.6 249.1,176.9 349.7,168.2 450.3,171.1 550.9,162.4 651.4,165.3 752,150.8"
+        fill="none" stroke="#FF8B00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/>
+      <!-- Data dots -->
+      <circle cx="48"    cy="179.8" r="3" fill="#FF8B00" stroke="#fff" stroke-width="1.5" opacity="0.5"/>
+      <circle cx="148.6" cy="185.6" r="3" fill="#FF8B00" stroke="#fff" stroke-width="1.5" opacity="0.5"/>
+      <circle cx="249.1" cy="176.9" r="3" fill="#FF8B00" stroke="#fff" stroke-width="1.5" opacity="0.5"/>
+      <circle cx="349.7" cy="168.2" r="3" fill="#FF8B00" stroke="#fff" stroke-width="1.5" opacity="0.5"/>
+      <circle cx="450.3" cy="171.1" r="3" fill="#FF8B00" stroke="#fff" stroke-width="1.5" opacity="0.5"/>
+      <circle cx="550.9" cy="162.4" r="3" fill="#FF8B00" stroke="#fff" stroke-width="1.5" opacity="0.5"/>
+      <circle cx="651.4" cy="165.3" r="3" fill="#FF8B00" stroke="#fff" stroke-width="1.5" opacity="0.5"/>
+      <circle cx="752"   cy="150.8" r="3.5" fill="#FF8B00" stroke="#fff" stroke-width="2" opacity="0.65"/>
+    </svg>
+
+    <!-- ── Floating Score ── -->
+    <div class="score-float">
+      <span class="score-label">Data Trust Score</span>
+
+      <div class="score-disc">
+        <!-- Frosted glass circle behind the ring -->
+        <div class="score-disc-bg"></div>
+        <!-- Donut ring SVG -->
+        <svg class="score-ring" width="186" height="186" viewBox="0 0 186 186" style="transform:rotate(-90deg)">
+          <defs>
+            <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+          <!-- Track -->
+          <circle cx="93" cy="93" r="84" fill="none" stroke="rgba(255,139,0,0.08)" stroke-width="9"/>
+          <!-- Filled arc: 48% of 2*pi*84 = 253.2 of 527.8 -->
+          <circle cx="93" cy="93" r="84" fill="none" stroke="#FF8B00" stroke-width="9"
+            stroke-dasharray="253.2 527.8" stroke-linecap="round" filter="url(#glow)"/>
+        </svg>
+        <!-- Score number overlay -->
+        <div class="score-content">
+          <span class="score-number">48</span>
+        </div>
+      </div>
+
+      <div class="badge-row">
+        <span class="badge badge-level"><span class="badge-dot"></span> At Risk</span>
+        <span class="badge badge-trend">↗ Stable</span>
+      </div>
+    </div>
+
+    <!-- Month labels along the bottom of the chart area -->
+    <div class="month-row">
+      <span class="month-label">May</span>
+      <span class="month-label">Jun</span>
+      <span class="month-label">Jul</span>
+      <span class="month-label">Aug</span>
+      <span class="month-label">Sep</span>
+      <span class="month-label">Oct</span>
+      <span class="month-label">Nov</span>
+      <span class="month-label">Dec</span>
+    </div>
+  </div>
+
+  <!-- ── Insight ── -->
+  <div class="insight-bar">
+    <div class="insight-icon">
+      <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+        <path d="M8 2L2 14h12L8 2z" fill="#fff"/>
+        <rect x="7.25" y="6" width="1.5" height="4" rx="0.75" fill="#FF8B00"/>
+        <circle cx="8" cy="11.5" r="0.85" fill="#FF8B00"/>
+      </svg>
+    </div>
+    <p class="insight-text">
+      <span class="hl">Timing</span> is your weakest component at <span class="hl">20</span> — start there to improve fastest.
+    </p>
+  </div>
+
+  <div style="height:12px;"></div>
+  <div class="section-divider"></div>
+
+  <!-- ── Confidence Gauges ── -->
+  <div class="confidence-section">
+    <div class="confidence-title">How confidently can you use your Jira data for each purpose?</div>
+
+    <div class="gauge-row">
+
+      <div class="gauge-tile high">
+        <svg class="gauge-svg" width="64" height="40" viewBox="0 0 64 40">
+          <path d="M 6,34 A 26,26 0 0,1 58,34" fill="none" stroke="#EBECF0" stroke-width="5.5" stroke-linecap="round"/>
+          <path d="M 6,34 A 26,26 0 0,1 58,34" fill="none" stroke="#00875A" stroke-width="5.5" stroke-linecap="round" stroke-dasharray="77.5 81.7"/>
+        </svg>
+        <span class="gauge-pct" style="color:#00875A;">95%</span>
+        <span class="gauge-name">Task tracking</span>
+        <span class="gauge-status" style="color:#00875A;">High</span>
+      </div>
+
+      <div class="gauge-tile moderate">
+        <svg class="gauge-svg" width="64" height="40" viewBox="0 0 64 40">
+          <path d="M 6,34 A 26,26 0 0,1 58,34" fill="none" stroke="#EBECF0" stroke-width="5.5" stroke-linecap="round"/>
+          <path d="M 6,34 A 26,26 0 0,1 58,34" fill="none" stroke="#FF8B00" stroke-width="5.5" stroke-linecap="round" stroke-dasharray="55.6 81.7"/>
+        </svg>
+        <span class="gauge-pct" style="color:#FF8B00;">68%</span>
+        <span class="gauge-name">Sprint planning</span>
+        <span class="gauge-status" style="color:#FF8B00;">Moderate</span>
+      </div>
+
+      <div class="gauge-tile low">
+        <svg class="gauge-svg" width="64" height="40" viewBox="0 0 64 40">
+          <path d="M 6,34 A 26,26 0 0,1 58,34" fill="none" stroke="#EBECF0" stroke-width="5.5" stroke-linecap="round"/>
+          <path d="M 6,34 A 26,26 0 0,1 58,34" fill="none" stroke="#DE350B" stroke-width="5.5" stroke-linecap="round" stroke-dasharray="32.7 81.7"/>
+        </svg>
+        <span class="gauge-pct" style="color:#DE350B;">40%</span>
+        <span class="gauge-name">Velocity reporting</span>
+        <span class="gauge-status" style="color:#DE350B;">Low</span>
+      </div>
+
+      <div class="gauge-tile low">
+        <svg class="gauge-svg" width="64" height="40" viewBox="0 0 64 40">
+          <path d="M 6,34 A 26,26 0 0,1 58,34" fill="none" stroke="#EBECF0" stroke-width="5.5" stroke-linecap="round"/>
+          <path d="M 6,34 A 26,26 0 0,1 58,34" fill="none" stroke="#DE350B" stroke-width="5.5" stroke-linecap="round" stroke-dasharray="27.0 81.7"/>
+        </svg>
+        <span class="gauge-pct" style="color:#DE350B;">33%</span>
+        <span class="gauge-name">Capacity planning</span>
+        <span class="gauge-status" style="color:#DE350B;">Low</span>
+      </div>
+
+      <div class="gauge-tile vlow">
+        <svg class="gauge-svg" width="64" height="40" viewBox="0 0 64 40">
+          <path d="M 6,34 A 26,26 0 0,1 58,34" fill="none" stroke="#EBECF0" stroke-width="5.5" stroke-linecap="round"/>
+          <path d="M 6,34 A 26,26 0 0,1 58,34" fill="none" stroke="#BF2600" stroke-width="5.5" stroke-linecap="round" stroke-dasharray="20.4 81.7"/>
+        </svg>
+        <span class="gauge-pct" style="color:#BF2600;">25%</span>
+        <span class="gauge-name">Forecasting</span>
+        <span class="gauge-status" style="color:#BF2600;">Very low</span>
+      </div>
+
+      <div class="gauge-tile vlow">
+        <svg class="gauge-svg" width="64" height="40" viewBox="0 0 64 40">
+          <path d="M 6,34 A 26,26 0 0,1 58,34" fill="none" stroke="#EBECF0" stroke-width="5.5" stroke-linecap="round"/>
+          <path d="M 6,34 A 26,26 0 0,1 58,34" fill="none" stroke="#BF2600" stroke-width="5.5" stroke-linecap="round" stroke-dasharray="14.7 81.7"/>
+        </svg>
+        <span class="gauge-pct" style="color:#BF2600;">18%</span>
+        <span class="gauge-name">Benchmarking</span>
+        <span class="gauge-status" style="color:#BF2600;">Very low</span>
+      </div>
+
+      <div class="gauge-tile vlow">
+        <svg class="gauge-svg" width="64" height="40" viewBox="0 0 64 40">
+          <path d="M 6,34 A 26,26 0 0,1 58,34" fill="none" stroke="#EBECF0" stroke-width="5.5" stroke-linecap="round"/>
+          <path d="M 6,34 A 26,26 0 0,1 58,34" fill="none" stroke="#BF2600" stroke-width="5.5" stroke-linecap="round" stroke-dasharray="9.8 81.7"/>
+        </svg>
+        <span class="gauge-pct" style="color:#BF2600;">12%</span>
+        <span class="gauge-name">Strategic reporting</span>
+        <span class="gauge-status" style="color:#BF2600;">Very low</span>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

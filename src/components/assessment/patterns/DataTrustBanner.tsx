@@ -1,8 +1,6 @@
 import React from 'react';
 import { AssessmentLensResults, LensType, OverallSeverity, PatternDetectionResult } from '../../../types/patterns';
 import { TrendDataPoint } from '../../../types/assessment';
-import Sparkline from '../common/Sparkline';
-import MediaServicesActualSizeIcon from '@atlaskit/icon/glyph/media-services/actual-size';
 
 // ── Trust Levels ────────────────────────────────────────────────────
 export interface TrustLevel {
@@ -234,84 +232,30 @@ export function getRequiredLevelForReliable(useCaseIndex: number): string | null
   return null;
 }
 
-// ── Trust Spectrum SVG ──────────────────────────────────────────────
-const TrustSpectrum: React.FC<{ activeIndex: number; levelColor: string }> = ({ activeIndex, levelColor }) => {
-  const nodeCount = TRUST_LEVELS.length;
-  const svgWidth = 520;
-  const svgHeight = 72;
-  const nodeY = 26;
-  const labelY = 58;
-  const spacing = (svgWidth - 80) / (nodeCount - 1);
-  const startX = 40;
+// ── Confidence Computation ──────────────────────────────────────────
+const USE_CASE_THRESHOLDS = [25, 45, 60, 70, 80, 88, 95];
 
-  return (
-    <svg
-      width="100%"
-      height={svgHeight}
-      viewBox={`0 0 ${svgWidth} ${svgHeight}`}
-      preserveAspectRatio="xMidYMid meet"
-      style={{ maxWidth: `${svgWidth}px`, display: 'block', margin: '0 auto' }}
-    >
-      {/* Connecting lines */}
-      {TRUST_LEVELS.map((_, i) => {
-        if (i === nodeCount - 1) return null;
-        const x1 = startX + i * spacing;
-        const x2 = startX + (i + 1) * spacing;
-        const reached = i < activeIndex;
-        return (
-          <line
-            key={`line-${i}`}
-            x1={x1}
-            y1={nodeY}
-            x2={x2}
-            y2={nodeY}
-            stroke={reached ? TRUST_LEVELS[i].color : '#DFE1E6'}
-            strokeWidth={3}
-          />
-        );
-      })}
+function getConfidence(composite: number, threshold: number): number {
+  if (composite >= threshold) return Math.min(98, Math.round(80 + (composite - threshold) / (100 - threshold) * 20));
+  return Math.max(5, Math.round((composite / threshold) * 75));
+}
 
-      {/* Nodes */}
-      {TRUST_LEVELS.map((level, i) => {
-        const cx = startX + i * spacing;
-        const isCurrent = i === activeIndex;
-        const isReached = i <= activeIndex;
+const CONFIDENCE_SHORT_NAMES = [
+  'Task tracking',
+  'Sprint planning',
+  'Velocity reporting',
+  'Capacity planning',
+  'Forecasting',
+  'Benchmarking',
+  'Strategic reporting',
+];
 
-        return (
-          <g key={level.name}>
-            {isCurrent && (
-              <>
-                <circle cx={cx} cy={nodeY} r={20} fill={level.color} opacity={0.06} />
-                <circle cx={cx} cy={nodeY} r={14} fill={level.color} opacity={0.10} />
-              </>
-            )}
-            <circle
-              cx={cx}
-              cy={nodeY}
-              r={isCurrent ? 9 : 5}
-              fill={isReached ? level.color : '#FFFFFF'}
-              stroke={isReached ? level.color : '#DFE1E6'}
-              strokeWidth={isReached ? 0 : 1.5}
-            />
-            <text
-              x={cx}
-              y={labelY}
-              textAnchor="middle"
-              style={{
-                fontSize: isCurrent ? '12px' : '11px',
-                fontWeight: isCurrent ? 700 : 400,
-                fill: isCurrent ? level.color : '#A5ADBA',
-                letterSpacing: isCurrent ? '0.3px' : '0',
-              }}
-            >
-              {level.name}
-            </text>
-          </g>
-        );
-      })}
-    </svg>
-  );
-};
+function getConfidenceLabel(status: ReliabilityStatus, confidence: number): { label: string; color: string } {
+  if (status === 'reliable') return { label: 'High', color: '#00875A' };
+  if (status === 'caution') return { label: 'Moderate', color: '#FF8B00' };
+  if (confidence >= 30) return { label: 'Low', color: '#DE350B' };
+  return { label: 'Very low', color: '#BF2600' };
+}
 
 // ── Mock Trend Data ─────────────────────────────────────────────────
 const MOCK_COMPOSITE_TREND: TrendDataPoint[] = [
@@ -336,6 +280,129 @@ function computeTrend(data: TrendDataPoint[]): 'up' | 'down' | 'stable' {
   return 'stable';
 }
 
+// ── Chart coordinate helpers ─────────────────────────────────────────
+const CHART_W = 800;
+const CHART_H = 290;
+const CHART_START_X = 48;
+const CHART_END_X = 752;
+
+function computeChartPoints(data: TrendDataPoint[]) {
+  const step = data.length > 1 ? (CHART_END_X - CHART_START_X) / (data.length - 1) : 0;
+  return data.map((d, i) => ({
+    x: CHART_START_X + i * step,
+    y: CHART_H * (1 - (d.healthScore ?? d.value) / 100),
+    value: d.healthScore ?? d.value,
+  }));
+}
+
+// ── Chart Backdrop Sub-component (area fill + line only) ────────────
+const ChartBackdrop: React.FC<{ points: { x: number; y: number }[]; color: string }> = ({ points, color }) => {
+  const polylineStr = points.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+  const polygonStr = polylineStr + ` ${points[points.length - 1].x.toFixed(1)},${CHART_H - 20} ${points[0].x.toFixed(1)},${CHART_H - 20}`;
+
+  return (
+    <svg style={styles.chartBackdrop} viewBox={`0 0 ${CHART_W} ${CHART_H}`} preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="area-grad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity={0.12} />
+          <stop offset="100%" stopColor={color} stopOpacity={0.01} />
+        </linearGradient>
+      </defs>
+      <polygon points={polygonStr} fill="url(#area-grad)" />
+      <polyline points={polylineStr} fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" opacity={0.5} />
+    </svg>
+  );
+};
+
+// ── Chart Data Points Overlay (HTML — stays crisp) ──────────────────
+const ChartDataPoints: React.FC<{ points: { x: number; y: number; value: number }[]; color: string }> = ({ points, color }) => (
+  <div style={styles.dataPointOverlay}>
+    {points.map((p, i) => {
+      const leftPct = (p.x / CHART_W) * 100;
+      const topPct = (p.y / CHART_H) * 100;
+      const isLast = i === points.length - 1;
+      // Hide labels that would be behind the centered score disc
+      const isBehindDisc = leftPct > 33 && leftPct < 67;
+
+      return (
+        <React.Fragment key={i}>
+          {/* Dot */}
+          <div style={{
+            position: 'absolute' as const,
+            left: `${leftPct}%`,
+            top: `${topPct}%`,
+            transform: 'translate(-50%, -50%)',
+            width: isLast ? 8 : 7,
+            height: isLast ? 8 : 7,
+            borderRadius: '50%',
+            background: color,
+            border: `${isLast ? 2 : 1.5}px solid #fff`,
+            opacity: isLast ? 0.65 : 0.5,
+            zIndex: 1,
+          }} />
+          {/* Value label — only when not obscured by score disc */}
+          {!isBehindDisc && (
+            <span style={{
+              position: 'absolute' as const,
+              left: `${leftPct}%`,
+              top: `${topPct}%`,
+              transform: 'translate(-50%, calc(-100% - 6px))',
+              fontSize: '11px',
+              fontWeight: 600,
+              color,
+              opacity: isLast ? 0.75 : 0.5,
+              whiteSpace: 'nowrap' as const,
+              pointerEvents: 'none' as const,
+              zIndex: 1,
+            }}>
+              {p.value}
+            </span>
+          )}
+        </React.Fragment>
+      );
+    })}
+  </div>
+);
+
+// ── Confidence Gauges Sub-component ─────────────────────────────────
+const ConfidenceGauges: React.FC<{ composite: number; reliabilityStatuses: ReliabilityStatus[] }> = ({ composite, reliabilityStatuses }) => {
+  const arcRadius = 26;
+  const totalArc = Math.PI * arcRadius; // ~81.68
+
+  return (
+    <div style={styles.confidenceSection}>
+      <div style={styles.confidenceTitle}>
+        How confidently can you use your Jira data for each purpose?
+      </div>
+      <div style={styles.gaugeRow}>
+        {CONFIDENCE_SHORT_NAMES.map((name, i) => {
+          const confidence = getConfidence(composite, USE_CASE_THRESHOLDS[i]);
+          const status = reliabilityStatuses[i];
+          const { label, color } = getConfidenceLabel(status, confidence);
+          const filled = (confidence / 100) * totalArc;
+
+          return (
+            <div key={i} style={{
+              ...styles.gaugeTile,
+              background: `${color}0A`,
+              borderColor: `${color}14`,
+            }}>
+              <svg width={64} height={40} viewBox="0 0 64 40" style={{ display: 'block' }}>
+                <path d="M 6,34 A 26,26 0 0,1 58,34" fill="none" stroke="#EBECF0" strokeWidth={5.5} strokeLinecap="round" />
+                <path d="M 6,34 A 26,26 0 0,1 58,34" fill="none" stroke={color} strokeWidth={5.5} strokeLinecap="round"
+                  strokeDasharray={`${filled.toFixed(1)} ${totalArc.toFixed(1)}`} />
+              </svg>
+              <span style={{ ...styles.gaugePct, color }}>{confidence}%</span>
+              <span style={styles.gaugeName}>{name}</span>
+              <span style={{ ...styles.gaugeStatus, color }}>{label}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 // ── Banner Component (Hero Only) ────────────────────────────────────
 interface DataTrustBannerProps {
   lensResults: AssessmentLensResults;
@@ -345,170 +412,110 @@ interface DataTrustBannerProps {
 
 const DataTrustBanner: React.FC<DataTrustBannerProps> = ({ lensResults, integrityScore, trendData }) => {
   const scores = computeLensScores(lensResults, integrityScore);
-  const { level: trustLevel, index: trustIndex } = getTrustLevel(scores.composite);
+  const { level: trustLevel } = getTrustLevel(scores.composite);
   const weakest = getWeakestLens(scores);
-  const weakestTrust = getTrustLevel(weakest.score);
 
   const trend = trendData ?? MOCK_COMPOSITE_TREND;
   const overallTrend = computeTrend(trend);
   const trendLabel = overallTrend === 'up' ? 'Improving' : overallTrend === 'down' ? 'Declining' : 'Stable';
-  const trendColor = overallTrend === 'up' ? '#36B37E' : overallTrend === 'down' ? '#DE350B' : '#6B778C';
-  const trendArrowPath = overallTrend === 'up'
-    ? 'M3,10 L7,3 L11,10 L9,10 L9,12 L5,12 L5,10 Z'
-    : 'M3,5 L7,12 L11,5 L9,5 L9,3 L5,3 L5,5 Z';
-  const sparkTrend = overallTrend === 'up' ? 'improving' as const : overallTrend === 'down' ? 'declining' as const : 'stable' as const;
-  const hasTrendData = trend.length >= 2;
+  const trendArrow = overallTrend === 'up' ? '\u2197' : overallTrend === 'down' ? '\u2198' : '\u2192';
 
   const reliabilityStatuses = getReliabilityStatuses(trustLevel.name);
-  const RELIABILITY_SHORT_NAMES = [
-    'Task tracking',
-    'Sprint planning',
-    'Velocity reporting',
-    'Capacity planning',
-    'Forecasting',
-    'Benchmarking',
-    'Strategic reporting',
-  ];
+
+  // Donut ring math
+  const r = 84;
+  const circ = 2 * Math.PI * r;
+  const filled = (scores.composite / 100) * circ;
+
+  // Chart points — computed once, shared between backdrop SVG and HTML overlay
+  const chartPoints = computeChartPoints(trend);
 
   return (
-    <div style={{ ...styles.heroCard, background: '#FFFFFF' }}>
-      {/* Top accent stripe */}
-      <div style={{ ...styles.accentStripe, backgroundColor: trustLevel.color }} />
+    <div style={styles.heroCard}>
+      {/* Accent bar — gradient stripe */}
+      <div style={styles.accentBar} />
 
-      <div style={styles.heroTwoColumn}>
-        {/* Left: Score, status, spectrum */}
-        <div style={styles.heroLeft}>
-          <div style={styles.heroTitleRow}>
-            <span style={styles.heroSubtitle}>DATA TRUST SCORE</span>
+      {/* Hero top — chart backdrop + floating score */}
+      <div style={styles.heroTop}>
+        <ChartBackdrop points={chartPoints} color={trustLevel.color} />
+        <ChartDataPoints points={chartPoints} color={trustLevel.color} />
+
+        <div style={styles.scoreFloat}>
+          <span style={styles.scoreLabel}>DATA TRUST SCORE</span>
+
+          <div style={styles.scoreDisc}>
+            {/* Frosted glass circle */}
+            <div style={styles.scoreDiscBg} />
+            {/* Donut ring SVG */}
+            <svg width={186} height={186} viewBox="0 0 186 186" style={{ ...styles.scoreRing, transform: 'rotate(-90deg)' }}>
+              <defs>
+                <filter id="hero-glow" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="blur" />
+                  <feMerge>
+                    <feMergeNode in="blur" />
+                    <feMergeNode in="SourceGraphic" />
+                  </feMerge>
+                </filter>
+              </defs>
+              {/* Track */}
+              <circle cx={93} cy={93} r={r} fill="none" stroke={`${trustLevel.color}14`} strokeWidth={9} />
+              {/* Filled arc */}
+              <circle cx={93} cy={93} r={r} fill="none" stroke={trustLevel.color} strokeWidth={9}
+                strokeDasharray={`${filled.toFixed(1)} ${circ.toFixed(1)}`} strokeLinecap="round" filter="url(#hero-glow)" />
+            </svg>
+            {/* Score number overlay */}
+            <div style={styles.scoreContent}>
+              <span style={{ ...styles.scoreNumber, color: trustLevel.color }}>{scores.composite}</span>
+            </div>
           </div>
 
-          {/* Donut ring with score */}
-          {(() => {
-            const r = 80;
-            const circ = 2 * Math.PI * r;
-            const filled = (scores.composite / 100) * circ;
-            return (
-              <div style={styles.heroDonutWrap}>
-                <svg width={180} height={180} viewBox="0 0 180 180" style={{ transform: 'rotate(-90deg)' }}>
-                  <defs>
-                    <filter id="hero-glow" x="-20%" y="-20%" width="140%" height="140%">
-                      <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur" />
-                      <feMerge>
-                        <feMergeNode in="blur" />
-                        <feMergeNode in="SourceGraphic" />
-                      </feMerge>
-                    </filter>
-                  </defs>
-                  {/* Subtle inner fill */}
-                  <circle cx={90} cy={90} r={r - 5} fill={`${trustLevel.color}08`} />
-                  {/* Track */}
-                  <circle cx={90} cy={90} r={r} fill="none" stroke={`${trustLevel.color}15`} strokeWidth={10} />
-                  {/* Filled arc with glow */}
-                  <circle
-                    cx={90} cy={90} r={r}
-                    fill="none"
-                    stroke={trustLevel.color}
-                    strokeWidth={10}
-                    strokeDasharray={`${filled} ${circ}`}
-                    strokeLinecap="round"
-                    filter="url(#hero-glow)"
-                  />
-                </svg>
-                <div style={styles.heroDonutLabel}>
-                  <span style={{ ...styles.heroBigNumber, color: trustLevel.color }}>
-                    {scores.composite}
-                  </span>
-                </div>
-              </div>
-            );
-          })()}
-
-          {/* Category + trend + sparkline as unified chip */}
-          <div style={{
-            ...styles.heroStatusChip,
-            backgroundColor: `${trustLevel.color}18`,
-            border: `1.5px solid ${trustLevel.color}40`,
-          }}>
-            <span style={{ ...styles.heroStatusDot, backgroundColor: trustLevel.color }} />
-            <span style={{ ...styles.heroStatusTier, color: trustLevel.color }}>
+          {/* Badge row */}
+          <div style={styles.badgeRow}>
+            <span style={{
+              ...styles.badge,
+              background: `${trustLevel.color}1F`,
+              border: `1.5px solid ${trustLevel.color}4D`,
+              color: trustLevel.color,
+            }}>
+              <span style={{ ...styles.badgeDot, backgroundColor: trustLevel.color }} />
               {trustLevel.name}
             </span>
-            <span style={styles.heroStatusDivider} />
-            {overallTrend === 'stable' ? (
-              <span style={{ display: 'inline-flex', flexShrink: 0 }}>
-                <MediaServicesActualSizeIcon label="" size="small" primaryColor={trendColor} />
-              </span>
-            ) : (
-              <svg width="12" height="12" viewBox="0 0 14 14" style={{ flexShrink: 0 }}>
-                <path d={trendArrowPath} fill={trendColor} />
-              </svg>
-            )}
-            <span style={{ ...styles.heroStatusTrend, color: trendColor }}>
-              {trendLabel}
+            <span style={styles.badgeTrend}>
+              {trendArrow} {trendLabel}
             </span>
-            {hasTrendData && (
-              <>
-                <span style={styles.heroStatusDivider} />
-                <span style={styles.heroSparklineWrap}>
-                  <Sparkline
-                    data={trend}
-                    trend={sparkTrend}
-                    width={56}
-                    height={20}
-                  />
-                </span>
-              </>
-            )}
-          </div>
-
-          {/* Priority callout */}
-          <p style={styles.heroDescription}>
-            {weakest.score < 75 ? (
-              <>
-                <span style={{ color: weakestTrust.level.color, fontWeight: 600 }}>{weakest.label}</span>
-                {' '}is your weakest component at{' '}
-                <span style={{ color: weakestTrust.level.color, fontWeight: 600 }}>{weakest.score}</span>
-                {' '}&mdash; start there to improve fastest.
-              </>
-            ) : (
-              <>All components are performing well. Your data has {trustLevel.description}.</>
-            )}
-          </p>
-
-          {/* Trust Spectrum */}
-          <div style={styles.spectrumWrap}>
-            <TrustSpectrum activeIndex={trustIndex} levelColor={trustLevel.color} />
           </div>
         </div>
 
-        {/* Right: Jira Reliability */}
-        <div style={styles.heroRight}>
-          <span style={styles.reliabilityTitle}>WHAT YOUR JIRA DATA CAN SUPPORT</span>
-          <div style={styles.reliabilityRows}>
-            {reliabilityStatuses.map((status, i) => {
-              const rs = RELIABILITY_STYLES[status];
-              const requiredLevel = status !== 'reliable' ? getRequiredLevelForReliable(i) : null;
-              return (
-                <div key={i} style={styles.reliabilityRow}>
-                  <span style={{
-                    ...styles.reliabilityIcon,
-                    color: rs.color,
-                    backgroundColor: `${rs.color}14`,
-                  }}>
-                    {rs.symbol}
-                  </span>
-                  <div style={styles.reliabilityTextCol}>
-                    <span style={styles.reliabilityName}>{RELIABILITY_SHORT_NAMES[i]}</span>
-                    {requiredLevel && (
-                      <span style={styles.reliabilityNeeds}>Needs {requiredLevel} or better</span>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
       </div>
+
+      {/* Insight callout */}
+      <div style={styles.insightBar}>
+        <div style={styles.insightIcon}>
+          <svg width={12} height={12} viewBox="0 0 16 16" fill="none">
+            <path d="M8 2L2 14h12L8 2z" fill="#fff" />
+            <rect x="7.25" y="6" width="1.5" height="4" rx="0.75" fill="#FF8B00" />
+            <circle cx="8" cy="11.5" r="0.85" fill="#FF8B00" />
+          </svg>
+        </div>
+        <p style={styles.insightText}>
+          {weakest.score < 75 ? (
+            <>
+              <span style={styles.insightHl}>{weakest.label}</span>
+              {' '}is your weakest component at{' '}
+              <span style={styles.insightHl}>{weakest.score}</span>
+              {' '}&mdash; start there to improve fastest.
+            </>
+          ) : (
+            <>All components are performing well. Your data has {trustLevel.description}.</>
+          )}
+        </p>
+      </div>
+
+      <div style={{ height: '12px' }} />
+      <div style={styles.sectionDivider} />
+
+      {/* Confidence gauges */}
+      <ConfidenceGauges composite={scores.composite} reliabilityStatuses={reliabilityStatuses} />
     </div>
   );
 };
@@ -517,58 +524,77 @@ const DataTrustBanner: React.FC<DataTrustBannerProps> = ({ lensResults, integrit
 const styles: Record<string, React.CSSProperties> = {
   heroCard: {
     position: 'relative',
-    padding: '28px 48px 24px',
-    overflow: 'hidden',
+    background: '#FFFFFF',
     borderRadius: '16px',
     border: '1px solid #E4E6EB',
+    overflow: 'hidden',
   },
-  accentStripe: {
-    position: 'absolute',
+  accentBar: {
+    height: '5px',
+    background: 'linear-gradient(90deg, #FF8B00, #FFAB00)',
+  },
+  heroTop: {
+    position: 'relative' as const,
+    minHeight: '290px',
+    overflow: 'hidden',
+  },
+  chartBackdrop: {
+    position: 'absolute' as const,
     top: 0,
     left: 0,
     right: 0,
-    height: '4px',
+    bottom: 0,
+    width: '100%',
+    height: '100%',
   },
-  heroTwoColumn: {
-    display: 'flex',
-    gap: '0',
-    alignItems: 'stretch',
+  dataPointOverlay: {
+    position: 'absolute' as const,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    pointerEvents: 'none' as const,
   },
-  heroLeft: {
-    flex: '1 1 0',
-    display: 'flex',
-    flexDirection: 'column' as const,
-    alignItems: 'center',
-    textAlign: 'center' as const,
-  },
-  heroRight: {
-    flex: '0 0 280px',
-    display: 'flex',
-    flexDirection: 'column' as const,
-    borderLeft: '1px solid rgba(9, 30, 66, 0.08)',
-    paddingLeft: '32px',
-    marginLeft: '32px',
-    justifyContent: 'center',
-  },
-  heroTitleRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    marginBottom: '8px',
-  },
-  heroSubtitle: {
-    fontSize: '14px',
-    fontWeight: 600,
-    color: '#6B778C',
-    letterSpacing: '0.5px',
-    textTransform: 'uppercase' as const,
-  },
-  heroDonutWrap: {
+  scoreFloat: {
     position: 'relative' as const,
-    width: '180px',
-    height: '180px',
+    zIndex: 1,
+    display: 'flex',
+    flexDirection: 'column' as const,
+    alignItems: 'center',
+    padding: '20px 0 12px',
   },
-  heroDonutLabel: {
+  scoreLabel: {
+    fontSize: '10px',
+    fontWeight: 700,
+    color: '#8993A4',
+    letterSpacing: '1.2px',
+    textTransform: 'uppercase' as const,
+    marginBottom: '4px',
+  },
+  scoreDisc: {
+    position: 'relative' as const,
+    width: '186px',
+    height: '186px',
+  },
+  scoreDiscBg: {
+    position: 'absolute' as const,
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    width: '150px',
+    height: '150px',
+    borderRadius: '50%',
+    background: 'rgba(255, 255, 255, 0.92)',
+    boxShadow: '0 6px 40px rgba(9, 30, 66, 0.10), 0 0 0 1px rgba(9, 30, 66, 0.04)',
+    backdropFilter: 'blur(12px)',
+    WebkitBackdropFilter: 'blur(12px)',
+  },
+  scoreRing: {
+    display: 'block',
+    position: 'relative' as const,
+    zIndex: 1,
+  },
+  scoreContent: {
     position: 'absolute' as const,
     top: 0,
     left: 0,
@@ -578,104 +604,141 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: 'column' as const,
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 2,
   },
-  heroBigNumber: {
-    fontSize: '72px',
+  scoreNumber: {
+    fontSize: '64px',
     fontWeight: 800,
     lineHeight: 1,
     letterSpacing: '-3px',
   },
-  heroStatusChip: {
-    display: 'inline-flex',
+  badgeRow: {
+    display: 'flex',
     alignItems: 'center',
-    gap: '8px',
-    padding: '6px 14px',
-    borderRadius: '20px',
+    gap: '6px',
     marginTop: '8px',
   },
-  heroStatusDot: {
-    width: '7px',
-    height: '7px',
+  badge: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '5px',
+    padding: '4px 12px',
+    borderRadius: '12px',
+    fontSize: '11.5px',
+    fontWeight: 600,
+    whiteSpace: 'nowrap' as const,
+    backdropFilter: 'blur(6px)',
+    WebkitBackdropFilter: 'blur(6px)',
+  },
+  badgeDot: {
+    width: '6px',
+    height: '6px',
     borderRadius: '50%',
     flexShrink: 0,
   },
-  heroStatusTier: {
-    fontSize: '13px',
-    fontWeight: 700,
-  },
-  heroStatusDivider: {
-    width: '1px',
-    height: '14px',
-    backgroundColor: 'rgba(9, 30, 66, 0.15)',
-  },
-  heroStatusTrend: {
-    fontSize: '13px',
-    fontWeight: 600,
-  },
-  heroSparklineWrap: {
+  badgeTrend: {
     display: 'inline-flex',
     alignItems: 'center',
-    flexShrink: 0,
-    opacity: 0.8,
-  } as React.CSSProperties,
-  heroDescription: {
-    margin: '12px 0 0',
-    fontSize: '14px',
-    color: '#6B778C',
-    lineHeight: 1.5,
-    maxWidth: '440px',
-  },
-  spectrumWrap: {
-    padding: '12px 20px 0',
-    width: '100%',
-    maxWidth: '520px',
-  },
-  reliabilityTitle: {
-    fontSize: '11px',
-    fontWeight: 700,
-    color: '#6B778C',
-    letterSpacing: '1px',
-    textTransform: 'uppercase' as const,
-    marginBottom: '12px',
-  },
-  reliabilityRows: {
-    display: 'flex',
-    flexDirection: 'column' as const,
     gap: '4px',
+    padding: '4px 12px',
+    borderRadius: '12px',
+    fontSize: '11.5px',
+    fontWeight: 600,
+    whiteSpace: 'nowrap' as const,
+    background: 'rgba(255, 255, 255, 0.7)',
+    border: '1.5px solid rgba(9, 30, 66, 0.1)',
+    color: '#44546F',
+    backdropFilter: 'blur(6px)',
+    WebkitBackdropFilter: 'blur(6px)',
   },
-  reliabilityRow: {
+  insightBar: {
+    position: 'relative' as const,
+    zIndex: 1,
+    margin: '0 28px 0',
+    padding: '10px 16px',
+    background: 'rgba(255, 247, 237, 0.95)',
+    borderLeft: '3px solid #FF8B00',
+    borderRadius: '0 8px 8px 0',
     display: 'flex',
-    alignItems: 'flex-start',
-    gap: '8px',
-    padding: '5px 0',
+    alignItems: 'center',
+    gap: '10px',
+    backdropFilter: 'blur(4px)',
+    WebkitBackdropFilter: 'blur(4px)',
   },
-  reliabilityIcon: {
-    display: 'inline-flex',
+  insightIcon: {
+    flexShrink: 0,
+    width: '22px',
+    height: '22px',
+    borderRadius: '50%',
+    background: '#FF8B00',
+    display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    width: '20px',
-    height: '20px',
-    borderRadius: '50%',
-    fontSize: '11px',
-    fontWeight: 700,
-    flexShrink: 0,
-    marginTop: '1px',
   },
-  reliabilityTextCol: {
-    display: 'flex',
-    flexDirection: 'column' as const,
-  },
-  reliabilityName: {
+  insightText: {
     fontSize: '13px',
     fontWeight: 500,
-    color: '#172B4D',
-    lineHeight: 1.3,
+    color: '#44546F',
+    lineHeight: 1.4,
+    margin: 0,
   },
-  reliabilityNeeds: {
-    fontSize: '11px',
-    fontWeight: 400,
-    color: '#97A0AF',
-    marginTop: '1px',
+  insightHl: {
+    fontWeight: 700,
+    color: '#FF8B00',
+  },
+  sectionDivider: {
+    height: '1px',
+    background: '#EBECF0',
+    margin: 0,
+  },
+  confidenceSection: {
+    padding: '18px 32px 22px',
+    background: '#FAFBFC',
+  },
+  confidenceTitle: {
+    fontSize: '12.5px',
+    fontWeight: 600,
+    color: '#44546F',
+    marginBottom: '16px',
+    textAlign: 'center' as const,
+  },
+  gaugeRow: {
+    display: 'flex',
+    justifyContent: 'center',
+    gap: '8px',
+  },
+  gaugeTile: {
+    flex: '1',
+    maxWidth: '128px',
+    display: 'flex',
+    flexDirection: 'column' as const,
+    alignItems: 'center',
+    textAlign: 'center' as const,
+    gap: '3px',
+    padding: '12px 6px 10px',
+    borderRadius: '12px',
+    border: '1px solid transparent',
+  },
+  gaugePct: {
+    fontSize: '13px',
+    fontWeight: 700,
+    lineHeight: 1,
+    marginTop: '-1px',
+  },
+  gaugeName: {
+    fontSize: '10.5px',
+    fontWeight: 600,
+    color: '#172B4D',
+    lineHeight: 1.25,
+    minHeight: '26px',
+    display: 'flex',
+    alignItems: 'center',
+  },
+  gaugeStatus: {
+    fontSize: '9px',
+    fontWeight: 700,
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.4px',
   },
 };
 

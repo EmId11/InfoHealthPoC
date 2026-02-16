@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hero Redesign v3 — Confidence Tiles</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background: #F4F5F7;
+    padding: 32px 40px;
+    color: #172B4D;
+  }
+
+  /* ── Hero Card ── */
+  .hero-card {
+    position: relative;
+    background: #FFFFFF;
+    border-radius: 16px;
+    border: 1px solid #E4E6EB;
+    padding: 28px 40px 28px;
+    overflow: hidden;
+    max-width: 1020px;
+    margin: 0 auto;
+  }
+  .accent-stripe {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: #FF8B00;
+  }
+
+  /* ── Top Row: Score + Chart side-by-side ── */
+  .top-row {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    margin-bottom: 8px;
+  }
+  .score-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .score-col .subtitle {
+    font-size: 13px;
+    font-weight: 600;
+    color: #6B778C;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .chart-col {
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* ── Donut ── */
+  .donut-wrap {
+    position: relative;
+    width: 150px;
+    height: 150px;
+  }
+  .donut-label {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+  }
+  .donut-number {
+    font-size: 56px;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -3px;
+    color: #FF8B00;
+  }
+
+  /* ── Badges ── */
+  .badge-row { display: flex; align-items: center; gap: 8px; }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .badge-severity {
+    background: #FFF7ED;
+    border: 1.5px solid #FFE380;
+    color: #FF8B00;
+  }
+  .badge-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #FF8B00;
+  }
+
+  /* ── Callout ── */
+  .callout {
+    font-size: 13px;
+    color: #6B778C;
+    line-height: 1.5;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  .callout .hl { font-weight: 600; color: #FF8B00; }
+
+  /* ── Divider ── */
+  .section-divider {
+    height: 1px;
+    background: #E4E6EB;
+    margin: 0 -40px 20px;
+  }
+
+  /* ── Reliability Section ── */
+  .reliability-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .reliability-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #6B778C;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .reliability-subtitle {
+    font-size: 11px;
+    color: #97A0AF;
+  }
+
+  /* ── Confidence Tiles ── */
+  .tile-row {
+    display: flex;
+    gap: 8px;
+  }
+  .tile {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    border-radius: 10px;
+    border: 1px solid #E4E6EB;
+    overflow: hidden;
+    background: #FAFBFC;
+    min-height: 120px;
+    position: relative;
+  }
+  .tile-top {
+    padding: 10px 10px 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    position: relative;
+    z-index: 1;
+  }
+  .tile-name {
+    font-size: 11px;
+    font-weight: 600;
+    color: #172B4D;
+    line-height: 1.3;
+  }
+  /* The fill — rises from the bottom */
+  .tile-fill {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    border-radius: 0 0 9px 9px;
+    transition: height 0.4s ease;
+  }
+  .tile-status-bottom {
+    position: relative;
+    z-index: 1;
+    padding: 6px 10px 10px;
+    font-size: 10px;
+    font-weight: 700;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  /* ── Chart SVG ── */
+  .chart-svg { display: block; width: 100%; height: auto; }
+</style>
+</head>
+<body>
+
+<div class="hero-card">
+  <div class="accent-stripe"></div>
+
+  <!-- Top Row: Score + Chart -->
+  <div class="top-row">
+    <div class="score-col">
+      <span class="subtitle">DATA TRUST SCORE</span>
+      <div class="donut-wrap">
+        <svg width="150" height="150" viewBox="0 0 150 150" style="transform:rotate(-90deg)">
+          <defs>
+            <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+          <circle cx="75" cy="75" r="60" fill="#FF8B0008"/>
+          <circle cx="75" cy="75" r="64" fill="none" stroke="#FF8B0015" stroke-width="9"/>
+          <circle cx="75" cy="75" r="64" fill="none" stroke="#FF8B00" stroke-width="9"
+            stroke-dasharray="193 402" stroke-linecap="round" filter="url(#glow)"/>
+        </svg>
+        <div class="donut-label">
+          <span class="donut-number">48</span>
+        </div>
+      </div>
+      <div class="badge-row">
+        <span class="badge badge-severity"><span class="badge-dot"></span> At Risk</span>
+      </div>
+    </div>
+
+    <div class="chart-col">
+      <svg class="chart-svg" viewBox="0 0 440 170" xmlns="http://www.w3.org/2000/svg">
+        <!-- Severity bands -->
+        <rect x="30" y="0" width="400" height="17" fill="#E3FCEF" opacity="0.7"/>
+        <rect x="30" y="17" width="400" height="25.5" fill="#E3FCEF" opacity="0.5"/>
+        <rect x="30" y="42.5" width="400" height="42.5" fill="#DEEBFF" opacity="0.5"/>
+        <rect x="30" y="85" width="400" height="42.5" fill="#FFF7ED" opacity="0.7"/>
+        <rect x="30" y="127.5" width="400" height="22.5" fill="#FFEBE6" opacity="0.5"/>
+        <!-- Dashed boundaries -->
+        <line x1="30" y1="85" x2="430" y2="85" stroke="#DFE1E6" stroke-width="0.5" stroke-dasharray="4,3"/>
+        <line x1="30" y1="42.5" x2="430" y2="42.5" stroke="#DFE1E6" stroke-width="0.5" stroke-dasharray="4,3"/>
+        <line x1="30" y1="17" x2="430" y2="17" stroke="#DFE1E6" stroke-width="0.5" stroke-dasharray="4,3"/>
+        <line x1="30" y1="127.5" x2="430" y2="127.5" stroke="#DFE1E6" stroke-width="0.5" stroke-dasharray="4,3"/>
+        <!-- Zone labels — watermark-style text inside each band, right-aligned -->
+        <text x="425" y="9" font-size="9" fill="#006644" font-weight="600" text-anchor="end" dominant-baseline="middle" opacity="0.5">Optimal</text>
+        <text x="425" y="30" font-size="9" fill="#00875A" font-weight="600" text-anchor="end" dominant-baseline="middle" opacity="0.45">Healthy</text>
+        <text x="425" y="64" font-size="9" fill="#2684FF" font-weight="600" text-anchor="end" dominant-baseline="middle" opacity="0.45">Fair</text>
+        <text x="425" y="106" font-size="9.5" fill="#FF8B00" font-weight="700" text-anchor="end" dominant-baseline="middle" opacity="0.7">At Risk</text>
+        <text x="425" y="139" font-size="9" fill="#DE350B" font-weight="600" text-anchor="end" dominant-baseline="middle" opacity="0.45">Critical</text>
+        <!-- Gradient -->
+        <defs>
+          <linearGradient id="ag" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#FF8B00" stop-opacity="0.22"/>
+            <stop offset="100%" stop-color="#FF8B00" stop-opacity="0.02"/>
+          </linearGradient>
+        </defs>
+        <!-- Data: 38,36,39,42,41,44,43,46 => Y: 150*(1-s/100) -->
+        <!-- 93,96,91.5,87,88.5,84,85.5,81 -->
+        <!-- X: 30,87.1,144.3,201.4,258.6,315.7,372.9,430 -->
+        <polygon points="30,93 87.1,96 144.3,91.5 201.4,87 258.6,88.5 315.7,84 372.9,85.5 430,81 430,150 30,150" fill="url(#ag)"/>
+        <polyline points="30,93 87.1,96 144.3,91.5 201.4,87 258.6,88.5 315.7,84 372.9,85.5 430,81" fill="none" stroke="#FF8B00" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="30" cy="93" r="3" fill="#FF8B00" stroke="#fff" stroke-width="2"/>
+        <circle cx="87.1" cy="96" r="3" fill="#FF8B00" stroke="#fff" stroke-width="2"/>
+        <circle cx="144.3" cy="91.5" r="3" fill="#FF8B00" stroke="#fff" stroke-width="2"/>
+        <circle cx="201.4" cy="87" r="3" fill="#FF8B00" stroke="#fff" stroke-width="2"/>
+        <circle cx="258.6" cy="88.5" r="3" fill="#FF8B00" stroke="#fff" stroke-width="2"/>
+        <circle cx="315.7" cy="84" r="3" fill="#FF8B00" stroke="#fff" stroke-width="2"/>
+        <circle cx="372.9" cy="85.5" r="3" fill="#FF8B00" stroke="#fff" stroke-width="2"/>
+        <circle cx="430" cy="81" r="3.5" fill="#FF8B00" stroke="#fff" stroke-width="2.5"/>
+        <!-- X-axis -->
+        <line x1="30" y1="150" x2="430" y2="150" stroke="#E4E6EB" stroke-width="1"/>
+        <text x="30" y="163" font-size="9" fill="#8993A4" text-anchor="middle">May</text>
+        <text x="87.1" y="163" font-size="9" fill="#8993A4" text-anchor="middle">Jun</text>
+        <text x="144.3" y="163" font-size="9" fill="#8993A4" text-anchor="middle">Jul</text>
+        <text x="201.4" y="163" font-size="9" fill="#8993A4" text-anchor="middle">Aug</text>
+        <text x="258.6" y="163" font-size="9" fill="#8993A4" text-anchor="middle">Sep</text>
+        <text x="315.7" y="163" font-size="9" fill="#8993A4" text-anchor="middle">Oct</text>
+        <text x="372.9" y="163" font-size="9" fill="#8993A4" text-anchor="middle">Nov</text>
+        <text x="430" y="163" font-size="9" fill="#8993A4" text-anchor="middle">Dec</text>
+      </svg>
+    </div>
+  </div>
+
+  <!-- Callout -->
+  <p class="callout">
+    <span class="hl">Timing</span> is your weakest component at <span class="hl">20</span> &mdash; start there to improve fastest.
+  </p>
+
+  <!-- Divider -->
+  <div class="section-divider"></div>
+
+  <!-- Reliability Section — Full Width -->
+  <div class="reliability-header">
+    <span class="reliability-title">DATA RELIABILITY BY USE CASE</span>
+    <span class="reliability-subtitle">How confidently can you use your Jira data for each purpose?</span>
+  </div>
+
+  <div class="tile-row">
+
+    <!-- Task tracking — Reliable -->
+    <div class="tile">
+      <div class="tile-fill" style="height:92%;background:linear-gradient(to top,#00875A,#36B37E);opacity:0.12;"></div>
+      <div class="tile-top">
+        <span class="tile-name">Task tracking</span>
+      </div>
+      <div class="tile-status-bottom" style="color:#00875A;">Reliable</div>
+    </div>
+
+    <!-- Sprint planning — Caution -->
+    <div class="tile">
+      <div class="tile-fill" style="height:58%;background:linear-gradient(to top,#FF8B00,#FFAB00);opacity:0.12;"></div>
+      <div class="tile-top">
+        <span class="tile-name">Sprint planning</span>
+      </div>
+      <div class="tile-status-bottom" style="color:#FF8B00;">Caution</div>
+    </div>
+
+    <!-- Velocity reporting — Low -->
+    <div class="tile">
+      <div class="tile-fill" style="height:32%;background:linear-gradient(to top,#DE350B,#FF5630);opacity:0.12;"></div>
+      <div class="tile-top">
+        <span class="tile-name">Velocity reporting</span>
+      </div>
+      <div class="tile-status-bottom" style="color:#DE350B;">Low</div>
+    </div>
+
+    <!-- Capacity planning — Low -->
+    <div class="tile">
+      <div class="tile-fill" style="height:22%;background:linear-gradient(to top,#DE350B,#FF5630);opacity:0.12;"></div>
+      <div class="tile-top">
+        <span class="tile-name">Capacity planning</span>
+      </div>
+      <div class="tile-status-bottom" style="color:#DE350B;">Low</div>
+    </div>
+
+    <!-- Forecasting — Very low -->
+    <div class="tile">
+      <div class="tile-fill" style="height:15%;background:linear-gradient(to top,#BF2600,#DE350B);opacity:0.12;"></div>
+      <div class="tile-top">
+        <span class="tile-name">Forecasting</span>
+      </div>
+      <div class="tile-status-bottom" style="color:#BF2600;">Very low</div>
+    </div>
+
+    <!-- Benchmarking — Very low -->
+    <div class="tile">
+      <div class="tile-fill" style="height:10%;background:linear-gradient(to top,#BF2600,#DE350B);opacity:0.12;"></div>
+      <div class="tile-top">
+        <span class="tile-name">Bench&shy;marking</span>
+      </div>
+      <div class="tile-status-bottom" style="color:#BF2600;">Very low</div>
+    </div>
+
+    <!-- Strategic reporting — Very low -->
+    <div class="tile">
+      <div class="tile-fill" style="height:5%;background:#BF2600;opacity:0.12;"></div>
+      <div class="tile-top">
+        <span class="tile-name">Strategic reporting</span>
+      </div>
+      <div class="tile-status-bottom" style="color:#BF2600;">Very low</div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>
