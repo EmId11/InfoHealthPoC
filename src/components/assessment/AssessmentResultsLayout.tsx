@@ -22,8 +22,9 @@ import SettingsIcon from '@atlaskit/icon/glyph/settings';
 import ShareIcon from '@atlaskit/icon/glyph/share';
 import { PersonaSwitcher } from '../persona';
 import { LensType } from '../../types/patterns';
-import LensCardsRow from './patterns/LensCardsRow';
-import DataTrustBanner from './patterns/DataTrustBanner';
+import DataTrustBanner, { computeLensScores, getTrustLevel } from './patterns/DataTrustBanner';
+import ScoreComponentsCard from './patterns/ScoreComponentsCard';
+import JiraReliabilityCard from './patterns/JiraReliabilityCard';
 import { mockIntegrityDimensionResult } from '../../constants/mockAssessmentData';
 
 // Top-level tabs
@@ -402,32 +403,27 @@ const AssessmentResultsLayout: React.FC<AssessmentResultsLayoutProps> = ({
           {/* ═══════════════════════════════════════════════════════════════════
               ASSESSMENT RESULTS TAB - Four-Lens Data Trust View
           ═══════════════════════════════════════════════════════════════════ */}
-          {activeTab === 'assessment-results' && (
-            <>
-              {/* Unified Data Trust Assessment Container */}
-              {assessmentResult.lensResults && (
-                <div style={{ position: 'relative', marginBottom: '24px' }}>
-                  <div style={{
-                    background: '#FFFFFF',
-                    border: '1px solid #E4E6EB',
-                    borderRadius: '12px',
-                    overflow: 'hidden',
-                  }}>
-                    <DataTrustBanner
-                      lensResults={assessmentResult.lensResults}
-                      integrityScore={mockIntegrityDimensionResult.healthScore}
-                    />
-                    <div style={{ height: '1px', backgroundColor: '#E4E6EB' }} />
-                    <LensCardsRow
-                      lensResults={assessmentResult.lensResults}
-                      onLensClick={(lens) => onLensClick?.(lens)}
-                      embedded={true}
-                    />
-                  </div>
-                </div>
-              )}
-            </>
-          )}
+          {activeTab === 'assessment-results' && assessmentResult.lensResults && (() => {
+            const intScore = mockIntegrityDimensionResult.healthScore;
+            const scores = computeLensScores(assessmentResult.lensResults, intScore);
+            const { level } = getTrustLevel(scores.composite);
+            return (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', marginBottom: '24px' }}>
+                <DataTrustBanner
+                  lensResults={assessmentResult.lensResults}
+                  integrityScore={intScore}
+                />
+                <ScoreComponentsCard
+                  lensResults={assessmentResult.lensResults}
+                  integrityScore={intScore}
+                  onLensClick={(lens) => onLensClick?.(lens)}
+                />
+                <JiraReliabilityCard
+                  trustLevelName={level.name}
+                />
+              </div>
+            );
+          })()}
 
           {/* ═══════════════════════════════════════════════════════════════════
               IMPROVEMENT PLAN TAB

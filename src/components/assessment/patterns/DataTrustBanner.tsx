@@ -1,29 +1,28 @@
 import React from 'react';
-import { AssessmentLensResults, PatternDetectionResult } from '../../../types/patterns';
-
-interface DataTrustBannerProps {
-  lensResults: AssessmentLensResults;
-  integrityScore: number;
-}
+import { AssessmentLensResults, LensType, OverallSeverity, PatternDetectionResult } from '../../../types/patterns';
+import { TrendDataPoint } from '../../../types/assessment';
+import Sparkline from '../common/Sparkline';
+import MediaServicesActualSizeIcon from '@atlaskit/icon/glyph/media-services/actual-size';
 
 // ── Trust Levels ────────────────────────────────────────────────────
-interface TrustLevel {
+export interface TrustLevel {
   name: string;
   range: [number, number];
   color: string;
   bgTint: string;
+  borderTint: string;
   description: string;
 }
 
-const TRUST_LEVELS: TrustLevel[] = [
-  { name: 'Unreliable',  range: [0, 24],   color: '#DE350B', bgTint: 'rgba(222,53,11,0.04)',  description: 'significant trust deficits that undermine decision-making' },
-  { name: 'Concerning',  range: [25, 44],  color: '#FF5630', bgTint: 'rgba(255,86,48,0.04)',  description: 'significant trust gaps that warrant attention' },
-  { name: 'Developing',  range: [45, 59],  color: '#FF8B00', bgTint: 'rgba(255,139,0,0.04)',  description: 'emerging data practices with room for improvement' },
-  { name: 'Dependable',  range: [60, 79],  color: '#36B37E', bgTint: 'rgba(54,179,126,0.04)', description: 'reasonably trustworthy data with minor gaps' },
-  { name: 'Exemplary',   range: [80, 100], color: '#00875A', bgTint: 'rgba(0,135,90,0.04)',   description: 'high-confidence data suitable for strategic decisions' },
+export const TRUST_LEVELS: TrustLevel[] = [
+  { name: 'Critical',  range: [0, 25],   color: '#DE350B', bgTint: '#FFEBE6',               borderTint: '#FFBDAD', description: 'critical data gaps that undermine decision-making' },
+  { name: 'At Risk',   range: [26, 50],  color: '#FF8B00', bgTint: '#FFF7ED',               borderTint: '#FFE380', description: 'data gaps common enough to cause problems' },
+  { name: 'Fair',      range: [51, 75],  color: '#2684FF', bgTint: '#DEEBFF',               borderTint: '#B3D4FF', description: 'emerging data practices with room for improvement' },
+  { name: 'Healthy',   range: [76, 90],  color: '#00875A', bgTint: '#E3FCEF',               borderTint: '#79F2C0', description: 'strong and reliable information practices' },
+  { name: 'Optimal',   range: [91, 100], color: '#006644', bgTint: '#E3FCEF',               borderTint: '#ABF5D1', description: 'high-confidence data suitable for strategic decisions' },
 ];
 
-function getTrustLevel(composite: number): { level: TrustLevel; index: number } {
+export function getTrustLevel(composite: number): { level: TrustLevel; index: number } {
   for (let i = 0; i < TRUST_LEVELS.length; i++) {
     const l = TRUST_LEVELS[i];
     if (composite >= l.range[0] && composite <= l.range[1]) {
@@ -33,8 +32,8 @@ function getTrustLevel(composite: number): { level: TrustLevel; index: number } 
   return { level: TRUST_LEVELS[0], index: 0 };
 }
 
-// ── Score Computation (internal only) ───────────────────────────────
-function computeLensScores(lensResults: AssessmentLensResults, integrityScore: number) {
+// ── Score Computation ───────────────────────────────────────────────
+export function computeLensScores(lensResults: AssessmentLensResults, integrityScore: number) {
   const coverage = lensResults.coverage.coveragePercent;
   const integrity = integrityScore;
   const timingLens = lensResults.timing;
@@ -54,7 +53,7 @@ function computeLensScores(lensResults: AssessmentLensResults, integrityScore: n
 }
 
 // ── Pattern Insights ────────────────────────────────────────────────
-function aggregatePatternInsights(lensResults: AssessmentLensResults) {
+export function aggregatePatternInsights(lensResults: AssessmentLensResults) {
   const allResults: PatternDetectionResult[] = [
     ...lensResults.integrity.results,
     ...lensResults.timing.results,
@@ -76,6 +75,163 @@ function aggregatePatternInsights(lensResults: AssessmentLensResults) {
     : null;
 
   return { criticalCount, warningCount, totalAffected, topFinding };
+}
+
+// ── Insight Bullets ─────────────────────────────────────────────────
+export interface InsightBullet {
+  label: string;
+  labelColor: string;
+  labelBg: string;
+  text: string;
+}
+
+export const SEVERITY_PILLS: Record<string, { label: string; color: string; bg: string }> = {
+  critical: { label: 'Critical', color: '#DE350B', bg: '#FFEBE6' },
+  atRisk:   { label: 'At Risk',  color: '#FF8B00', bg: '#FFF7ED' },
+  fair:     { label: 'Fair',     color: '#2684FF', bg: '#DEEBFF' },
+  healthy:  { label: 'Healthy',  color: '#00875A', bg: '#E3FCEF' },
+};
+
+export type ReliabilityStatus = 'reliable' | 'caution' | 'not-recommended';
+
+export const JIRA_USE_CASES = [
+  'Basic task tracking & status updates',
+  'Sprint planning & backlog management',
+  'Velocity & throughput reporting',
+  'Capacity planning',
+  'Forecasting & delivery predictions',
+  'Cross-team benchmarking',
+  'Executive & strategic reporting',
+];
+
+export const RELIABILITY_STYLES: Record<ReliabilityStatus, { color: string; symbol: string; label: string }> = {
+  reliable:          { color: '#00875A', symbol: '\u2713', label: 'Reliable' },
+  caution:           { color: '#FF8B00', symbol: '~', label: 'Use with caution' },
+  'not-recommended': { color: '#DE350B', symbol: '\u2717', label: 'Not recommended' },
+};
+
+export const TRUST_RELIABILITY: Record<string, ReliabilityStatus[]> = {
+  'Critical':  ['caution','not-recommended','not-recommended','not-recommended','not-recommended','not-recommended','not-recommended'],
+  'At Risk':   ['reliable','caution','not-recommended','not-recommended','not-recommended','not-recommended','not-recommended'],
+  'Fair':      ['reliable','reliable','caution','caution','not-recommended','not-recommended','caution'],
+  'Healthy':   ['reliable','reliable','reliable','reliable','caution','caution','reliable'],
+  'Optimal':   ['reliable','reliable','reliable','reliable','reliable','reliable','reliable'],
+};
+
+export function getReliabilityStatuses(levelName: string): ReliabilityStatus[] {
+  return TRUST_RELIABILITY[levelName] ?? TRUST_RELIABILITY['Critical'];
+}
+
+// ── Lens Config ─────────────────────────────────────────────────────
+export const LENS_CONFIG: Record<LensType, { label: string; icon: string; description: string }> = {
+  coverage:    { label: 'Field Completeness', icon: 'M3 3h18v18H3V3zm2 2v14h14V5H14v6l-2.5-1.5L9 11V5H5z', description: 'Are critical Jira fields filled in before work starts?' },
+  integrity:   { label: 'Integrity',          icon: 'M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3zm-1 14.5l-4-4 1.41-1.41L11 13.67l5.59-5.58L18 9.5l-7 7z', description: 'Do field values contain real data or just placeholders?' },
+  timing:      { label: 'Timing',             icon: 'M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z', description: 'Was information available when decisions were made?' },
+  behavioral:  { label: 'Behavioral',         icon: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z', description: 'Are there patterns that may distort your metrics?' },
+};
+
+export const LENS_SEVERITY_STYLES: Record<OverallSeverity, { color: string; bgColor: string; label: string; icon: string }> = {
+  critical: { color: '#DE350B', bgColor: '#FFEBE6', label: 'Critical', icon: '\u26D4' },
+  warning:  { color: '#FF8B00', bgColor: '#FFFAE6', label: 'Warning',  icon: '\u26A0' },
+  clean:    { color: '#00875A', bgColor: '#E3FCEF', label: 'Clean',    icon: '\u2713' },
+};
+
+export function getCoverageSeverity(percent: number): OverallSeverity {
+  if (percent >= 70) return 'clean';
+  if (percent >= 45) return 'warning';
+  return 'critical';
+}
+
+export function generateInsights(
+  scores: ReturnType<typeof computeLensScores>,
+  insights: ReturnType<typeof aggregatePatternInsights>,
+): InsightBullet[] {
+  const bullets: InsightBullet[] = [];
+
+  const covPill = scores.coverage < 45 ? SEVERITY_PILLS.critical
+    : scores.coverage < 60 ? SEVERITY_PILLS.atRisk
+    : scores.coverage < 75 ? SEVERITY_PILLS.fair
+    : SEVERITY_PILLS.healthy;
+  bullets.push({
+    label: covPill.label,
+    labelColor: covPill.color,
+    labelBg: covPill.bg,
+    text: scores.coverage < 50
+      ? `${scores.coverage}% field coverage \u2014 nearly half of critical fields lack values`
+      : scores.coverage < 70
+        ? `${scores.coverage}% field coverage \u2014 a notable portion of critical fields are incomplete`
+        : `${scores.coverage}% field coverage \u2014 most critical fields are populated`,
+  });
+
+  const patternParts: string[] = [];
+  if (insights.criticalCount > 0) patternParts.push(`${insights.criticalCount} critical`);
+  if (insights.warningCount > 0) patternParts.push(`${insights.warningCount} warning`);
+  if (patternParts.length > 0) {
+    const total = insights.criticalCount + insights.warningCount;
+    const pill = insights.criticalCount > 0 ? SEVERITY_PILLS.critical : SEVERITY_PILLS.atRisk;
+    bullets.push({
+      label: pill.label,
+      labelColor: pill.color,
+      labelBg: pill.bg,
+      text: `${patternParts.join(' and ')} pattern${total !== 1 ? 's' : ''} detected across ${insights.totalAffected} issues`,
+    });
+  }
+
+  const lensNames: Record<string, string> = { coverage: 'Field Completeness', integrity: 'Integrity', timing: 'Timing', behavioral: 'Behavioral' };
+  const lensScores = [
+    { key: 'coverage', score: scores.coverage },
+    { key: 'integrity', score: scores.integrity },
+    { key: 'timing', score: scores.timing },
+    { key: 'behavioral', score: scores.behavioral },
+  ];
+  const worst = lensScores.reduce((a, b) => a.score < b.score ? a : b);
+  if (worst.score < 50) {
+    const pill = worst.score < 30 ? SEVERITY_PILLS.critical : SEVERITY_PILLS.atRisk;
+    bullets.push({
+      label: pill.label,
+      labelColor: pill.color,
+      labelBg: pill.bg,
+      text: `${lensNames[worst.key]} is the weakest lens at ${worst.score}%`,
+    });
+  }
+
+  if (insights.topFinding) {
+    const summary = insights.topFinding.summary.length > 120
+      ? insights.topFinding.summary.slice(0, 117) + '...'
+      : insights.topFinding.summary;
+    const pill = insights.topFinding.severity === 'critical' ? SEVERITY_PILLS.critical : SEVERITY_PILLS.atRisk;
+    bullets.push({
+      label: pill.label,
+      labelColor: pill.color,
+      labelBg: pill.bg,
+      text: summary,
+    });
+  }
+
+  return bullets;
+}
+
+// ── Weakest Lens Helper ────────────────────────────────────────────
+export function getWeakestLens(scores: ReturnType<typeof computeLensScores>) {
+  const lenses: { key: string; label: string; score: number; lensType: LensType }[] = [
+    { key: 'coverage', label: LENS_CONFIG.coverage.label, score: scores.coverage, lensType: 'coverage' },
+    { key: 'integrity', label: LENS_CONFIG.integrity.label, score: scores.integrity, lensType: 'integrity' },
+    { key: 'timing', label: LENS_CONFIG.timing.label, score: scores.timing, lensType: 'timing' },
+    { key: 'behavioral', label: LENS_CONFIG.behavioral.label, score: scores.behavioral, lensType: 'behavioral' },
+  ];
+  return lenses.reduce((a, b) => a.score < b.score ? a : b);
+}
+
+// ── Required Level Helper ──────────────────────────────────────────
+export function getRequiredLevelForReliable(useCaseIndex: number): string | null {
+  const levelOrder = ['Critical', 'At Risk', 'Fair', 'Healthy', 'Optimal'];
+  for (const levelName of levelOrder) {
+    const statuses = TRUST_RELIABILITY[levelName];
+    if (statuses && statuses[useCaseIndex] === 'reliable') {
+      return levelName;
+    }
+  }
+  return null;
 }
 
 // ── Trust Spectrum SVG ──────────────────────────────────────────────
@@ -123,14 +279,12 @@ const TrustSpectrum: React.FC<{ activeIndex: number; levelColor: string }> = ({ 
 
         return (
           <g key={level.name}>
-            {/* Outer halo for current node */}
             {isCurrent && (
               <>
                 <circle cx={cx} cy={nodeY} r={20} fill={level.color} opacity={0.06} />
                 <circle cx={cx} cy={nodeY} r={14} fill={level.color} opacity={0.10} />
               </>
             )}
-            {/* Node circle */}
             <circle
               cx={cx}
               cy={nodeY}
@@ -139,7 +293,6 @@ const TrustSpectrum: React.FC<{ activeIndex: number; levelColor: string }> = ({ 
               stroke={isReached ? level.color : '#DFE1E6'}
               strokeWidth={isReached ? 0 : 1.5}
             />
-            {/* Label */}
             <text
               x={cx}
               y={labelY}
@@ -160,144 +313,126 @@ const TrustSpectrum: React.FC<{ activeIndex: number; levelColor: string }> = ({ 
   );
 };
 
-// ── Insight Bullets ─────────────────────────────────────────────────
-interface InsightBullet {
-  label: string;
-  labelColor: string;
-  labelBg: string;
-  text: string;
+// ── Mock Trend Data ─────────────────────────────────────────────────
+const MOCK_COMPOSITE_TREND: TrendDataPoint[] = [
+  { period: '2025-05', value: 38, healthScore: 38 },
+  { period: '2025-06', value: 36, healthScore: 36 },
+  { period: '2025-07', value: 39, healthScore: 39 },
+  { period: '2025-08', value: 42, healthScore: 42 },
+  { period: '2025-09', value: 41, healthScore: 41 },
+  { period: '2025-10', value: 44, healthScore: 44 },
+  { period: '2025-11', value: 43, healthScore: 43 },
+  { period: '2025-12', value: 46, healthScore: 46 },
+];
+
+function computeTrend(data: TrendDataPoint[]): 'up' | 'down' | 'stable' {
+  if (data.length < 2) return 'stable';
+  const first = data[0].healthScore ?? data[0].value;
+  const last = data[data.length - 1].healthScore ?? data[data.length - 1].value;
+  const firstLevel = getTrustLevel(first).index;
+  const lastLevel = getTrustLevel(last).index;
+  if (lastLevel > firstLevel) return 'up';
+  if (lastLevel < firstLevel) return 'down';
+  return 'stable';
 }
 
-const SEVERITY_PILLS: Record<string, { label: string; color: string; bg: string }> = {
-  critical: { label: 'Critical', color: '#DE350B', bg: '#FFEBE6' },
-  atRisk:   { label: 'At Risk',  color: '#FF8B00', bg: '#FFF7ED' },
-  fair:     { label: 'Fair',     color: '#2684FF', bg: '#DEEBFF' },
-  healthy:  { label: 'Healthy',  color: '#00875A', bg: '#E3FCEF' },
-};
-
-function generateInsights(
-  scores: ReturnType<typeof computeLensScores>,
-  insights: ReturnType<typeof aggregatePatternInsights>,
-): InsightBullet[] {
-  const bullets: InsightBullet[] = [];
-
-  // Coverage observation
-  const covPill = scores.coverage < 45 ? SEVERITY_PILLS.critical
-    : scores.coverage < 60 ? SEVERITY_PILLS.atRisk
-    : scores.coverage < 75 ? SEVERITY_PILLS.fair
-    : SEVERITY_PILLS.healthy;
-  bullets.push({
-    label: covPill.label,
-    labelColor: covPill.color,
-    labelBg: covPill.bg,
-    text: scores.coverage < 50
-      ? `${scores.coverage}% field coverage \u2014 nearly half of critical fields lack values`
-      : scores.coverage < 70
-        ? `${scores.coverage}% field coverage \u2014 a notable portion of critical fields are incomplete`
-        : `${scores.coverage}% field coverage \u2014 most critical fields are populated`,
-  });
-
-  // Pattern count summary
-  const patternParts: string[] = [];
-  if (insights.criticalCount > 0) patternParts.push(`${insights.criticalCount} critical`);
-  if (insights.warningCount > 0) patternParts.push(`${insights.warningCount} warning`);
-  if (patternParts.length > 0) {
-    const total = insights.criticalCount + insights.warningCount;
-    const pill = insights.criticalCount > 0 ? SEVERITY_PILLS.critical : SEVERITY_PILLS.atRisk;
-    bullets.push({
-      label: pill.label,
-      labelColor: pill.color,
-      labelBg: pill.bg,
-      text: `${patternParts.join(' and ')} pattern${total !== 1 ? 's' : ''} detected across ${insights.totalAffected} issues`,
-    });
-  }
-
-  // Worst lens callout
-  const lensNames: Record<string, string> = { coverage: 'Field Completeness', integrity: 'Integrity', timing: 'Timing', behavioral: 'Behavioral' };
-  const lensScores = [
-    { key: 'coverage', score: scores.coverage },
-    { key: 'integrity', score: scores.integrity },
-    { key: 'timing', score: scores.timing },
-    { key: 'behavioral', score: scores.behavioral },
-  ];
-  const worst = lensScores.reduce((a, b) => a.score < b.score ? a : b);
-  if (worst.score < 50) {
-    const pill = worst.score < 30 ? SEVERITY_PILLS.critical : SEVERITY_PILLS.atRisk;
-    bullets.push({
-      label: pill.label,
-      labelColor: pill.color,
-      labelBg: pill.bg,
-      text: `${lensNames[worst.key]} is the weakest lens at ${worst.score}%`,
-    });
-  }
-
-  // Top finding
-  if (insights.topFinding) {
-    const summary = insights.topFinding.summary.length > 120
-      ? insights.topFinding.summary.slice(0, 117) + '...'
-      : insights.topFinding.summary;
-    const pill = insights.topFinding.severity === 'critical' ? SEVERITY_PILLS.critical : SEVERITY_PILLS.atRisk;
-    bullets.push({
-      label: pill.label,
-      labelColor: pill.color,
-      labelBg: pill.bg,
-      text: summary,
-    });
-  }
-
-  return bullets;
+// ── Banner Component (Hero Only) ────────────────────────────────────
+interface DataTrustBannerProps {
+  lensResults: AssessmentLensResults;
+  integrityScore: number;
+  trendData?: TrendDataPoint[];
 }
 
-// ── Banner Component ────────────────────────────────────────────────
-const DataTrustBanner: React.FC<DataTrustBannerProps> = ({ lensResults, integrityScore }) => {
+const DataTrustBanner: React.FC<DataTrustBannerProps> = ({ lensResults, integrityScore, trendData }) => {
   const scores = computeLensScores(lensResults, integrityScore);
   const { level: trustLevel, index: trustIndex } = getTrustLevel(scores.composite);
-  const insights = aggregatePatternInsights(lensResults);
-  const bullets = generateInsights(scores, insights);
+  const weakest = getWeakestLens(scores);
+  const weakestTrust = getTrustLevel(weakest.score);
+
+  const trend = trendData ?? MOCK_COMPOSITE_TREND;
+  const overallTrend = computeTrend(trend);
+  const trendLabel = overallTrend === 'up' ? 'Improving' : overallTrend === 'down' ? 'Declining' : 'Stable';
+  const trendColor = overallTrend === 'up' ? '#36B37E' : overallTrend === 'down' ? '#DE350B' : '#6B778C';
+  const trendArrowPath = overallTrend === 'up'
+    ? 'M3,10 L7,3 L11,10 L9,10 L9,12 L5,12 L5,10 Z'
+    : 'M3,5 L7,12 L11,5 L9,5 L9,3 L5,3 L5,5 Z';
+  const sparkTrend = overallTrend === 'up' ? 'improving' as const : overallTrend === 'down' ? 'declining' as const : 'stable' as const;
+  const hasTrendData = trend.length >= 2;
 
   return (
-    <div style={{
-      ...styles.container,
-      background: `linear-gradient(180deg, ${trustLevel.bgTint} 0%, #FFFFFF 100%)`,
-    }}>
+    <div style={{ ...styles.heroCard, background: trustLevel.bgTint }}>
       {/* Top accent stripe */}
       <div style={{ ...styles.accentStripe, backgroundColor: trustLevel.color }} />
 
-      {/* Hero Section — centered */}
-      <div style={styles.heroSection}>
-        <div style={styles.overline}>DATA TRUST ASSESSMENT</div>
-        <div style={{ ...styles.trustLevelName, color: trustLevel.color }}>
-          {trustLevel.name}
+      <div style={styles.heroCenterFlow}>
+        {/* Title row */}
+        <div style={styles.heroTitleRow}>
+          <span style={styles.heroSubtitle}>DATA TRUST SCORE</span>
         </div>
-        <div style={styles.heroDesc}>
-          Your Jira data has {trustLevel.description}.
+
+        {/* Giant score */}
+        <div style={styles.heroScoreBlock}>
+          <span style={{ ...styles.heroBigNumber, color: trustLevel.color }}>
+            {scores.composite}
+          </span>
+          <span style={styles.heroBigDenom}>/100</span>
         </div>
-      </div>
 
-      {/* Spectrum */}
-      <div style={styles.spectrumWrap}>
-        <TrustSpectrum activeIndex={trustIndex} levelColor={trustLevel.color} />
-      </div>
-
-      {/* Divider */}
-      <div style={styles.findingsDivider} />
-
-      {/* Key Findings */}
-      <div style={styles.findingsSection}>
-        <div style={styles.findingsLabel}>KEY FINDINGS</div>
-        <div style={styles.findingsList}>
-          {bullets.map((bullet, i) => (
-            <div key={i} style={styles.findingRow}>
-              <span style={{
-                ...styles.severityPill,
-                color: bullet.labelColor,
-                backgroundColor: bullet.labelBg,
-              }}>
-                {bullet.label}
+        {/* Category + trend + sparkline as unified chip */}
+        <div style={{
+          ...styles.heroStatusChip,
+          backgroundColor: `${trustLevel.color}18`,
+          border: `1.5px solid ${trustLevel.color}40`,
+        }}>
+          <span style={{ ...styles.heroStatusDot, backgroundColor: trustLevel.color }} />
+          <span style={{ ...styles.heroStatusTier, color: trustLevel.color }}>
+            {trustLevel.name}
+          </span>
+          <span style={styles.heroStatusDivider} />
+          {overallTrend === 'stable' ? (
+            <span style={{ display: 'inline-flex', flexShrink: 0 }}>
+              <MediaServicesActualSizeIcon label="" size="small" primaryColor={trendColor} />
+            </span>
+          ) : (
+            <svg width="12" height="12" viewBox="0 0 14 14" style={{ flexShrink: 0 }}>
+              <path d={trendArrowPath} fill={trendColor} />
+            </svg>
+          )}
+          <span style={{ ...styles.heroStatusTrend, color: trendColor }}>
+            {trendLabel}
+          </span>
+          {hasTrendData && (
+            <>
+              <span style={styles.heroStatusDivider} />
+              <span style={styles.heroSparklineWrap}>
+                <Sparkline
+                  data={trend}
+                  trend={sparkTrend}
+                  width={56}
+                  height={20}
+                />
               </span>
-              <span style={styles.findingText}>{bullet.text}</span>
-            </div>
-          ))}
+            </>
+          )}
+        </div>
+
+        {/* Priority callout */}
+        <p style={styles.heroDescription}>
+          {weakest.score < 75 ? (
+            <>
+              <span style={{ color: weakestTrust.level.color, fontWeight: 600 }}>{weakest.label}</span>
+              {' '}is your weakest component at{' '}
+              <span style={{ color: weakestTrust.level.color, fontWeight: 600 }}>{weakest.score}</span>
+              {' '}&mdash; start there to improve fastest.
+            </>
+          ) : (
+            <>All components are performing well. Your data has {trustLevel.description}.</>
+          )}
+        </p>
+
+        {/* Trust Spectrum */}
+        <div style={styles.spectrumWrap}>
+          <TrustSpectrum activeIndex={trustIndex} levelColor={trustLevel.color} />
         </div>
       </div>
     </div>
@@ -306,91 +441,99 @@ const DataTrustBanner: React.FC<DataTrustBannerProps> = ({ lensResults, integrit
 
 // ── Styles ──────────────────────────────────────────────────────────
 const styles: Record<string, React.CSSProperties> = {
-  container: {
+  heroCard: {
     position: 'relative',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '4px',
-    paddingTop: '0',
+    padding: '28px 48px 20px',
+    overflow: 'hidden',
+    borderRadius: '16px',
+    border: '1px solid #E4E6EB',
   },
   accentStripe: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
     height: '4px',
-    width: '100%',
   },
-  heroSection: {
+  heroCenterFlow: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
     textAlign: 'center',
-    padding: '32px 40px 8px',
   },
-  overline: {
-    fontSize: '11px',
-    fontWeight: 700,
-    letterSpacing: '1.5px',
-    textTransform: 'uppercase' as const,
-    color: '#8993A4',
-    marginBottom: '12px',
-  },
-  trustLevelName: {
-    fontSize: '36px',
-    fontWeight: 800,
-    lineHeight: 1.1,
-    marginBottom: '10px',
-    letterSpacing: '-0.5px',
-  },
-  heroDesc: {
-    fontSize: '16px',
-    color: '#42526E',
-    lineHeight: 1.5,
-    maxWidth: '560px',
-    margin: '0 auto',
-  },
-  spectrumWrap: {
-    padding: '12px 40px 16px',
-  },
-  findingsDivider: {
-    height: '1px',
-    backgroundColor: '#EBECF0',
-    margin: '0 36px',
-  },
-  findingsSection: {
-    padding: '20px 40px 28px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px',
-  },
-  findingsLabel: {
-    fontSize: '10px',
-    fontWeight: 700,
-    letterSpacing: '1px',
-    textTransform: 'uppercase' as const,
-    color: '#8993A4',
-  },
-  findingsList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '10px',
-  },
-  findingRow: {
+  heroTitleRow: {
     display: 'flex',
     alignItems: 'center',
-    gap: '12px',
+    gap: '8px',
+    marginBottom: '8px',
   },
-  severityPill: {
+  heroSubtitle: {
+    fontSize: '14px',
+    fontWeight: 600,
+    color: '#6B778C',
+    letterSpacing: '0.5px',
+    textTransform: 'uppercase' as const,
+  },
+  heroScoreBlock: {
+    display: 'flex',
+    alignItems: 'baseline',
+  },
+  heroBigNumber: {
+    fontSize: '96px',
+    fontWeight: 800,
+    lineHeight: 1,
+    letterSpacing: '-4px',
+  },
+  heroBigDenom: {
+    fontSize: '28px',
+    fontWeight: 500,
+    color: '#97A0AF',
+    marginLeft: '4px',
+  },
+  heroStatusChip: {
     display: 'inline-flex',
     alignItems: 'center',
-    justifyContent: 'center',
-    padding: '3px 10px',
-    borderRadius: '10px',
-    fontSize: '11px',
-    fontWeight: 700,
-    whiteSpace: 'nowrap' as const,
-    minWidth: '64px',
-    textAlign: 'center' as const,
+    gap: '8px',
+    padding: '6px 14px',
+    borderRadius: '20px',
+    marginTop: '8px',
+  },
+  heroStatusDot: {
+    width: '7px',
+    height: '7px',
+    borderRadius: '50%',
     flexShrink: 0,
   },
-  findingText: {
+  heroStatusTier: {
+    fontSize: '13px',
+    fontWeight: 700,
+  },
+  heroStatusDivider: {
+    width: '1px',
+    height: '14px',
+    backgroundColor: 'rgba(9, 30, 66, 0.15)',
+  },
+  heroStatusTrend: {
+    fontSize: '13px',
+    fontWeight: 600,
+  },
+  heroSparklineWrap: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    flexShrink: 0,
+    opacity: 0.8,
+  } as React.CSSProperties,
+  heroDescription: {
+    margin: '12px 0 0',
     fontSize: '14px',
-    color: '#172B4D',
+    color: '#6B778C',
     lineHeight: 1.5,
+    maxWidth: '480px',
+  },
+  spectrumWrap: {
+    padding: '12px 40px 0',
+    width: '100%',
+    maxWidth: '580px',
   },
 };
 
