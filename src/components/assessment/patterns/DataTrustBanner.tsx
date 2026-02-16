@@ -34,8 +34,8 @@ export function getTrustLevel(composite: number): { level: TrustLevel; index: nu
 
 // ── Score Computation ───────────────────────────────────────────────
 export function computeLensScores(lensResults: AssessmentLensResults, integrityScore: number) {
-  const coverage = lensResults.coverage.coveragePercent;
-  const integrity = integrityScore;
+  const coverage = Math.round(lensResults.coverage.coveragePercent);
+  const integrity = Math.round(integrityScore);
   const timingLens = lensResults.timing;
   const timing = timingLens.patternsChecked > 0
     ? Math.round((1 - timingLens.patternsDetected / timingLens.patternsChecked) * 100)
@@ -124,10 +124,10 @@ export function getReliabilityStatuses(levelName: string): ReliabilityStatus[] {
 
 // ── Lens Config ─────────────────────────────────────────────────────
 export const LENS_CONFIG: Record<LensType, { label: string; icon: string; description: string }> = {
-  coverage:    { label: 'Field Completeness', icon: 'M3 3h18v18H3V3zm2 2v14h14V5H14v6l-2.5-1.5L9 11V5H5z', description: 'Are critical Jira fields filled in before work starts?' },
-  integrity:   { label: 'Integrity',          icon: 'M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3zm-1 14.5l-4-4 1.41-1.41L11 13.67l5.59-5.58L18 9.5l-7 7z', description: 'Do field values contain real data or just placeholders?' },
-  timing:      { label: 'Timing',             icon: 'M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z', description: 'Was information available when decisions were made?' },
-  behavioral:  { label: 'Behavioral',         icon: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z', description: 'Are there patterns that may distort your metrics?' },
+  coverage:    { label: 'Timeliness',       icon: 'M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z', description: 'Does data arrive before the decisions it needs to inform?' },
+  integrity:   { label: 'Trustworthiness',  icon: 'M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3zm-1 14.5l-4-4 1.41-1.41L11 13.67l5.59-5.58L18 9.5l-7 7z', description: 'Can you rely on field values to reflect genuine work activity?' },
+  timing:      { label: 'Timing',           icon: 'M3 3h18v18H3V3zm2 2v14h14V5H14v6l-2.5-1.5L9 11V5H5z', description: 'Was information available when decisions were made?' },
+  behavioral:  { label: 'Freshness',         icon: 'M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z', description: 'Does your data reflect how things actually stand right now?' },
 };
 
 export const LENS_SEVERITY_STYLES: Record<OverallSeverity, { color: string; bgColor: string; label: string; icon: string }> = {
@@ -382,12 +382,46 @@ const DataTrustBanner: React.FC<DataTrustBannerProps> = ({ lensResults, integrit
             <span style={styles.heroSubtitle}>DATA TRUST SCORE</span>
           </div>
 
-          <div style={styles.heroScoreBlock}>
-            <span style={{ ...styles.heroBigNumber, color: trustLevel.color }}>
-              {scores.composite}
-            </span>
-            <span style={styles.heroBigDenom}>/100</span>
-          </div>
+          {/* Donut ring with score */}
+          {(() => {
+            const r = 80;
+            const circ = 2 * Math.PI * r;
+            const filled = (scores.composite / 100) * circ;
+            return (
+              <div style={styles.heroDonutWrap}>
+                <svg width={180} height={180} viewBox="0 0 180 180" style={{ transform: 'rotate(-90deg)' }}>
+                  <defs>
+                    <filter id="hero-glow" x="-20%" y="-20%" width="140%" height="140%">
+                      <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur" />
+                      <feMerge>
+                        <feMergeNode in="blur" />
+                        <feMergeNode in="SourceGraphic" />
+                      </feMerge>
+                    </filter>
+                  </defs>
+                  {/* Subtle inner fill */}
+                  <circle cx={90} cy={90} r={r - 5} fill={`${trustLevel.color}08`} />
+                  {/* Track */}
+                  <circle cx={90} cy={90} r={r} fill="none" stroke={`${trustLevel.color}15`} strokeWidth={10} />
+                  {/* Filled arc with glow */}
+                  <circle
+                    cx={90} cy={90} r={r}
+                    fill="none"
+                    stroke={trustLevel.color}
+                    strokeWidth={10}
+                    strokeDasharray={`${filled} ${circ}`}
+                    strokeLinecap="round"
+                    filter="url(#hero-glow)"
+                  />
+                </svg>
+                <div style={styles.heroDonutLabel}>
+                  <span style={{ ...styles.heroBigNumber, color: trustLevel.color }}>
+                    {scores.composite}
+                  </span>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Category + trend + sparkline as unified chip */}
           <div style={{
@@ -529,21 +563,27 @@ const styles: Record<string, React.CSSProperties> = {
     letterSpacing: '0.5px',
     textTransform: 'uppercase' as const,
   },
-  heroScoreBlock: {
+  heroDonutWrap: {
+    position: 'relative' as const,
+    width: '180px',
+    height: '180px',
+  },
+  heroDonutLabel: {
+    position: 'absolute' as const,
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
     display: 'flex',
-    alignItems: 'baseline',
+    flexDirection: 'column' as const,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   heroBigNumber: {
-    fontSize: '96px',
+    fontSize: '72px',
     fontWeight: 800,
     lineHeight: 1,
-    letterSpacing: '-4px',
-  },
-  heroBigDenom: {
-    fontSize: '28px',
-    fontWeight: 500,
-    color: '#97A0AF',
-    marginLeft: '4px',
+    letterSpacing: '-3px',
   },
   heroStatusChip: {
     display: 'inline-flex',
