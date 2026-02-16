@@ -359,80 +359,120 @@ const DataTrustBanner: React.FC<DataTrustBannerProps> = ({ lensResults, integrit
   const sparkTrend = overallTrend === 'up' ? 'improving' as const : overallTrend === 'down' ? 'declining' as const : 'stable' as const;
   const hasTrendData = trend.length >= 2;
 
+  const reliabilityStatuses = getReliabilityStatuses(trustLevel.name);
+  const RELIABILITY_SHORT_NAMES = [
+    'Task tracking',
+    'Sprint planning',
+    'Velocity reporting',
+    'Capacity planning',
+    'Forecasting',
+    'Benchmarking',
+    'Strategic reporting',
+  ];
+
   return (
-    <div style={{ ...styles.heroCard, background: trustLevel.bgTint }}>
+    <div style={{ ...styles.heroCard, background: '#FFFFFF' }}>
       {/* Top accent stripe */}
       <div style={{ ...styles.accentStripe, backgroundColor: trustLevel.color }} />
 
-      <div style={styles.heroCenterFlow}>
-        {/* Title row */}
-        <div style={styles.heroTitleRow}>
-          <span style={styles.heroSubtitle}>DATA TRUST SCORE</span>
-        </div>
+      <div style={styles.heroTwoColumn}>
+        {/* Left: Score, status, spectrum */}
+        <div style={styles.heroLeft}>
+          <div style={styles.heroTitleRow}>
+            <span style={styles.heroSubtitle}>DATA TRUST SCORE</span>
+          </div>
 
-        {/* Giant score */}
-        <div style={styles.heroScoreBlock}>
-          <span style={{ ...styles.heroBigNumber, color: trustLevel.color }}>
-            {scores.composite}
-          </span>
-          <span style={styles.heroBigDenom}>/100</span>
-        </div>
-
-        {/* Category + trend + sparkline as unified chip */}
-        <div style={{
-          ...styles.heroStatusChip,
-          backgroundColor: `${trustLevel.color}18`,
-          border: `1.5px solid ${trustLevel.color}40`,
-        }}>
-          <span style={{ ...styles.heroStatusDot, backgroundColor: trustLevel.color }} />
-          <span style={{ ...styles.heroStatusTier, color: trustLevel.color }}>
-            {trustLevel.name}
-          </span>
-          <span style={styles.heroStatusDivider} />
-          {overallTrend === 'stable' ? (
-            <span style={{ display: 'inline-flex', flexShrink: 0 }}>
-              <MediaServicesActualSizeIcon label="" size="small" primaryColor={trendColor} />
+          <div style={styles.heroScoreBlock}>
+            <span style={{ ...styles.heroBigNumber, color: trustLevel.color }}>
+              {scores.composite}
             </span>
-          ) : (
-            <svg width="12" height="12" viewBox="0 0 14 14" style={{ flexShrink: 0 }}>
-              <path d={trendArrowPath} fill={trendColor} />
-            </svg>
-          )}
-          <span style={{ ...styles.heroStatusTrend, color: trendColor }}>
-            {trendLabel}
-          </span>
-          {hasTrendData && (
-            <>
-              <span style={styles.heroStatusDivider} />
-              <span style={styles.heroSparklineWrap}>
-                <Sparkline
-                  data={trend}
-                  trend={sparkTrend}
-                  width={56}
-                  height={20}
-                />
+            <span style={styles.heroBigDenom}>/100</span>
+          </div>
+
+          {/* Category + trend + sparkline as unified chip */}
+          <div style={{
+            ...styles.heroStatusChip,
+            backgroundColor: `${trustLevel.color}18`,
+            border: `1.5px solid ${trustLevel.color}40`,
+          }}>
+            <span style={{ ...styles.heroStatusDot, backgroundColor: trustLevel.color }} />
+            <span style={{ ...styles.heroStatusTier, color: trustLevel.color }}>
+              {trustLevel.name}
+            </span>
+            <span style={styles.heroStatusDivider} />
+            {overallTrend === 'stable' ? (
+              <span style={{ display: 'inline-flex', flexShrink: 0 }}>
+                <MediaServicesActualSizeIcon label="" size="small" primaryColor={trendColor} />
               </span>
-            </>
-          )}
+            ) : (
+              <svg width="12" height="12" viewBox="0 0 14 14" style={{ flexShrink: 0 }}>
+                <path d={trendArrowPath} fill={trendColor} />
+              </svg>
+            )}
+            <span style={{ ...styles.heroStatusTrend, color: trendColor }}>
+              {trendLabel}
+            </span>
+            {hasTrendData && (
+              <>
+                <span style={styles.heroStatusDivider} />
+                <span style={styles.heroSparklineWrap}>
+                  <Sparkline
+                    data={trend}
+                    trend={sparkTrend}
+                    width={56}
+                    height={20}
+                  />
+                </span>
+              </>
+            )}
+          </div>
+
+          {/* Priority callout */}
+          <p style={styles.heroDescription}>
+            {weakest.score < 75 ? (
+              <>
+                <span style={{ color: weakestTrust.level.color, fontWeight: 600 }}>{weakest.label}</span>
+                {' '}is your weakest component at{' '}
+                <span style={{ color: weakestTrust.level.color, fontWeight: 600 }}>{weakest.score}</span>
+                {' '}&mdash; start there to improve fastest.
+              </>
+            ) : (
+              <>All components are performing well. Your data has {trustLevel.description}.</>
+            )}
+          </p>
+
+          {/* Trust Spectrum */}
+          <div style={styles.spectrumWrap}>
+            <TrustSpectrum activeIndex={trustIndex} levelColor={trustLevel.color} />
+          </div>
         </div>
 
-        {/* Priority callout */}
-        <p style={styles.heroDescription}>
-          {weakest.score < 75 ? (
-            <>
-              <span style={{ color: weakestTrust.level.color, fontWeight: 600 }}>{weakest.label}</span>
-              {' '}is your weakest component at{' '}
-              <span style={{ color: weakestTrust.level.color, fontWeight: 600 }}>{weakest.score}</span>
-              {' '}&mdash; start there to improve fastest.
-            </>
-          ) : (
-            <>All components are performing well. Your data has {trustLevel.description}.</>
-          )}
-        </p>
-
-        {/* Trust Spectrum */}
-        <div style={styles.spectrumWrap}>
-          <TrustSpectrum activeIndex={trustIndex} levelColor={trustLevel.color} />
+        {/* Right: Jira Reliability */}
+        <div style={styles.heroRight}>
+          <span style={styles.reliabilityTitle}>WHAT YOUR JIRA DATA CAN SUPPORT</span>
+          <div style={styles.reliabilityRows}>
+            {reliabilityStatuses.map((status, i) => {
+              const rs = RELIABILITY_STYLES[status];
+              const requiredLevel = status !== 'reliable' ? getRequiredLevelForReliable(i) : null;
+              return (
+                <div key={i} style={styles.reliabilityRow}>
+                  <span style={{
+                    ...styles.reliabilityIcon,
+                    color: rs.color,
+                    backgroundColor: `${rs.color}14`,
+                  }}>
+                    {rs.symbol}
+                  </span>
+                  <div style={styles.reliabilityTextCol}>
+                    <span style={styles.reliabilityName}>{RELIABILITY_SHORT_NAMES[i]}</span>
+                    {requiredLevel && (
+                      <span style={styles.reliabilityNeeds}>Needs {requiredLevel} or better</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>
@@ -443,7 +483,7 @@ const DataTrustBanner: React.FC<DataTrustBannerProps> = ({ lensResults, integrit
 const styles: Record<string, React.CSSProperties> = {
   heroCard: {
     position: 'relative',
-    padding: '28px 48px 20px',
+    padding: '28px 48px 24px',
     overflow: 'hidden',
     borderRadius: '16px',
     border: '1px solid #E4E6EB',
@@ -455,11 +495,26 @@ const styles: Record<string, React.CSSProperties> = {
     right: 0,
     height: '4px',
   },
-  heroCenterFlow: {
+  heroTwoColumn: {
     display: 'flex',
-    flexDirection: 'column',
+    gap: '0',
+    alignItems: 'stretch',
+  },
+  heroLeft: {
+    flex: '1 1 0',
+    display: 'flex',
+    flexDirection: 'column' as const,
     alignItems: 'center',
-    textAlign: 'center',
+    textAlign: 'center' as const,
+  },
+  heroRight: {
+    flex: '0 0 280px',
+    display: 'flex',
+    flexDirection: 'column' as const,
+    borderLeft: '1px solid rgba(9, 30, 66, 0.08)',
+    paddingLeft: '32px',
+    marginLeft: '32px',
+    justifyContent: 'center',
   },
   heroTitleRow: {
     display: 'flex',
@@ -528,12 +583,59 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '14px',
     color: '#6B778C',
     lineHeight: 1.5,
-    maxWidth: '480px',
+    maxWidth: '440px',
   },
   spectrumWrap: {
-    padding: '12px 40px 0',
+    padding: '12px 20px 0',
     width: '100%',
-    maxWidth: '580px',
+    maxWidth: '520px',
+  },
+  reliabilityTitle: {
+    fontSize: '11px',
+    fontWeight: 700,
+    color: '#6B778C',
+    letterSpacing: '1px',
+    textTransform: 'uppercase' as const,
+    marginBottom: '12px',
+  },
+  reliabilityRows: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: '4px',
+  },
+  reliabilityRow: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: '8px',
+    padding: '5px 0',
+  },
+  reliabilityIcon: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '20px',
+    height: '20px',
+    borderRadius: '50%',
+    fontSize: '11px',
+    fontWeight: 700,
+    flexShrink: 0,
+    marginTop: '1px',
+  },
+  reliabilityTextCol: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+  },
+  reliabilityName: {
+    fontSize: '13px',
+    fontWeight: 500,
+    color: '#172B4D',
+    lineHeight: 1.3,
+  },
+  reliabilityNeeds: {
+    fontSize: '11px',
+    fontWeight: 400,
+    color: '#97A0AF',
+    marginTop: '1px',
   },
 };
 

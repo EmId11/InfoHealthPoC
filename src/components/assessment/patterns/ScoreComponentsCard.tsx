@@ -50,7 +50,6 @@ const ScoreComponentsCard: React.FC<ScoreComponentsCardProps> = ({
                 ...styles.lensCard,
                 borderTopColor: trustLevel.color,
                 ...(isWeakest ? {
-                  backgroundColor: trustLevel.bgTint,
                   borderColor: trustLevel.borderTint,
                   borderTopColor: trustLevel.color,
                 } : {}),
@@ -144,7 +143,7 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     gap: '6px',
     padding: '24px 24px 16px',
-    backgroundColor: '#FAFBFC',
+    backgroundColor: '#FFFFFF',
     border: '1px solid #E4E6EB',
     borderTop: '4px solid',
     borderRadius: '14px',

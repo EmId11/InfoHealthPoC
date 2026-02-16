@@ -22,9 +22,8 @@ import SettingsIcon from '@atlaskit/icon/glyph/settings';
 import ShareIcon from '@atlaskit/icon/glyph/share';
 import { PersonaSwitcher } from '../persona';
 import { LensType } from '../../types/patterns';
-import DataTrustBanner, { computeLensScores, getTrustLevel } from './patterns/DataTrustBanner';
+import DataTrustBanner from './patterns/DataTrustBanner';
 import ScoreComponentsCard from './patterns/ScoreComponentsCard';
-import JiraReliabilityCard from './patterns/JiraReliabilityCard';
 import { mockIntegrityDimensionResult } from '../../constants/mockAssessmentData';
 
 // Top-level tabs
@@ -405,8 +404,6 @@ const AssessmentResultsLayout: React.FC<AssessmentResultsLayoutProps> = ({
           ═══════════════════════════════════════════════════════════════════ */}
           {activeTab === 'assessment-results' && assessmentResult.lensResults && (() => {
             const intScore = mockIntegrityDimensionResult.healthScore;
-            const scores = computeLensScores(assessmentResult.lensResults, intScore);
-            const { level } = getTrustLevel(scores.composite);
             return (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', marginBottom: '24px' }}>
                 <DataTrustBanner
@@ -417,9 +414,6 @@ const AssessmentResultsLayout: React.FC<AssessmentResultsLayoutProps> = ({
                   lensResults={assessmentResult.lensResults}
                   integrityScore={intScore}
                   onLensClick={(lens) => onLensClick?.(lens)}
-                />
-                <JiraReliabilityCard
-                  trustLevelName={level.name}
                 />
               </div>
             );
