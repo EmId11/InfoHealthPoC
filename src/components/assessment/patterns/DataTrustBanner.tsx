@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { AssessmentLensResults, LensType, OverallSeverity, PatternDetectionResult } from '../../../types/patterns';
-import { TrendDataPoint } from '../../../types/assessment';
+import { TrendDataPoint, ComparisonTeam } from '../../../types/assessment';
+import CrossIcon from '@atlaskit/icon/glyph/cross';
+import HeroInfoButton from '../../common/HeroInfoButton';
 
 // ── Trust Levels ────────────────────────────────────────────────────
 export interface TrustLevel {
@@ -258,15 +260,16 @@ function getConfidenceLabel(status: ReliabilityStatus, confidence: number): { la
 }
 
 // ── Mock Trend Data ─────────────────────────────────────────────────
+// Spans Critical → At Risk to show multi-category colour transitions
 const MOCK_COMPOSITE_TREND: TrendDataPoint[] = [
-  { period: '2025-05', value: 38, healthScore: 38 },
-  { period: '2025-06', value: 36, healthScore: 36 },
-  { period: '2025-07', value: 39, healthScore: 39 },
-  { period: '2025-08', value: 42, healthScore: 42 },
-  { period: '2025-09', value: 41, healthScore: 41 },
-  { period: '2025-10', value: 44, healthScore: 44 },
-  { period: '2025-11', value: 43, healthScore: 43 },
-  { period: '2025-12', value: 46, healthScore: 46 },
+  { period: '2025-05-12', value: 18, healthScore: 18 },
+  { period: '2025-06-09', value: 23, healthScore: 23 },
+  { period: '2025-07-14', value: 30, healthScore: 30 },
+  { period: '2025-08-11', value: 35, healthScore: 35 },
+  { period: '2025-09-08', value: 38, healthScore: 38 },
+  { period: '2025-10-13', value: 41, healthScore: 41 },
+  { period: '2025-11-10', value: 44, healthScore: 44 },
+  { period: '2025-12-08', value: 46, healthScore: 46 },
 ];
 
 function computeTrend(data: TrendDataPoint[]): 'up' | 'down' | 'stable' {
@@ -286,43 +289,92 @@ const CHART_H = 290;
 const CHART_START_X = 48;
 const CHART_END_X = 752;
 
+const MONTH_ABBRS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+/** Format a period string into a compact date label.
+ *  "2025-05-12" → "12 May"   |   "2025-05" → "May '25" */
+function formatPeriodLabel(period: string): string {
+  const parts = period.split('-');
+  const monthIdx = parseInt(parts[1], 10) - 1;
+  const mon = MONTH_ABBRS[monthIdx] || '';
+  if (parts[2]) {
+    const day = parseInt(parts[2], 10);
+    return `${day} ${mon}`;
+  }
+  return `${mon} '${parts[0].slice(2)}`;
+}
+
 function computeChartPoints(data: TrendDataPoint[]) {
   const step = data.length > 1 ? (CHART_END_X - CHART_START_X) / (data.length - 1) : 0;
   return data.map((d, i) => ({
     x: CHART_START_X + i * step,
     y: CHART_H * (1 - (d.healthScore ?? d.value) / 100),
     value: d.healthScore ?? d.value,
+    period: d.period,
   }));
 }
 
-// ── Chart Backdrop Sub-component (area fill + line only) ────────────
-const ChartBackdrop: React.FC<{ points: { x: number; y: number }[]; color: string }> = ({ points, color }) => {
-  const polylineStr = points.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
-  const polygonStr = polylineStr + ` ${points[points.length - 1].x.toFixed(1)},${CHART_H - 20} ${points[0].x.toFixed(1)},${CHART_H - 20}`;
+// ── Chart Backdrop Sub-component (multi-colour area fill + line) ─────
+const ChartBackdrop: React.FC<{ points: { x: number; y: number; value: number }[] }> = ({ points }) => {
+  const getColor = (v: number) => getTrustLevel(v).level.color;
 
   return (
     <svg style={styles.chartBackdrop} viewBox={`0 0 ${CHART_W} ${CHART_H}`} preserveAspectRatio="none">
       <defs>
-        <linearGradient id="area-grad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity={0.12} />
-          <stop offset="100%" stopColor={color} stopOpacity={0.01} />
-        </linearGradient>
+        {points.map((p, i) => {
+          if (i === 0) return null;
+          const prev = points[i - 1];
+          const c1 = getColor(prev.value);
+          const c2 = getColor(p.value);
+          return (
+            <React.Fragment key={`defs-${i}`}>
+              <linearGradient id={`seg-line-${i}`} x1={prev.x} y1="0" x2={p.x} y2="0" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stopColor={c1} />
+                <stop offset="100%" stopColor={c2} />
+              </linearGradient>
+              <linearGradient id={`seg-area-${i}`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={c2} stopOpacity={0.12} />
+                <stop offset="100%" stopColor={c2} stopOpacity={0.01} />
+              </linearGradient>
+            </React.Fragment>
+          );
+        })}
       </defs>
-      <polygon points={polygonStr} fill="url(#area-grad)" />
-      <polyline points={polylineStr} fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" opacity={0.5} />
+      {/* Area fills per segment */}
+      {points.map((p, i) => {
+        if (i === 0) return null;
+        const prev = points[i - 1];
+        const pts = `${prev.x.toFixed(1)},${prev.y.toFixed(1)} ${p.x.toFixed(1)},${p.y.toFixed(1)} ${p.x.toFixed(1)},${CHART_H - 20} ${prev.x.toFixed(1)},${CHART_H - 20}`;
+        return <polygon key={`area-${i}`} points={pts} fill={`url(#seg-area-${i})`} />;
+      })}
+      {/* Line segments with gradient transitions */}
+      {points.map((p, i) => {
+        if (i === 0) return null;
+        const prev = points[i - 1];
+        return (
+          <line key={`line-${i}`}
+            x1={prev.x.toFixed(1)} y1={prev.y.toFixed(1)}
+            x2={p.x.toFixed(1)} y2={p.y.toFixed(1)}
+            stroke={`url(#seg-line-${i})`}
+            strokeWidth={2} strokeLinecap="round" opacity={0.5}
+          />
+        );
+      })}
     </svg>
   );
 };
 
 // ── Chart Data Points Overlay (HTML — stays crisp) ──────────────────
-const ChartDataPoints: React.FC<{ points: { x: number; y: number; value: number }[]; color: string }> = ({ points, color }) => (
+const ChartDataPoints: React.FC<{ points: { x: number; y: number; value: number; period: string }[] }> = ({ points }) => (
   <div style={styles.dataPointOverlay}>
     {points.map((p, i) => {
+      const pointColor = getTrustLevel(p.value).level.color;
       const leftPct = (p.x / CHART_W) * 100;
       const topPct = (p.y / CHART_H) * 100;
       const isLast = i === points.length - 1;
       // Hide labels that would be behind the centered score disc
       const isBehindDisc = leftPct > 33 && leftPct < 67;
+      const dateLabel = formatPeriodLabel(p.period);
 
       return (
         <React.Fragment key={i}>
@@ -335,27 +387,47 @@ const ChartDataPoints: React.FC<{ points: { x: number; y: number; value: number 
             width: isLast ? 8 : 7,
             height: isLast ? 8 : 7,
             borderRadius: '50%',
-            background: color,
+            background: pointColor,
             border: `${isLast ? 2 : 1.5}px solid #fff`,
             opacity: isLast ? 0.65 : 0.5,
             zIndex: 1,
           }} />
-          {/* Value label — only when not obscured by score disc */}
+          {/* Value label above dot */}
           {!isBehindDisc && (
             <span style={{
               position: 'absolute' as const,
               left: `${leftPct}%`,
               top: `${topPct}%`,
               transform: 'translate(-50%, calc(-100% - 6px))',
-              fontSize: '11px',
-              fontWeight: 600,
-              color,
-              opacity: isLast ? 0.75 : 0.5,
+              fontSize: '13px',
+              fontWeight: 700,
+              color: pointColor,
+              opacity: isLast ? 0.9 : 0.7,
               whiteSpace: 'nowrap' as const,
               pointerEvents: 'none' as const,
               zIndex: 1,
             }}>
               {p.value}
+            </span>
+          )}
+          {/* Month label below dot */}
+          {!isBehindDisc && (
+            <span style={{
+              position: 'absolute' as const,
+              left: `${leftPct}%`,
+              top: `${topPct}%`,
+              transform: 'translate(-50%, 8px)',
+              fontSize: '8.5px',
+              fontWeight: 700,
+              color: pointColor,
+              opacity: isLast ? 0.6 : 0.45,
+              letterSpacing: '0.3px',
+              textTransform: 'uppercase' as const,
+              whiteSpace: 'nowrap' as const,
+              pointerEvents: 'none' as const,
+              zIndex: 1,
+            }}>
+              {dateLabel}
             </span>
           )}
         </React.Fragment>
@@ -403,14 +475,170 @@ const ConfidenceGauges: React.FC<{ composite: number; reliabilityStatuses: Relia
   );
 };
 
+// ── Team Comparison Modal ────────────────────────────────────────────
+interface TeamComparisonModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  composite: number;
+  trustLevelColor: string;
+  comparisonTeams: ComparisonTeam[];
+  comparisonTeamCount: number;
+}
+
+const TeamComparisonModal: React.FC<TeamComparisonModalProps> = ({
+  isOpen, onClose, composite, trustLevelColor, comparisonTeams, comparisonTeamCount,
+}) => {
+  if (!isOpen) return null;
+
+  const teamsAhead = Math.round((1 - composite / 100) * comparisonTeamCount);
+  const yourRank = teamsAhead + 1;
+
+  // Generate mock peer positions using seeded random
+  const seed = 'composite-trust'.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+  const peerPositions: number[] = [];
+  for (let i = 0; i < comparisonTeamCount; i++) {
+    const pseudoRandom = Math.sin(seed * (i + 1) * 9999) * 10000;
+    const normalized = pseudoRandom - Math.floor(pseudoRandom);
+    peerPositions.push(Math.max(5, Math.min(95, normalized * 100)));
+  }
+  const sorted = [...peerPositions].sort((a, b) => a - b);
+  const peerMin = sorted[0] ?? 0;
+  const peerMax = sorted[sorted.length - 1] ?? 100;
+  const peerMedian = sorted.length > 0 ? sorted[Math.floor(sorted.length / 2)] : 50;
+
+  // Build ranked team lists
+  const ranksToAssign = Array.from({ length: comparisonTeamCount }, (_, i) => i + 1)
+    .filter(r => r !== yourRank);
+  const shuffledRanks = [...ranksToAssign].sort((a, b) => {
+    const teamA = comparisonTeams[ranksToAssign.indexOf(a) % comparisonTeams.length];
+    const teamB = comparisonTeams[ranksToAssign.indexOf(b) % comparisonTeams.length];
+    return (teamA?.name || '').localeCompare(teamB?.name || '');
+  });
+  const teamsWithRanks = comparisonTeams.map((team, idx) => ({
+    ...team,
+    rank: shuffledRanks[idx % shuffledRanks.length] || idx + 1,
+  })).sort((a, b) => a.rank - b.rank);
+  const betterTeams = teamsWithRanks.filter(t => t.rank < yourRank);
+  const worseTeams = teamsWithRanks.filter(t => t.rank > yourRank);
+
+  return (
+    <div style={styles.compareOverlay} onClick={onClose}>
+      <div style={styles.compareModal} onClick={e => e.stopPropagation()}>
+        <div style={styles.compareHeader}>
+          <h2 style={styles.compareTitle}>Data Trust — Team Comparison</h2>
+          <button style={styles.compareCloseBtn} onClick={onClose}>
+            <CrossIcon label="Close" size="small" />
+          </button>
+        </div>
+        <div style={styles.compareBody}>
+          <p style={styles.compareIntro}>
+            Your team is ranked <strong>#{yourRank}</strong> of {comparisonTeamCount + 1} for overall Data Trust.
+          </p>
+
+          {/* Spectrum */}
+          <div style={styles.spectrumContainer}>
+            <div style={styles.spectrumLabel}>Peer Score Distribution</div>
+            <div style={styles.spectrumBarWrap}>
+              <div style={styles.spectrumTrack} />
+              <span style={styles.spectrumMin}>0</span>
+              <span style={styles.spectrumMax}>100</span>
+              <div style={{
+                ...styles.spectrumRangeBand,
+                left: `${peerMin}%`,
+                width: `${peerMax - peerMin}%`,
+              }} />
+              <div style={{
+                ...styles.spectrumMedianTick,
+                left: `${peerMedian}%`,
+              }} />
+              <div style={{
+                ...styles.spectrumYourMarker,
+                left: `${composite}%`,
+                backgroundColor: trustLevelColor,
+                boxShadow: `0 0 0 3px ${trustLevelColor}40`,
+              }} />
+            </div>
+            <div style={styles.spectrumLegend}>
+              <span style={styles.spectrumLegendItem}>
+                <span style={{ ...styles.spectrumLegendDot, backgroundColor: 'rgba(9,30,66,0.15)' }} />
+                Peer range ({Math.round(peerMin)}–{Math.round(peerMax)})
+              </span>
+              <span style={styles.spectrumLegendItem}>
+                <span style={{ ...styles.spectrumLegendDot, backgroundColor: trustLevelColor }} />
+                Your team ({composite})
+              </span>
+            </div>
+          </div>
+
+          {/* Teams above */}
+          {betterTeams.length > 0 && (
+            <div style={styles.compareTeamsSection}>
+              <h4 style={{ ...styles.compareTeamsSectionTitle, color: '#006644' }}>
+                Teams scoring higher ({betterTeams.length})
+              </h4>
+              <div style={styles.compareTeamsList}>
+                {betterTeams.map(team => (
+                  <div key={team.id} style={{ ...styles.compareTeamItem, borderLeft: '3px solid #36B37E' }}>
+                    <span style={{ ...styles.compareTeamRank, color: '#006644' }}>#{team.rank}</span>
+                    <span style={styles.compareTeamName}>{team.name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Your team divider */}
+          <div style={styles.compareYourDivider}>
+            <div style={styles.compareYourLine} />
+            <span style={styles.compareYourBadge}>Your team — #{yourRank}</span>
+            <div style={styles.compareYourLine} />
+          </div>
+
+          {/* Teams below */}
+          {worseTeams.length > 0 && (
+            <div style={styles.compareTeamsSection}>
+              <h4 style={{ ...styles.compareTeamsSectionTitle, color: '#DE350B' }}>
+                Teams scoring lower ({worseTeams.length})
+              </h4>
+              <div style={styles.compareTeamsList}>
+                {worseTeams.map(team => (
+                  <div key={team.id} style={{ ...styles.compareTeamItem, borderLeft: '3px solid #FF8B00' }}>
+                    <span style={{ ...styles.compareTeamRank, color: '#DE350B' }}>#{team.rank}</span>
+                    <span style={styles.compareTeamName}>{team.name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <p style={styles.compareNote}>
+            Rankings reflect overall Data Trust composite scores. Individual lens rankings may differ.
+          </p>
+        </div>
+        <div style={styles.compareFooter}>
+          <button style={styles.compareCloseButton} onClick={onClose}>Close</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ── Banner Component (Hero Only) ────────────────────────────────────
 interface DataTrustBannerProps {
   lensResults: AssessmentLensResults;
   integrityScore: number;
   trendData?: TrendDataPoint[];
+  comparisonTeams?: ComparisonTeam[];
+  comparisonTeamCount?: number;
+  comparisonCriteria?: string[];
 }
 
-const DataTrustBanner: React.FC<DataTrustBannerProps> = ({ lensResults, integrityScore, trendData }) => {
+const DataTrustBanner: React.FC<DataTrustBannerProps> = ({
+  lensResults, integrityScore, trendData,
+  comparisonTeams = [], comparisonTeamCount = 0, comparisonCriteria = [],
+}) => {
+  const [isCompareOpen, setIsCompareOpen] = useState(false);
+
   const scores = computeLensScores(lensResults, integrityScore);
   const { level: trustLevel } = getTrustLevel(scores.composite);
   const weakest = getWeakestLens(scores);
@@ -437,13 +665,60 @@ const DataTrustBanner: React.FC<DataTrustBannerProps> = ({ lensResults, integrit
 
       {/* Hero top — chart backdrop + floating score */}
       <div style={styles.heroTop}>
-        <ChartBackdrop points={chartPoints} color={trustLevel.color} />
-        <ChartDataPoints points={chartPoints} color={trustLevel.color} />
+        <ChartBackdrop points={chartPoints} />
+        <ChartDataPoints points={chartPoints} />
 
         <div style={styles.scoreFloat}>
-          <span style={styles.scoreLabel}>DATA TRUST SCORE</span>
+          <div style={styles.scoreLabelRow}>
+            <span style={styles.scoreLabel}>DATA TRUST SCORE</span>
+            <HeroInfoButton title="Understanding Your Data Trust Score">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <div>
+                  <h4 style={{ margin: '0 0 8px', fontSize: '13px', fontWeight: 700, color: '#0052CC', textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>What the Score Represents</h4>
+                  <p style={{ margin: 0, fontSize: '14px', color: '#42526E', lineHeight: 1.7 }}>
+                    Your Data Trust Score is a composite measure from 0–100 that reflects the overall trustworthiness of your Jira data across four lenses. A higher score means your data is more reliable for making informed decisions.
+                  </p>
+                </div>
+                <div>
+                  <h4 style={{ margin: '0 0 8px', fontSize: '13px', fontWeight: 700, color: '#0052CC', textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>Lens Weights</h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    {[
+                      { name: 'Timeliness', weight: '30%', color: '#0052CC' },
+                      { name: 'Trustworthiness', weight: '30%', color: '#6554C0' },
+                      { name: 'Timing', weight: '20%', color: '#00B8D9' },
+                      { name: 'Freshness', weight: '20%', color: '#36B37E' },
+                    ].map(l => (
+                      <div key={l.name} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 10px', backgroundColor: '#F4F5F7', borderRadius: '6px' }}>
+                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: l.color, flexShrink: 0 }} />
+                        <span style={{ flex: 1, fontSize: '13px', fontWeight: 600, color: '#172B4D' }}>{l.name}</span>
+                        <span style={{ fontSize: '13px', fontWeight: 700, color: l.color }}>{l.weight}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <h4 style={{ margin: '0 0 8px', fontSize: '13px', fontWeight: 700, color: '#0052CC', textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>Trust Level Thresholds</h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    {TRUST_LEVELS.map(tl => (
+                      <div key={tl.name} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '5px 10px', backgroundColor: tl.bgTint, borderRadius: '6px', borderLeft: `3px solid ${tl.color}` }}>
+                        <span style={{ fontSize: '13px', fontWeight: 700, color: tl.color, minWidth: '70px' }}>{tl.name}</span>
+                        <span style={{ fontSize: '12px', color: '#6B778C' }}>{tl.range[0]}–{tl.range[1]}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div style={{ padding: '10px 12px', backgroundColor: '#DEEBFF', borderRadius: '6px', border: '1px solid #B3D4FF' }}>
+                  <p style={{ margin: 0, fontSize: '13px', color: '#0052CC', lineHeight: 1.5 }}>
+                    The confidence gauges below the score show how reliably you can use your Jira data for each purpose, derived from the composite score against use-case-specific thresholds.
+                  </p>
+                </div>
+              </div>
+            </HeroInfoButton>
+          </div>
 
           <div style={styles.scoreDisc}>
+            {/* Halo — fades chart line smoothly behind the donut */}
+            <div style={styles.scoreHalo} />
             {/* Frosted glass circle */}
             <div style={styles.scoreDiscBg} />
             {/* Donut ring SVG */}
@@ -483,6 +758,18 @@ const DataTrustBanner: React.FC<DataTrustBannerProps> = ({ lensResults, integrit
             <span style={styles.badgeTrend}>
               {trendArrow} {trendLabel}
             </span>
+            {comparisonTeamCount > 0 && (
+              <button
+                style={styles.compareBadge}
+                onClick={() => setIsCompareOpen(true)}
+                type="button"
+              >
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" style={{ flexShrink: 0 }}>
+                  <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-5 6c0-2.76 2.24-5 5-5s5 2.24 5 5H3zm10-8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zm1.5 2h-.52a3.98 3.98 0 0 1 1.52 3.13V14H16v-2c0-1.1-.9-2-2-2h-.5zM3 6a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zM.5 8H0c-1.1 0-2 .9-2 2v2h2v-2.13c0-1.2.47-2.3 1.25-3.12L.5 8z" />
+                </svg>
+                vs {comparisonTeamCount} teams
+              </button>
+            )}
           </div>
         </div>
 
@@ -516,6 +803,16 @@ const DataTrustBanner: React.FC<DataTrustBannerProps> = ({ lensResults, integrit
 
       {/* Confidence gauges */}
       <ConfidenceGauges composite={scores.composite} reliabilityStatuses={reliabilityStatuses} />
+
+      {/* Team Comparison Modal */}
+      <TeamComparisonModal
+        isOpen={isCompareOpen}
+        onClose={() => setIsCompareOpen(false)}
+        composite={scores.composite}
+        trustLevelColor={trustLevel.color}
+        comparisonTeams={comparisonTeams}
+        comparisonTeamCount={comparisonTeamCount}
+      />
     </div>
   );
 };
@@ -563,18 +860,34 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     padding: '20px 0 12px',
   },
+  scoreLabelRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    marginBottom: '4px',
+  },
   scoreLabel: {
     fontSize: '10px',
     fontWeight: 700,
     color: '#8993A4',
     letterSpacing: '1.2px',
     textTransform: 'uppercase' as const,
-    marginBottom: '4px',
   },
   scoreDisc: {
     position: 'relative' as const,
     width: '186px',
     height: '186px',
+  },
+  scoreHalo: {
+    position: 'absolute' as const,
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    width: '260px',
+    height: '260px',
+    borderRadius: '50%',
+    background: 'radial-gradient(circle, rgba(255,255,255,0.95) 32%, rgba(255,255,255,0.65) 52%, rgba(255,255,255,0) 72%)',
+    pointerEvents: 'none' as const,
   },
   scoreDiscBg: {
     position: 'absolute' as const,
@@ -650,6 +963,262 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#44546F',
     backdropFilter: 'blur(6px)',
     WebkitBackdropFilter: 'blur(6px)',
+  },
+  compareBadge: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '4px',
+    padding: '4px 12px',
+    borderRadius: '12px',
+    fontSize: '11.5px',
+    fontWeight: 600,
+    whiteSpace: 'nowrap' as const,
+    background: 'rgba(255, 255, 255, 0.7)',
+    border: '1.5px solid rgba(9, 30, 66, 0.1)',
+    color: '#44546F',
+    backdropFilter: 'blur(6px)',
+    WebkitBackdropFilter: 'blur(6px)',
+    cursor: 'pointer',
+    fontFamily: 'inherit',
+  },
+  // Team Comparison Modal styles
+  compareOverlay: {
+    position: 'fixed' as const,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(9, 30, 66, 0.54)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+  },
+  compareModal: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: '8px',
+    boxShadow: '0 8px 16px rgba(9, 30, 66, 0.25)',
+    width: '100%',
+    maxWidth: '600px',
+    maxHeight: '80vh',
+    display: 'flex',
+    flexDirection: 'column' as const,
+    overflow: 'hidden' as const,
+  },
+  compareHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '20px 24px',
+    borderBottom: '1px solid #EBECF0',
+  },
+  compareTitle: {
+    margin: 0,
+    fontSize: '20px',
+    fontWeight: 600,
+    color: '#172B4D',
+  },
+  compareCloseBtn: {
+    background: 'none',
+    border: 'none',
+    padding: '4px',
+    cursor: 'pointer',
+    borderRadius: '4px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  compareBody: {
+    padding: '24px',
+    overflowY: 'auto' as const,
+    flex: 1,
+  },
+  compareIntro: {
+    marginTop: 0,
+    marginBottom: '20px',
+    lineHeight: 1.6,
+    fontSize: '14px',
+    color: '#172B4D',
+  },
+  compareFooter: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    padding: '16px 24px',
+    borderTop: '1px solid #EBECF0',
+  },
+  compareCloseButton: {
+    backgroundColor: '#0052CC',
+    color: '#FFFFFF',
+    border: 'none',
+    borderRadius: '4px',
+    padding: '8px 16px',
+    fontSize: '14px',
+    fontWeight: 500,
+    cursor: 'pointer',
+    fontFamily: 'inherit',
+  },
+  // Spectrum bar styles
+  spectrumContainer: {
+    marginBottom: '20px',
+    padding: '16px',
+    backgroundColor: '#F4F5F7',
+    borderRadius: '8px',
+  },
+  spectrumLabel: {
+    fontSize: '11px',
+    fontWeight: 600,
+    color: '#6B778C',
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.5px',
+    marginBottom: '12px',
+  },
+  spectrumBarWrap: {
+    position: 'relative' as const,
+    height: '24px',
+    width: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    margin: '0 16px',
+    boxSizing: 'border-box' as const,
+  },
+  spectrumTrack: {
+    position: 'absolute' as const,
+    left: 0,
+    right: 0,
+    height: '6px',
+    borderRadius: '3px',
+    background: 'linear-gradient(to right, #DE350B 0%, #DE350B 30%, #FF8B00 30%, #FF8B00 45%, #2684FF 45%, #2684FF 55%, #00875A 55%, #00875A 70%, #006644 70%, #006644 100%)',
+    opacity: 0.45,
+  },
+  spectrumRangeBand: {
+    position: 'absolute' as const,
+    height: '18px',
+    borderRadius: '9px',
+    backgroundColor: 'rgba(9, 30, 66, 0.10)',
+    zIndex: 1,
+  },
+  spectrumMedianTick: {
+    position: 'absolute' as const,
+    width: '2px',
+    height: '14px',
+    backgroundColor: 'rgba(9, 30, 66, 0.25)',
+    borderRadius: '1px',
+    transform: 'translateX(-50%)',
+    zIndex: 2,
+    pointerEvents: 'none' as const,
+  },
+  spectrumYourMarker: {
+    position: 'absolute' as const,
+    top: '50%',
+    transform: 'translate(-50%, -50%)',
+    width: '14px',
+    height: '14px',
+    borderRadius: '50%',
+    border: '2.5px solid white',
+    zIndex: 3,
+  },
+  spectrumMin: {
+    position: 'absolute' as const,
+    left: '-16px',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    fontSize: '10px',
+    fontWeight: 600,
+    color: '#97A0AF',
+  },
+  spectrumMax: {
+    position: 'absolute' as const,
+    right: '-22px',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    fontSize: '10px',
+    fontWeight: 600,
+    color: '#97A0AF',
+  },
+  spectrumLegend: {
+    display: 'flex',
+    gap: '16px',
+    marginTop: '10px',
+    marginLeft: '16px',
+  },
+  spectrumLegendItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '5px',
+    fontSize: '11px',
+    color: '#6B778C',
+  },
+  spectrumLegendDot: {
+    width: '8px',
+    height: '8px',
+    borderRadius: '50%',
+    flexShrink: 0,
+  },
+  // Team ranking list styles
+  compareTeamsSection: {
+    backgroundColor: '#F4F5F7',
+    borderRadius: '6px',
+    padding: '16px',
+    marginBottom: '12px',
+  },
+  compareTeamsSectionTitle: {
+    margin: '0 0 12px 0',
+    fontSize: '12px',
+    fontWeight: 600,
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.5px',
+  },
+  compareTeamsList: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(2, 1fr)',
+    gap: '8px',
+    maxHeight: '200px',
+    overflowY: 'auto' as const,
+  },
+  compareTeamItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '6px 10px',
+    backgroundColor: '#FFFFFF',
+    borderRadius: '4px',
+    fontSize: '13px',
+  },
+  compareTeamRank: {
+    fontSize: '12px',
+    fontWeight: 600,
+    minWidth: '28px',
+  },
+  compareTeamName: {
+    color: '#172B4D',
+    fontWeight: 500,
+  },
+  compareYourDivider: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    margin: '16px 0',
+  },
+  compareYourLine: {
+    flex: 1,
+    height: '1px',
+    backgroundColor: '#0052CC',
+  },
+  compareYourBadge: {
+    padding: '6px 12px',
+    backgroundColor: '#0052CC',
+    color: '#FFFFFF',
+    borderRadius: '4px',
+    fontSize: '12px',
+    fontWeight: 600,
+    whiteSpace: 'nowrap' as const,
+  },
+  compareNote: {
+    margin: '16px 0 0',
+    fontSize: '13px',
+    color: '#5E6C84',
+    lineHeight: 1.5,
+    fontStyle: 'italic' as const,
   },
   insightBar: {
     position: 'relative' as const,

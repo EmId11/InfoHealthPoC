@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import ReactDOM from 'react-dom';
 import CrossIcon from '@atlaskit/icon/glyph/cross';
 
 interface HeroInfoButtonProps {
@@ -56,7 +57,7 @@ const HeroInfoButton: React.FC<HeroInfoButtonProps> = ({ title, children }) => {
         </svg>
       </button>
 
-      {isOpen && (
+      {isOpen && ReactDOM.createPortal(
         <div style={styles.modalOverlay} onClick={handleOverlayClick}>
           <div style={styles.modal}>
             {/* Decorative header with gradient */}
@@ -84,7 +85,8 @@ const HeroInfoButton: React.FC<HeroInfoButtonProps> = ({ title, children }) => {
             </div>
             <div style={styles.modalContent}>{children}</div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

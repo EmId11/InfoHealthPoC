@@ -409,6 +409,9 @@ const AssessmentResultsLayout: React.FC<AssessmentResultsLayoutProps> = ({
                 <DataTrustBanner
                   lensResults={assessmentResult.lensResults}
                   integrityScore={intScore}
+                  comparisonTeams={assessmentResult.comparisonTeams}
+                  comparisonTeamCount={assessmentResult.comparisonTeamCount}
+                  comparisonCriteria={assessmentResult.comparisonCriteria}
                 />
                 <ScoreComponentsCard
                   lensResults={assessmentResult.lensResults}
