@@ -32,6 +32,15 @@ export function getTrustLevel(composite: number): { level: TrustLevel; index: nu
   return { level: TRUST_LEVELS[0], index: 0 };
 }
 
+// Warm hero gradients tinted by category colour
+export const HERO_GRADIENTS: Record<string, string> = {
+  'Critical':  'linear-gradient(135deg, #FFF5F2 0%, #FFEDE6 40%, #FFE2D4 100%)',
+  'At Risk':   'linear-gradient(135deg, #FFF8F0 0%, #FFF3E0 40%, #FFE8CC 100%)',
+  'Fair':      'linear-gradient(135deg, #F0F5FF 0%, #E3EDFF 40%, #D4E4FF 100%)',
+  'Healthy':   'linear-gradient(135deg, #F2FFF6 0%, #E4FCE9 40%, #D4F5DC 100%)',
+  'Optimal':   'linear-gradient(135deg, #EEFFF3 0%, #DDFCE4 40%, #CCF5D5 100%)',
+};
+
 // ── Score Computation ───────────────────────────────────────────────
 export function computeLensScores(lensResults: AssessmentLensResults, integrityScore: number) {
   const coverage = Math.round(lensResults.coverage.coveragePercent);
@@ -808,14 +817,38 @@ const DataTrustBanner: React.FC<DataTrustBannerProps> = ({
   const chartPoints = computeChartPoints(trend);
 
   return (
+    <>
     <div style={styles.heroCard}>
       {/* Accent bar — gradient stripe */}
-      <div style={styles.accentBar} />
+      <div style={{ ...styles.accentBar, background: trustLevel.color }} />
 
-      {/* Hero top — floating score */}
-      <div style={styles.heroTop}>
+      {/* Hero top — warm gradient background spans full width */}
+      <div style={{ ...styles.heroTop, background: HERO_GRADIENTS[trustLevel.name] || HERO_GRADIENTS['At Risk'] }}>
+        {/* Decorative background circles */}
+        <div style={styles.questionDecor1} />
+        <div style={styles.questionDecor2} />
 
-        <div style={styles.scoreFloat}>
+        <div style={styles.heroColumns}>
+          {/* Left — question text */}
+          <div style={styles.questionContent}>
+            <span style={styles.questionEyebrow}>THE CORE QUESTION</span>
+            <h2 style={styles.questionText}>
+              Can you <span style={styles.questionHighlight}>trust</span> the data behind your <span style={styles.questionHighlight2}>decisions</span>?
+            </h2>
+            <p style={styles.questionSubtext}>
+              Your Jira data flows into sprint reviews, capacity planning, velocity reports, and executive dashboards. This assessment measures whether that data is complete, accurate, timely, and fresh enough to rely on. <strong style={{ color: trustLevel.color }}>Right now, your data shows {trustLevel.description}.</strong>
+            </p>
+          </div>
+
+          {/* Divider */}
+          <div style={styles.heroDivider}>
+            <div style={styles.heroDividerLine} />
+            <div style={styles.heroDividerDot} />
+            <div style={styles.heroDividerLine} />
+          </div>
+
+          {/* Right — score visualization */}
+          <div style={styles.scoreFloat}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div style={{ display: 'flex', flexDirection: 'column' as const, alignItems: 'center' }}>
             <div style={styles.scoreLabelRow}>
@@ -992,34 +1025,37 @@ const DataTrustBanner: React.FC<DataTrustBannerProps> = ({
           </div>
 
         </div>
+        </div>
 
       </div>
 
-      <div style={styles.sectionDivider} />
-
-      {/* Confidence gauges */}
-      <ConfidenceGauges composite={scores.composite} reliabilityStatuses={reliabilityStatuses} />
-
-      {/* Score History Modal */}
-      <TrendHistoryModal
-        isOpen={isHistoryOpen}
-        onClose={() => setIsHistoryOpen(false)}
-        chartPoints={chartPoints}
-        composite={scores.composite}
-        trustLevelColor={trustLevel.color}
-        trendLabel={trendLabel}
-      />
-
-      {/* Team Comparison Modal */}
-      <TeamComparisonModal
-        isOpen={isCompareOpen}
-        onClose={() => setIsCompareOpen(false)}
-        composite={scores.composite}
-        trustLevelColor={trustLevel.color}
-        comparisonTeams={comparisonTeams}
-        comparisonTeamCount={comparisonTeamCount}
-      />
     </div>
+
+    {/* Confidence gauges — separate card */}
+    <div style={styles.confidenceCard}>
+      <ConfidenceGauges composite={scores.composite} reliabilityStatuses={reliabilityStatuses} />
+    </div>
+
+    {/* Score History Modal */}
+    <TrendHistoryModal
+      isOpen={isHistoryOpen}
+      onClose={() => setIsHistoryOpen(false)}
+      chartPoints={chartPoints}
+      composite={scores.composite}
+      trustLevelColor={trustLevel.color}
+      trendLabel={trendLabel}
+    />
+
+    {/* Team Comparison Modal */}
+    <TeamComparisonModal
+      isOpen={isCompareOpen}
+      onClose={() => setIsCompareOpen(false)}
+      composite={scores.composite}
+      trustLevelColor={trustLevel.color}
+      comparisonTeams={comparisonTeams}
+      comparisonTeamCount={comparisonTeamCount}
+    />
+    </>
   );
 };
 
@@ -1038,16 +1074,108 @@ const styles: Record<string, React.CSSProperties> = {
   },
   heroTop: {
     position: 'relative' as const,
-    minHeight: '240px',
     overflow: 'hidden',
+  },
+  heroColumns: {
+    position: 'relative' as const,
+    zIndex: 1,
+    display: 'flex',
+    alignItems: 'center',
+    minHeight: '260px',
+    padding: '24px 36px 24px 56px',
+    gap: '32px',
+  },
+  questionDecor1: {
+    position: 'absolute' as const,
+    top: '-40px',
+    right: '-30px',
+    width: '180px',
+    height: '180px',
+    borderRadius: '50%',
+    background: 'rgba(255, 139, 0, 0.06)',
+    border: '1px solid rgba(255, 139, 0, 0.08)',
+  },
+  questionDecor2: {
+    position: 'absolute' as const,
+    bottom: '-20px',
+    left: '-40px',
+    width: '120px',
+    height: '120px',
+    borderRadius: '50%',
+    background: 'rgba(0, 82, 204, 0.04)',
+    border: '1px solid rgba(0, 82, 204, 0.06)',
+  },
+  questionContent: {
+    position: 'relative' as const,
+    zIndex: 1,
+    flex: '1 1 0%',
+    maxWidth: '600px',
+  },
+  questionEyebrow: {
+    display: 'inline-block',
+    fontSize: '10px',
+    fontWeight: 800,
+    letterSpacing: '2px',
+    color: '#BF6A02',
+    marginBottom: '12px',
+    textTransform: 'uppercase' as const,
+  },
+  questionText: {
+    margin: '0 0 16px',
+    fontSize: '28px',
+    fontWeight: 800,
+    lineHeight: 1.25,
+    color: '#172B4D',
+    letterSpacing: '-0.5px',
+  },
+  questionHighlight: {
+    color: '#FF8B00',
+    position: 'relative' as const,
+  },
+  questionHighlight2: {
+    color: '#0052CC',
+    position: 'relative' as const,
+  },
+  questionSubtext: {
+    margin: 0,
+    fontSize: '14px',
+    lineHeight: 1.7,
+    color: '#44546F',
+    fontWeight: 400,
+  },
+  heroDivider: {
+    flex: '0 0 auto',
+    display: 'flex',
+    flexDirection: 'column' as const,
+    alignItems: 'center',
+    alignSelf: 'stretch',
+    gap: '0',
+    padding: '16px 0',
+  },
+  heroDividerLine: {
+    flex: 1,
+    width: '1px',
+    background: 'linear-gradient(to bottom, transparent, rgba(255, 139, 0, 0.25), rgba(255, 139, 0, 0.35))',
+  },
+  heroDividerDot: {
+    width: '8px',
+    height: '8px',
+    borderRadius: '2px',
+    transform: 'rotate(45deg)',
+    background: 'rgba(255, 139, 0, 0.3)',
+    border: '1px solid rgba(255, 139, 0, 0.15)',
+    margin: '8px 0',
+    flexShrink: 0,
   },
   scoreFloat: {
     position: 'relative' as const,
     zIndex: 1,
+    flex: '0 0 auto',
     display: 'flex',
     flexDirection: 'column' as const,
     alignItems: 'center',
-    padding: '20px 0 12px',
+    padding: '0',
+    marginLeft: '16px',
   },
   scoreLabelRow: {
     display: 'flex',
@@ -1397,6 +1525,13 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#5E6C84',
     lineHeight: 1.5,
     fontStyle: 'italic' as const,
+  },
+  confidenceCard: {
+    background: '#FFFFFF',
+    borderRadius: '16px',
+    border: '1px solid #E4E6EB',
+    marginTop: '16px',
+    overflow: 'hidden',
   },
   sectionDivider: {
     height: '1px',

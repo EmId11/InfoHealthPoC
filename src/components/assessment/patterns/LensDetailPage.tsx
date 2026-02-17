@@ -10,6 +10,7 @@ import NavigationBar from '../common/NavigationBar';
 import TrendChart from '../common/TrendChart';
 import Sparkline from '../common/Sparkline';
 import HeroInfoButton from '../../common/HeroInfoButton';
+import { HERO_GRADIENTS } from './DataTrustBanner';
 import MediaServicesActualSizeIcon from '@atlaskit/icon/glyph/media-services/actual-size';
 import Dimension2Results from '../dimension2/Dimension2Results';
 import IndicatorsTab from '../common/IndicatorsTab';
@@ -101,63 +102,11 @@ const LensDetailPage: React.FC<LensDetailPageProps> = ({
 
     return (
       <>
-        <div style={{...styles.dimensionBlueBanner, background: tier.bgColor, borderColor: tier.borderColor}}>
-          <div style={styles.heroCenterFlow}>
-            {/* Title row with info button */}
-            <div style={styles.heroTitleRow}>
-              <span style={styles.heroSubtitle}>Health Score</span>
-              <span style={styles.heroInfoInline}>
-                <HeroInfoButton title={`About ${dimension.dimensionName}`}>
-                  <div style={styles.infoModalBody}>
-                    <div style={styles.infoSection}>
-                      <h4 style={styles.infoSectionTitle}>What This Shows</h4>
-                      <p style={styles.infoText}>
-                        {dimDesc?.whatWeMeasure || DIMENSION_EXPLANATION.whatThisShows}
-                      </p>
-                    </div>
-                    <div style={styles.infoSection}>
-                      <h4 style={styles.infoSectionTitle}>Why It Matters</h4>
-                      <p style={styles.infoText}>
-                        {dimDesc?.whyItMatters || 'This dimension affects your overall Jira health and the reliability of your data for planning and decision-making.'}
-                      </p>
-                    </div>
-                    <div style={styles.infoSection}>
-                      <h4 style={styles.infoSectionTitle}>What You Can Do</h4>
-                      <p style={styles.infoText}>
-                        {dimDesc?.whatYouCanDo || 'Review the indicators below to identify specific areas for improvement.'}
-                      </p>
-                    </div>
-                    <div style={styles.infoSection}>
-                      <h4 style={styles.infoSectionTitle}>Key Metrics</h4>
-                      <ul style={styles.infoList}>
-                        <li><strong>Score:</strong> {DIMENSION_EXPLANATION.keyMetrics.score}</li>
-                        <li><strong>Rating:</strong> {DIMENSION_EXPLANATION.keyMetrics.rating}</li>
-                        <li><strong>Trend:</strong> {DIMENSION_EXPLANATION.keyMetrics.trend}</li>
-                      </ul>
-                    </div>
-                    <div style={styles.infoSection}>
-                      <h4 style={styles.infoSectionTitle}>Health Categories</h4>
-                      <p style={styles.infoText}>
-                        Your score maps to one of five health categories.
-                      </p>
-                      <div style={styles.healthCategoriesList}>
-                        {[...INDICATOR_TIERS].reverse().map(t => (
-                          <div key={t.level} style={styles.healthCategoryRow}>
-                            <div style={styles.healthCategoryHeader}>
-                              <span style={{...styles.healthCategoryName, color: t.color}}>{t.name}</span>
-                              <span style={styles.healthCategoryRange}>{t.minPercentile}–{t.maxPercentile}</span>
-                            </div>
-                            <p style={styles.healthCategoryDesc}>{t.detailedDescription}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </HeroInfoButton>
-              </span>
-            </div>
-
-            {/* Giant score */}
+        <div style={{...styles.dimensionBlueBanner, background: HERO_GRADIENTS[tier.name] || HERO_GRADIENTS['At Risk'], borderColor: '#E4E6EB', borderTop: `5px solid ${tier.color}`}}>
+          {/* Decorative background circles */}
+          <div style={styles.lensDecor1} />
+          <div style={styles.lensDecor2} />
+          <div style={styles.heroColumnsLayout}>
             {(() => {
               let overallTrend: 'up' | 'down' | 'stable' = 'stable';
               if (dimension.trendData && dimension.trendData.length >= 2) {
@@ -168,63 +117,220 @@ const LensDetailPage: React.FC<LensDetailPageProps> = ({
                 if (lastTier > firstTier) overallTrend = 'up';
                 else if (lastTier < firstTier) overallTrend = 'down';
               }
-              const healthScore = dimension.healthScore ?? Math.round(dimension.overallPercentile);
-              const trendLabel = overallTrend === 'up' ? 'Improving' : overallTrend === 'down' ? 'Declining' : 'Stable';
-              const trendColor = overallTrend === 'up' ? '#36B37E' : overallTrend === 'down' ? '#DE350B' : '#6B778C';
-              const trendArrowPath = overallTrend === 'up'
-                ? 'M3,10 L7,3 L11,10 L9,10 L9,12 L5,12 L5,10 Z'
-                : 'M3,5 L7,12 L11,5 L9,5 L9,3 L5,3 L5,5 Z';
-
-              const sparkTrend = overallTrend === 'up' ? 'improving' as const : overallTrend === 'down' ? 'declining' as const : 'stable' as const;
+              const healthScore = Math.round(dimension.healthScore ?? dimension.overallPercentile);
+              const trendColor = overallTrend === 'up' ? '#00875A' : overallTrend === 'down' ? '#DE350B' : '#44546F';
               const hasTrendData = dimension.trendData && dimension.trendData.length >= 2;
+              const tierIndex = tier.level - 1; // 0-based index into INDICATOR_TIERS
+
+              // Donut math
+              const donutR = 84;
+              const donutCirc = 2 * Math.PI * donutR;
+              const donutFilled = (healthScore / 100) * donutCirc;
 
               return (
                 <>
-                  <div style={styles.heroScoreBlock}>
-                    <span style={{...styles.heroBigNumber, color: tier.color}}>{healthScore}</span>
-                    <span style={styles.heroBigDenom}>/100</span>
+                  {/* Left — question text */}
+                  <div style={styles.lensQuestionContent}>
+                    <span style={styles.lensQuestionEyebrow}>TIMELINESS</span>
+                    <h2 style={styles.lensQuestionText}>
+                      Are your tickets <span style={styles.lensHighlight1}>ready</span> before work <span style={styles.lensHighlight2}>begins</span>?
+                    </h2>
+                    <p style={styles.lensQuestionSubtext}>
+                      Measures whether required fields, descriptions, and acceptance criteria are filled in before a ticket enters a sprint. <strong style={{ color: tier.color }}>Your data shows {tier.description.toLowerCase()}.</strong>
+                    </p>
                   </div>
 
-                  {/* Category + trend + sparkline as unified chip */}
-                  <button
-                    style={{
-                      ...styles.heroStatusChip,
-                      backgroundColor: `${tier.color}18`,
-                      border: `1.5px solid ${tier.color}40`,
-                      cursor: hasTrendData ? 'pointer' : 'default',
-                    }}
-                    onClick={hasTrendData ? () => setShowScoreHistory(true) : undefined}
-                    title={hasTrendData ? 'View score history' : undefined}
-                  >
-                    <span style={{...styles.heroStatusDot, backgroundColor: tier.color}} />
-                    <span style={{...styles.heroStatusTier, color: tier.color}}>{tier.name}</span>
-                    <span style={styles.heroStatusDivider} />
-                    {overallTrend === 'stable' ? (
-                      <span style={{ display: 'inline-flex', flexShrink: 0 }}>
-                        <MediaServicesActualSizeIcon label="" size="small" primaryColor={trendColor} />
-                      </span>
-                    ) : (
-                      <svg width="12" height="12" viewBox="0 0 14 14" style={{ flexShrink: 0 }}>
-                        <path d={trendArrowPath} fill={trendColor} />
-                      </svg>
-                    )}
-                    <span style={{...styles.heroStatusTrend, color: trendColor}}>
-                      {trendLabel}
-                    </span>
-                    {hasTrendData && (
-                      <>
-                        <span style={styles.heroStatusDivider} />
-                        <span style={styles.heroSparklineWrap}>
-                          <Sparkline
-                            data={dimension.trendData!}
-                            trend={sparkTrend}
-                            width={56}
-                            height={20}
-                          />
+                  {/* Divider */}
+                  <div style={styles.lensDivider}>
+                    <div style={styles.lensDividerLine} />
+                    <div style={styles.lensDividerDot} />
+                    <div style={styles.lensDividerLine} />
+                  </div>
+
+                  {/* Right — score visualization */}
+                  <div style={styles.lensScoreFloat}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column' as const, alignItems: 'center' }}>
+                      {/* Title row */}
+                      <div style={styles.heroTitleRow}>
+                        <span style={styles.heroSubtitle}>Timeliness Score</span>
+                        <span style={styles.heroInfoInline}>
+                          <HeroInfoButton title={`About ${dimension.dimensionName}`}>
+                            <div style={styles.infoModalBody}>
+                              <div style={{ padding: '10px 12px', backgroundColor: '#DEEBFF', borderRadius: '6px', border: '1px solid #B3D4FF', marginBottom: '16px' }}>
+                                <p style={{ margin: 0, fontSize: '13px', color: '#0052CC', lineHeight: 1.5 }}>
+                                  {dimDesc?.summary || `Analysis of ${dimension.dimensionName} across your team's Jira data.`}
+                                </p>
+                              </div>
+                              <div style={styles.infoSection}>
+                                <h4 style={styles.infoSectionTitle}>What This Shows</h4>
+                                <p style={styles.infoText}>
+                                  {dimDesc?.whatWeMeasure || DIMENSION_EXPLANATION.whatThisShows}
+                                </p>
+                              </div>
+                              <div style={styles.infoSection}>
+                                <h4 style={styles.infoSectionTitle}>Why It Matters</h4>
+                                <p style={styles.infoText}>
+                                  {dimDesc?.whyItMatters || 'This dimension affects your overall Jira health and the reliability of your data for planning and decision-making.'}
+                                </p>
+                              </div>
+                              <div style={styles.infoSection}>
+                                <h4 style={styles.infoSectionTitle}>What You Can Do</h4>
+                                <p style={styles.infoText}>
+                                  {dimDesc?.whatYouCanDo || 'Review the indicators below to identify specific areas for improvement.'}
+                                </p>
+                              </div>
+                              <div style={styles.infoSection}>
+                                <h4 style={styles.infoSectionTitle}>Key Metrics</h4>
+                                <ul style={styles.infoList}>
+                                  <li><strong>Score:</strong> {DIMENSION_EXPLANATION.keyMetrics.score}</li>
+                                  <li><strong>Rating:</strong> {DIMENSION_EXPLANATION.keyMetrics.rating}</li>
+                                  <li><strong>Trend:</strong> {DIMENSION_EXPLANATION.keyMetrics.trend}</li>
+                                </ul>
+                              </div>
+                              <div style={styles.infoSection}>
+                                <h4 style={styles.infoSectionTitle}>Health Categories</h4>
+                                <p style={styles.infoText}>
+                                  Your score maps to one of five health categories.
+                                </p>
+                                <div style={styles.healthCategoriesList}>
+                                  {[...INDICATOR_TIERS].reverse().map(t => (
+                                    <div key={t.level} style={styles.healthCategoryRow}>
+                                      <div style={styles.healthCategoryHeader}>
+                                        <span style={{...styles.healthCategoryName, color: t.color}}>{t.name}</span>
+                                        <span style={styles.healthCategoryRange}>{t.minPercentile}–{t.maxPercentile}</span>
+                                      </div>
+                                      <p style={styles.healthCategoryDesc}>{t.detailedDescription}</p>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          </HeroInfoButton>
                         </span>
-                      </>
-                    )}
-                  </button>
+                      </div>
+
+                      {/* Donut ring */}
+                      <div style={styles.heroDonutDisc}>
+                        <div style={styles.heroDonutBg} />
+                        <svg width={186} height={186} viewBox="0 0 186 186" style={{ display: 'block', position: 'relative' as const, zIndex: 1, transform: 'rotate(-90deg)' }}>
+                          <defs>
+                            <filter id="lens-hero-glow" x="-20%" y="-20%" width="140%" height="140%">
+                              <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="blur" />
+                              <feMerge>
+                                <feMergeNode in="blur" />
+                                <feMergeNode in="SourceGraphic" />
+                              </feMerge>
+                            </filter>
+                          </defs>
+                          <circle cx={93} cy={93} r={donutR} fill="none" stroke={`${tier.color}14`} strokeWidth={9} />
+                          <circle cx={93} cy={93} r={donutR} fill="none" stroke={tier.color} strokeWidth={9}
+                            strokeDasharray={`${donutFilled.toFixed(1)} ${donutCirc.toFixed(1)}`} strokeLinecap="round" filter="url(#lens-hero-glow)" />
+                        </svg>
+                        <div style={styles.heroDonutContent}>
+                          <span style={{ fontSize: '64px', fontWeight: 800, lineHeight: 1, letterSpacing: '-3px', color: tier.color, position: 'relative' as const }}>
+                            {healthScore}
+                              <button
+                                className="trend-spark-btn"
+                                onClick={hasTrendData ? () => setShowScoreHistory(true) : undefined}
+                                type="button"
+                                title={hasTrendData ? 'View score history' : 'Trend'}
+                                style={{
+                                  position: 'absolute' as const,
+                                  top: '-4px',
+                                  right: '-32px',
+                                  width: '32px',
+                                  height: '32px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  borderRadius: '50%',
+                                  border: 'none',
+                                  background: 'transparent',
+                                  cursor: hasTrendData ? 'pointer' : 'default',
+                                  padding: 0,
+                                  transition: 'background 0.15s, transform 0.15s, box-shadow 0.15s',
+                                }}>
+                                {hasTrendData && <style>{`.trend-spark-btn:hover { background: ${trendColor}18 !important; transform: scale(1.15); box-shadow: 0 0 0 3px ${trendColor}22; } .trend-spark-btn:active { transform: scale(1.05); }`}</style>}
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={trendColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                                  style={{
+                                    transform: overallTrend === 'down' ? 'scaleY(-1)' : 'none',
+                                    opacity: overallTrend === 'stable' ? 0.7 : 0.9,
+                                  }}>
+                                  <polyline points="3,18 8,13 12,16 21,6" />
+                                  <polyline points="16,6 21,6 21,11" />
+                                </svg>
+                              </button>
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* "vs N teams" button */}
+                      {assessmentResult.comparisonTeamCount > 0 && (
+                        <div style={{ marginTop: '8px' }}>
+                          <button
+                            style={styles.heroCompareBtn}
+                            onClick={() => openComparisonModal(TICKET_READINESS_INDEX)}
+                            type="button"
+                          >
+                            <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" style={{ flexShrink: 0 }}>
+                              <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-5 6c0-2.76 2.24-5 5-5s5 2.24 5 5H3zm10-8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zm1.5 2h-.52a3.98 3.98 0 0 1 1.52 3.13V14H16v-2c0-1.1-.9-2-2-2h-.5zM3 6a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zM.5 8H0c-1.1 0-2 .9-2 2v2h2v-2.13c0-1.2.47-2.3 1.25-3.12L.5 8z" />
+                            </svg>
+                            vs {assessmentResult.comparisonTeamCount} teams
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Vertical trust level spectrum */}
+                    <svg width={90} height={126} viewBox="0 0 90 126">
+                      {(() => {
+                        const levels = [...INDICATOR_TIERS].reverse(); // Optimal at top
+                        const nodeX = 8;
+                        const labelX = 22;
+                        const spacing = 26;
+                        const startY = 12;
+                        return (
+                          <>
+                            {levels.map((_, j) => {
+                              if (j === levels.length - 1) return null;
+                              const y1 = startY + j * spacing;
+                              const y2 = startY + (j + 1) * spacing;
+                              const origIdx = INDICATOR_TIERS.length - 1 - j;
+                              const reached = origIdx <= tierIndex;
+                              return (
+                                <line key={`line-${j}`} x1={nodeX} y1={y1} x2={nodeX} y2={y2}
+                                  stroke={reached ? levels[j + 1].color : '#DFE1E6'} strokeWidth={2} />
+                              );
+                            })}
+                            {levels.map((level, j) => {
+                              const y = startY + j * spacing;
+                              const origIdx = INDICATOR_TIERS.length - 1 - j;
+                              const isCurr = origIdx === tierIndex;
+                              const isReached = origIdx <= tierIndex;
+                              return (
+                                <g key={level.name}>
+                                  {isCurr && (
+                                    <circle cx={nodeX} cy={y} r={10} fill={level.color} opacity={0.12} />
+                                  )}
+                                  <circle cx={nodeX} cy={y} r={isCurr ? 5 : 3}
+                                    fill={isReached ? level.color : '#FFFFFF'}
+                                    stroke={isReached ? level.color : '#DFE1E6'}
+                                    strokeWidth={isReached ? 0 : 1.5} />
+                                  <text x={labelX} y={y} dominantBaseline="central"
+                                    fontSize={isCurr ? '11.5' : '10'} fontWeight={isCurr ? '700' : '400'}
+                                    fill={isCurr ? level.color : '#A5ADBA'}>
+                                    {level.name}
+                                  </text>
+                                </g>
+                              );
+                            })}
+                          </>
+                        );
+                      })()}
+                    </svg>
+                  </div>
+                  </div>
 
                   {/* Score history modal */}
                   {showScoreHistory && dimension.trendData && dimension.trendData.length >= 2 && (
@@ -247,98 +353,6 @@ const LensDetailPage: React.FC<LensDetailPageProps> = ({
                 </>
               );
             })()}
-
-            {/* Description */}
-            <p style={styles.heroDescription}>
-              {dimDesc?.summary || `Analysis of ${dimension.dimensionName} across your team's Jira data.`}
-            </p>
-
-            {/* Inline peer comparison spectrum */}
-            {assessmentResult.comparisonTeamCount > 0 && (
-              <div style={styles.inlineSpectrumContainer}>
-                <div style={styles.inlineSpectrumHeader}>
-                  <span style={styles.inlineSpectrumTitle}>Peer Comparison</span>
-                  <button
-                    style={styles.inlineSpectrumLink}
-                    onClick={() => openComparisonModal(TICKET_READINESS_INDEX)}
-                  >
-                    vs {assessmentResult.comparisonTeamCount} similar teams &rarr;
-                  </button>
-                </div>
-                {(() => {
-                  const sortedPositions = [...comparisonTeamPositions].sort((a, b) => a - b);
-                  const peerMin = sortedPositions[0] ?? 0;
-                  const peerMax = sortedPositions[sortedPositions.length - 1] ?? 100;
-                  const peerMedian = sortedPositions.length > 0
-                    ? sortedPositions[Math.floor(sortedPositions.length / 2)]
-                    : 50;
-                  return (
-                    <div style={styles.inlineSpectrumBar}>
-                      <div style={styles.inlineSpectrumTrack} />
-                      <span style={styles.inlineSpectrumMin}>0</span>
-                      <span style={styles.inlineSpectrumMax}>100</span>
-                      <div
-                        style={{
-                          ...styles.inlinePeerRangeBand,
-                          left: `${peerMin}%`,
-                          width: `${peerMax - peerMin}%`,
-                        }}
-                        onMouseEnter={(e) => {
-                          const rect = e.currentTarget.getBoundingClientRect();
-                          setTooltip({
-                            visible: true,
-                            x: rect.left + rect.width / 2,
-                            y: rect.top,
-                            label: `${assessmentResult.comparisonTeamCount} teams`,
-                            value: `Range: ${Math.round(peerMin)}\u2013${Math.round(peerMax)} \u00B7 Median: ${Math.round(peerMedian)}`,
-                          });
-                        }}
-                        onMouseLeave={() => setTooltip(prev => ({ ...prev, visible: false }))}
-                      />
-                      <div
-                        style={{
-                          ...styles.inlinePeerMedianTick,
-                          left: `${peerMedian}%`,
-                        }}
-                      />
-                      <div
-                        style={{
-                          ...styles.inlineYourTeamMarker,
-                          left: `${yourPosition}%`,
-                          backgroundColor: tier.color,
-                          boxShadow: `0 0 0 3px ${tier.color}40`,
-                        }}
-                        onMouseEnter={(e) => {
-                          const rect = e.currentTarget.getBoundingClientRect();
-                          setTooltip({
-                            visible: true,
-                            x: rect.left + rect.width / 2,
-                            y: rect.top,
-                            label: 'Your Team',
-                            value: `Score: ${dimension.healthScore ?? Math.round(dimension.overallPercentile)}`,
-                          });
-                        }}
-                        onMouseLeave={() => setTooltip(prev => ({ ...prev, visible: false }))}
-                      />
-                    </div>
-                  );
-                })()}
-              </div>
-            )}
-
-            {/* Tooltip */}
-            {tooltip.visible && (
-              <div style={{
-                ...styles.tooltip,
-                left: tooltip.x,
-                top: tooltip.y - 8,
-              }}>
-                <div style={styles.tooltipLabel}>{tooltip.label}</div>
-                <div style={styles.tooltipValue}>{tooltip.value}</div>
-                <div style={styles.tooltipArrow} />
-              </div>
-            )}
-
           </div>
         </div>
 
@@ -376,63 +390,11 @@ const LensDetailPage: React.FC<LensDetailPageProps> = ({
 
     return (
       <>
-        <div style={{...styles.dimensionBlueBanner, background: integrityTier.bgColor, borderColor: integrityTier.borderColor}}>
-          <div style={styles.heroCenterFlow}>
-            {/* Title row with info button */}
-            <div style={styles.heroTitleRow}>
-              <span style={styles.heroSubtitle}>Health Score</span>
-              <span style={styles.heroInfoInline}>
-                <HeroInfoButton title={`About ${dimension.dimensionName}`}>
-                  <div style={styles.infoModalBody}>
-                    <div style={styles.infoSection}>
-                      <h4 style={styles.infoSectionTitle}>What This Shows</h4>
-                      <p style={styles.infoText}>
-                        We check whether field values are meaningful (not placeholders or defaults), consistent across related fields, and still accurate over time.
-                      </p>
-                    </div>
-                    <div style={styles.infoSection}>
-                      <h4 style={styles.infoSectionTitle}>Why It Matters</h4>
-                      <p style={styles.infoText}>
-                        Populated fields that lack real information create a false sense of data quality. Decisions made on hollow data are no better than guesses.
-                      </p>
-                    </div>
-                    <div style={styles.infoSection}>
-                      <h4 style={styles.infoSectionTitle}>What You Can Do</h4>
-                      <p style={styles.infoText}>
-                        Audit placeholder content, review default value usage, calibrate estimation practices, and establish regular data hygiene reviews.
-                      </p>
-                    </div>
-                    <div style={styles.infoSection}>
-                      <h4 style={styles.infoSectionTitle}>Key Metrics</h4>
-                      <ul style={styles.infoList}>
-                        <li><strong>Score:</strong> {DIMENSION_EXPLANATION.keyMetrics.score}</li>
-                        <li><strong>Rating:</strong> {DIMENSION_EXPLANATION.keyMetrics.rating}</li>
-                        <li><strong>Trend:</strong> {DIMENSION_EXPLANATION.keyMetrics.trend}</li>
-                      </ul>
-                    </div>
-                    <div style={styles.infoSection}>
-                      <h4 style={styles.infoSectionTitle}>Health Categories</h4>
-                      <p style={styles.infoText}>
-                        Your score maps to one of five health categories.
-                      </p>
-                      <div style={styles.healthCategoriesList}>
-                        {[...INDICATOR_TIERS].reverse().map(t => (
-                          <div key={t.level} style={styles.healthCategoryRow}>
-                            <div style={styles.healthCategoryHeader}>
-                              <span style={{...styles.healthCategoryName, color: t.color}}>{t.name}</span>
-                              <span style={styles.healthCategoryRange}>{t.minPercentile}–{t.maxPercentile}</span>
-                            </div>
-                            <p style={styles.healthCategoryDesc}>{t.detailedDescription}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </HeroInfoButton>
-              </span>
-            </div>
-
-            {/* Giant score */}
+        <div style={{...styles.dimensionBlueBanner, background: HERO_GRADIENTS[integrityTier.name] || HERO_GRADIENTS['At Risk'], borderColor: '#E4E6EB', borderTop: `5px solid ${integrityTier.color}`}}>
+          {/* Decorative background circles */}
+          <div style={styles.lensDecor1} />
+          <div style={styles.lensDecor2} />
+          <div style={styles.heroColumnsLayout}>
             {(() => {
               let intOverallTrend: 'up' | 'down' | 'stable' = 'stable';
               if (dimension.trendData && dimension.trendData.length >= 2) {
@@ -443,63 +405,185 @@ const LensDetailPage: React.FC<LensDetailPageProps> = ({
                 if (lastT > firstT) intOverallTrend = 'up';
                 else if (lastT < firstT) intOverallTrend = 'down';
               }
-              const healthScore = dimension.healthScore;
-              const trendLabel = intOverallTrend === 'up' ? 'Improving' : intOverallTrend === 'down' ? 'Declining' : 'Stable';
-              const trendColor = intOverallTrend === 'up' ? '#36B37E' : intOverallTrend === 'down' ? '#DE350B' : '#6B778C';
-              const trendArrowPath = intOverallTrend === 'up'
-                ? 'M3,10 L7,3 L11,10 L9,10 L9,12 L5,12 L5,10 Z'
-                : 'M3,5 L7,12 L11,5 L9,5 L9,3 L5,3 L5,5 Z';
-              const sparkTrend = intOverallTrend === 'up' ? 'improving' as const : intOverallTrend === 'down' ? 'declining' as const : 'stable' as const;
+              const healthScore = Math.round(dimension.healthScore);
+              const trendColor = intOverallTrend === 'up' ? '#00875A' : intOverallTrend === 'down' ? '#DE350B' : '#44546F';
               const hasTrendData = dimension.trendData && dimension.trendData.length >= 2;
+              const tierIndex = integrityTier.level - 1;
+
+              const donutR = 84;
+              const donutCirc = 2 * Math.PI * donutR;
+              const donutFilled = (healthScore / 100) * donutCirc;
 
               return (
                 <>
-                  <div style={styles.heroScoreBlock}>
-                    <span style={{...styles.heroBigNumber, color: integrityTier.color}}>{healthScore}</span>
-                    <span style={styles.heroBigDenom}>/100</span>
+                  {/* Left — question text */}
+                  <div style={styles.lensQuestionContent}>
+                    <span style={styles.lensQuestionEyebrow}>TRUSTWORTHINESS</span>
+                    <h2 style={styles.lensQuestionText}>
+                      Is your Jira data <span style={styles.lensHighlight1}>meaningful</span> or just <span style={styles.lensHighlight2}>placeholder</span>?
+                    </h2>
+                    <p style={styles.lensQuestionSubtext}>
+                      Checks whether field values are real and consistent — not defaults, duplicates, or copy-paste artifacts that create a false sense of completeness. <strong style={{ color: integrityTier.color }}>Your data shows {integrityTier.description.toLowerCase()}.</strong>
+                    </p>
                   </div>
 
-                  <button
-                    style={{
-                      ...styles.heroStatusChip,
-                      backgroundColor: `${integrityTier.color}18`,
-                      border: `1.5px solid ${integrityTier.color}40`,
-                      cursor: hasTrendData ? 'pointer' : 'default',
-                    }}
-                    onClick={hasTrendData ? () => setShowIntegrityScoreHistory(true) : undefined}
-                    title={hasTrendData ? 'View score history' : undefined}
-                  >
-                    <span style={{...styles.heroStatusDot, backgroundColor: integrityTier.color}} />
-                    <span style={{...styles.heroStatusTier, color: integrityTier.color}}>{integrityTier.name}</span>
-                    <span style={styles.heroStatusDivider} />
-                    {intOverallTrend === 'stable' ? (
-                      <span style={{ display: 'inline-flex', flexShrink: 0 }}>
-                        <MediaServicesActualSizeIcon label="" size="small" primaryColor={trendColor} />
-                      </span>
-                    ) : (
-                      <svg width="12" height="12" viewBox="0 0 14 14" style={{ flexShrink: 0 }}>
-                        <path d={trendArrowPath} fill={trendColor} />
-                      </svg>
-                    )}
-                    <span style={{...styles.heroStatusTrend, color: trendColor}}>
-                      {trendLabel}
-                    </span>
-                    {hasTrendData && (
-                      <>
-                        <span style={styles.heroStatusDivider} />
-                        <span style={styles.heroSparklineWrap}>
-                          <Sparkline
-                            data={dimension.trendData!}
-                            trend={sparkTrend}
-                            width={56}
-                            height={20}
-                          />
-                        </span>
-                      </>
-                    )}
-                  </button>
+                  {/* Divider */}
+                  <div style={styles.lensDivider}>
+                    <div style={styles.lensDividerLine} />
+                    <div style={styles.lensDividerDot} />
+                    <div style={styles.lensDividerLine} />
+                  </div>
 
-                  {/* Score history modal */}
+                  {/* Right — score visualization */}
+                  <div style={styles.lensScoreFloat}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column' as const, alignItems: 'center' }}>
+                      <div style={styles.heroTitleRow}>
+                        <span style={styles.heroSubtitle}>Trustworthiness Score</span>
+                        <span style={styles.heroInfoInline}>
+                          <HeroInfoButton title={`About ${dimension.dimensionName}`}>
+                            <div style={styles.infoModalBody}>
+                              <div style={{ padding: '10px 12px', backgroundColor: '#DEEBFF', borderRadius: '6px', border: '1px solid #B3D4FF', marginBottom: '16px' }}>
+                                <p style={{ margin: 0, fontSize: '13px', color: '#0052CC', lineHeight: 1.5 }}>
+                                  {dimension.verdictDescription}
+                                </p>
+                              </div>
+                              <div style={styles.infoSection}>
+                                <h4 style={styles.infoSectionTitle}>What This Shows</h4>
+                                <p style={styles.infoText}>
+                                  We check whether field values are meaningful (not placeholders or defaults), consistent across related fields, and still accurate over time.
+                                </p>
+                              </div>
+                              <div style={styles.infoSection}>
+                                <h4 style={styles.infoSectionTitle}>Why It Matters</h4>
+                                <p style={styles.infoText}>
+                                  Populated fields that lack real information create a false sense of data quality. Decisions made on hollow data are no better than guesses.
+                                </p>
+                              </div>
+                              <div style={styles.infoSection}>
+                                <h4 style={styles.infoSectionTitle}>What You Can Do</h4>
+                                <p style={styles.infoText}>
+                                  Audit placeholder content, review default value usage, calibrate estimation practices, and establish regular data hygiene reviews.
+                                </p>
+                              </div>
+                              <div style={styles.infoSection}>
+                                <h4 style={styles.infoSectionTitle}>Health Categories</h4>
+                                <p style={styles.infoText}>Your score maps to one of five health categories.</p>
+                                <div style={styles.healthCategoriesList}>
+                                  {[...INDICATOR_TIERS].reverse().map(t => (
+                                    <div key={t.level} style={styles.healthCategoryRow}>
+                                      <div style={styles.healthCategoryHeader}>
+                                        <span style={{...styles.healthCategoryName, color: t.color}}>{t.name}</span>
+                                        <span style={styles.healthCategoryRange}>{t.minPercentile}–{t.maxPercentile}</span>
+                                      </div>
+                                      <p style={styles.healthCategoryDesc}>{t.detailedDescription}</p>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          </HeroInfoButton>
+                        </span>
+                      </div>
+
+                      <div style={styles.heroDonutDisc}>
+                        <div style={styles.heroDonutBg} />
+                        <svg width={186} height={186} viewBox="0 0 186 186" style={{ display: 'block', position: 'relative' as const, zIndex: 1, transform: 'rotate(-90deg)' }}>
+                          <defs>
+                            <filter id="integrity-hero-glow" x="-20%" y="-20%" width="140%" height="140%">
+                              <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="blur" />
+                              <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                            </filter>
+                          </defs>
+                          <circle cx={93} cy={93} r={donutR} fill="none" stroke={`${integrityTier.color}14`} strokeWidth={9} />
+                          <circle cx={93} cy={93} r={donutR} fill="none" stroke={integrityTier.color} strokeWidth={9}
+                            strokeDasharray={`${donutFilled.toFixed(1)} ${donutCirc.toFixed(1)}`} strokeLinecap="round" filter="url(#integrity-hero-glow)" />
+                        </svg>
+                        <div style={styles.heroDonutContent}>
+                          <span style={{ fontSize: '64px', fontWeight: 800, lineHeight: 1, letterSpacing: '-3px', color: integrityTier.color, position: 'relative' as const }}>
+                            {healthScore}
+                            <button
+                              className="trend-spark-btn"
+                              onClick={hasTrendData ? () => setShowIntegrityScoreHistory(true) : undefined}
+                              type="button"
+                              title={hasTrendData ? 'View score history' : 'Trend'}
+                              style={{
+                                position: 'absolute' as const, top: '-4px', right: '-32px',
+                                width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                borderRadius: '50%', border: 'none', background: 'transparent',
+                                cursor: hasTrendData ? 'pointer' : 'default', padding: 0,
+                                transition: 'background 0.15s, transform 0.15s, box-shadow 0.15s',
+                              }}>
+                              {hasTrendData && <style>{`.trend-spark-btn:hover { background: ${trendColor}18 !important; transform: scale(1.15); box-shadow: 0 0 0 3px ${trendColor}22; } .trend-spark-btn:active { transform: scale(1.05); }`}</style>}
+                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={trendColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                                style={{ transform: intOverallTrend === 'down' ? 'scaleY(-1)' : 'none', opacity: intOverallTrend === 'stable' ? 0.7 : 0.9 }}>
+                                <polyline points="3,18 8,13 12,16 21,6" />
+                                <polyline points="16,6 21,6 21,11" />
+                              </svg>
+                            </button>
+                          </span>
+                        </div>
+                      </div>
+
+                      {assessmentResult.comparisonTeamCount > 0 && (
+                        <div style={{ marginTop: '8px' }}>
+                          <button style={styles.heroCompareBtn} onClick={() => {
+                            setComparisonModalContext({
+                              yourRank: Math.round((1 - dimension.healthScore / 100) * assessmentResult.comparisonTeamCount) + 1,
+                              dimensionName: dimension.dimensionName,
+                            });
+                            setIsComparisonModalOpen(true);
+                          }} type="button">
+                            <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" style={{ flexShrink: 0 }}>
+                              <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-5 6c0-2.76 2.24-5 5-5s5 2.24 5 5H3zm10-8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zm1.5 2h-.52a3.98 3.98 0 0 1 1.52 3.13V14H16v-2c0-1.1-.9-2-2-2h-.5zM3 6a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zM.5 8H0c-1.1 0-2 .9-2 2v2h2v-2.13c0-1.2.47-2.3 1.25-3.12L.5 8z" />
+                            </svg>
+                            vs {assessmentResult.comparisonTeamCount} teams
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Vertical trust level spectrum */}
+                    <svg width={90} height={126} viewBox="0 0 90 126">
+                      {(() => {
+                        const levels = [...INDICATOR_TIERS].reverse();
+                        const nodeX = 8; const labelX = 22; const spacing = 26; const startY = 12;
+                        return (
+                          <>
+                            {levels.map((_, j) => {
+                              if (j === levels.length - 1) return null;
+                              const y1 = startY + j * spacing; const y2 = startY + (j + 1) * spacing;
+                              const origIdx = INDICATOR_TIERS.length - 1 - j;
+                              return <line key={`line-${j}`} x1={nodeX} y1={y1} x2={nodeX} y2={y2}
+                                stroke={origIdx <= tierIndex ? levels[j + 1].color : '#DFE1E6'} strokeWidth={2} />;
+                            })}
+                            {levels.map((level, j) => {
+                              const y = startY + j * spacing;
+                              const origIdx = INDICATOR_TIERS.length - 1 - j;
+                              const isCurr = origIdx === tierIndex;
+                              const isReached = origIdx <= tierIndex;
+                              return (
+                                <g key={level.name}>
+                                  {isCurr && <circle cx={nodeX} cy={y} r={10} fill={level.color} opacity={0.12} />}
+                                  <circle cx={nodeX} cy={y} r={isCurr ? 5 : 3}
+                                    fill={isReached ? level.color : '#FFFFFF'}
+                                    stroke={isReached ? level.color : '#DFE1E6'}
+                                    strokeWidth={isReached ? 0 : 1.5} />
+                                  <text x={labelX} y={y} dominantBaseline="central"
+                                    fontSize={isCurr ? '11.5' : '10'} fontWeight={isCurr ? '700' : '400'}
+                                    fill={isCurr ? level.color : '#A5ADBA'}>
+                                    {level.name}
+                                  </text>
+                                </g>
+                              );
+                            })}
+                          </>
+                        );
+                      })()}
+                    </svg>
+                  </div>
+                  </div>
+
                   {showIntegrityScoreHistory && dimension.trendData && dimension.trendData.length >= 2 && (
                     <div style={styles.scoreHistoryOverlay} onClick={() => setShowIntegrityScoreHistory(false)}>
                       <div style={styles.scoreHistoryModal} onClick={(e) => e.stopPropagation()}>
@@ -508,11 +592,7 @@ const LensDetailPage: React.FC<LensDetailPageProps> = ({
                           <button onClick={() => setShowIntegrityScoreHistory(false)} style={styles.scoreHistoryClose}>{'\u2715'}</button>
                         </div>
                         <div style={styles.scoreHistoryBody}>
-                          <TrendChart
-                            data={dimension.trendData}
-                            height={280}
-                            dimensionName="Data Integrity"
-                          />
+                          <TrendChart data={dimension.trendData} height={280} dimensionName="Data Integrity" />
                         </div>
                       </div>
                     </div>
@@ -520,104 +600,6 @@ const LensDetailPage: React.FC<LensDetailPageProps> = ({
                 </>
               );
             })()}
-
-            {/* Description */}
-            <p style={styles.heroDescription}>
-              {dimension.verdictDescription}
-            </p>
-
-            {/* Inline peer comparison spectrum */}
-            {assessmentResult.comparisonTeamCount > 0 && (
-              <div style={styles.inlineSpectrumContainer}>
-                <div style={styles.inlineSpectrumHeader}>
-                  <span style={styles.inlineSpectrumTitle}>Peer Comparison</span>
-                  <button
-                    style={styles.inlineSpectrumLink}
-                    onClick={() => {
-                      setComparisonModalContext({
-                        yourRank: Math.round((1 - dimension.healthScore / 100) * assessmentResult.comparisonTeamCount) + 1,
-                        dimensionName: dimension.dimensionName,
-                      });
-                      setIsComparisonModalOpen(true);
-                    }}
-                  >
-                    vs {assessmentResult.comparisonTeamCount} similar teams &rarr;
-                  </button>
-                </div>
-                {(() => {
-                  const sortedPositions = [...intComparisonPositions].sort((a, b) => a - b);
-                  const peerMin = sortedPositions[0] ?? 0;
-                  const peerMax = sortedPositions[sortedPositions.length - 1] ?? 100;
-                  const peerMedian = sortedPositions.length > 0
-                    ? sortedPositions[Math.floor(sortedPositions.length / 2)]
-                    : 50;
-                  return (
-                    <div style={styles.inlineSpectrumBar}>
-                      <div style={styles.inlineSpectrumTrack} />
-                      <span style={styles.inlineSpectrumMin}>0</span>
-                      <span style={styles.inlineSpectrumMax}>100</span>
-                      <div
-                        style={{
-                          ...styles.inlinePeerRangeBand,
-                          left: `${peerMin}%`,
-                          width: `${peerMax - peerMin}%`,
-                        }}
-                        onMouseEnter={(e) => {
-                          const rect = e.currentTarget.getBoundingClientRect();
-                          setTooltip({
-                            visible: true,
-                            x: rect.left + rect.width / 2,
-                            y: rect.top,
-                            label: `${assessmentResult.comparisonTeamCount} teams`,
-                            value: `Range: ${Math.round(peerMin)}\u2013${Math.round(peerMax)} \u00B7 Median: ${Math.round(peerMedian)}`,
-                          });
-                        }}
-                        onMouseLeave={() => setTooltip(prev => ({ ...prev, visible: false }))}
-                      />
-                      <div
-                        style={{
-                          ...styles.inlinePeerMedianTick,
-                          left: `${peerMedian}%`,
-                        }}
-                      />
-                      <div
-                        style={{
-                          ...styles.inlineYourTeamMarker,
-                          left: `${intYourPosition}%`,
-                          backgroundColor: integrityTier.color,
-                          boxShadow: `0 0 0 3px ${integrityTier.color}40`,
-                        }}
-                        onMouseEnter={(e) => {
-                          const rect = e.currentTarget.getBoundingClientRect();
-                          setTooltip({
-                            visible: true,
-                            x: rect.left + rect.width / 2,
-                            y: rect.top,
-                            label: 'Your Team',
-                            value: `Score: ${dimension.healthScore}`,
-                          });
-                        }}
-                        onMouseLeave={() => setTooltip(prev => ({ ...prev, visible: false }))}
-                      />
-                    </div>
-                  );
-                })()}
-              </div>
-            )}
-
-            {/* Tooltip */}
-            {tooltip.visible && (
-              <div style={{
-                ...styles.tooltip,
-                left: tooltip.x,
-                top: tooltip.y - 8,
-              }}>
-                <div style={styles.tooltipLabel}>{tooltip.label}</div>
-                <div style={styles.tooltipValue}>{tooltip.value}</div>
-                <div style={styles.tooltipArrow} />
-              </div>
-            )}
-
           </div>
         </div>
 
@@ -651,63 +633,11 @@ const LensDetailPage: React.FC<LensDetailPageProps> = ({
 
     return (
       <>
-        <div style={{...styles.dimensionBlueBanner, background: freshnessTier.bgColor, borderColor: freshnessTier.borderColor}}>
-          <div style={styles.heroCenterFlow}>
-            {/* Title row with info button */}
-            <div style={styles.heroTitleRow}>
-              <span style={styles.heroSubtitle}>Health Score</span>
-              <span style={styles.heroInfoInline}>
-                <HeroInfoButton title={`About ${dimension.dimensionName}`}>
-                  <div style={styles.infoModalBody}>
-                    <div style={styles.infoSection}>
-                      <h4 style={styles.infoSectionTitle}>What This Shows</h4>
-                      <p style={styles.infoText}>
-                        We identify stale items, look for bulk updates that suggest catch-up sessions, and check whether parent-child relationships stay in sync.
-                      </p>
-                    </div>
-                    <div style={styles.infoSection}>
-                      <h4 style={styles.infoSectionTitle}>Why It Matters</h4>
-                      <p style={styles.infoText}>
-                        Stale data leads to bad decisions. If Jira does not reflect reality, standups become status-gathering sessions, and managers make plans based on outdated information.
-                      </p>
-                    </div>
-                    <div style={styles.infoSection}>
-                      <h4 style={styles.infoSectionTitle}>What You Can Do</h4>
-                      <p style={styles.infoText}>
-                        Encourage real-time updates as part of the workflow. Consider automation that prompts updates when items have been unchanged too long.
-                      </p>
-                    </div>
-                    <div style={styles.infoSection}>
-                      <h4 style={styles.infoSectionTitle}>Key Metrics</h4>
-                      <ul style={styles.infoList}>
-                        <li><strong>Score:</strong> {DIMENSION_EXPLANATION.keyMetrics.score}</li>
-                        <li><strong>Rating:</strong> {DIMENSION_EXPLANATION.keyMetrics.rating}</li>
-                        <li><strong>Trend:</strong> {DIMENSION_EXPLANATION.keyMetrics.trend}</li>
-                      </ul>
-                    </div>
-                    <div style={styles.infoSection}>
-                      <h4 style={styles.infoSectionTitle}>Health Categories</h4>
-                      <p style={styles.infoText}>
-                        Your score maps to one of five health categories.
-                      </p>
-                      <div style={styles.healthCategoriesList}>
-                        {[...INDICATOR_TIERS].reverse().map(t => (
-                          <div key={t.level} style={styles.healthCategoryRow}>
-                            <div style={styles.healthCategoryHeader}>
-                              <span style={{...styles.healthCategoryName, color: t.color}}>{t.name}</span>
-                              <span style={styles.healthCategoryRange}>{t.minPercentile}–{t.maxPercentile}</span>
-                            </div>
-                            <p style={styles.healthCategoryDesc}>{t.detailedDescription}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </HeroInfoButton>
-              </span>
-            </div>
-
-            {/* Giant score */}
+        <div style={{...styles.dimensionBlueBanner, background: HERO_GRADIENTS[freshnessTier.name] || HERO_GRADIENTS['At Risk'], borderColor: '#E4E6EB', borderTop: `5px solid ${freshnessTier.color}`}}>
+          {/* Decorative background circles */}
+          <div style={styles.lensDecor1} />
+          <div style={styles.lensDecor2} />
+          <div style={styles.heroColumnsLayout}>
             {(() => {
               let freshOverallTrend: 'up' | 'down' | 'stable' = 'stable';
               if (dimension.trendData && dimension.trendData.length >= 2) {
@@ -718,63 +648,185 @@ const LensDetailPage: React.FC<LensDetailPageProps> = ({
                 if (lastT > firstT) freshOverallTrend = 'up';
                 else if (lastT < firstT) freshOverallTrend = 'down';
               }
-              const healthScore = dimension.healthScore ?? Math.round(dimension.overallPercentile);
-              const trendLabel = freshOverallTrend === 'up' ? 'Improving' : freshOverallTrend === 'down' ? 'Declining' : 'Stable';
-              const trendColor = freshOverallTrend === 'up' ? '#36B37E' : freshOverallTrend === 'down' ? '#DE350B' : '#6B778C';
-              const trendArrowPath = freshOverallTrend === 'up'
-                ? 'M3,10 L7,3 L11,10 L9,10 L9,12 L5,12 L5,10 Z'
-                : 'M3,5 L7,12 L11,5 L9,5 L9,3 L5,3 L5,5 Z';
-              const sparkTrend = freshOverallTrend === 'up' ? 'improving' as const : freshOverallTrend === 'down' ? 'declining' as const : 'stable' as const;
+              const healthScore = Math.round(dimension.healthScore ?? dimension.overallPercentile);
+              const trendColor = freshOverallTrend === 'up' ? '#00875A' : freshOverallTrend === 'down' ? '#DE350B' : '#44546F';
               const hasTrendData = dimension.trendData && dimension.trendData.length >= 2;
+              const tierIndex = freshnessTier.level - 1;
+
+              const donutR = 84;
+              const donutCirc = 2 * Math.PI * donutR;
+              const donutFilled = (healthScore / 100) * donutCirc;
 
               return (
                 <>
-                  <div style={styles.heroScoreBlock}>
-                    <span style={{...styles.heroBigNumber, color: freshnessTier.color}}>{healthScore}</span>
-                    <span style={styles.heroBigDenom}>/100</span>
+                  {/* Left — question text */}
+                  <div style={styles.lensQuestionContent}>
+                    <span style={styles.lensQuestionEyebrow}>FRESHNESS</span>
+                    <h2 style={styles.lensQuestionText}>
+                      Does your Jira <span style={styles.lensHighlight1}>reflect</span> what's actually <span style={styles.lensHighlight2}>happening</span>?
+                    </h2>
+                    <p style={styles.lensQuestionSubtext}>
+                      Identifies stale items, bulk catch-up updates, and parent-child sync gaps that signal Jira isn't being maintained in real time. <strong style={{ color: freshnessTier.color }}>Your data shows {freshnessTier.description.toLowerCase()}.</strong>
+                    </p>
                   </div>
 
-                  <button
-                    style={{
-                      ...styles.heroStatusChip,
-                      backgroundColor: `${freshnessTier.color}18`,
-                      border: `1.5px solid ${freshnessTier.color}40`,
-                      cursor: hasTrendData ? 'pointer' : 'default',
-                    }}
-                    onClick={hasTrendData ? () => setShowFreshnessScoreHistory(true) : undefined}
-                    title={hasTrendData ? 'View score history' : undefined}
-                  >
-                    <span style={{...styles.heroStatusDot, backgroundColor: freshnessTier.color}} />
-                    <span style={{...styles.heroStatusTier, color: freshnessTier.color}}>{freshnessTier.name}</span>
-                    <span style={styles.heroStatusDivider} />
-                    {freshOverallTrend === 'stable' ? (
-                      <span style={{ display: 'inline-flex', flexShrink: 0 }}>
-                        <MediaServicesActualSizeIcon label="" size="small" primaryColor={trendColor} />
-                      </span>
-                    ) : (
-                      <svg width="12" height="12" viewBox="0 0 14 14" style={{ flexShrink: 0 }}>
-                        <path d={trendArrowPath} fill={trendColor} />
-                      </svg>
-                    )}
-                    <span style={{...styles.heroStatusTrend, color: trendColor}}>
-                      {trendLabel}
-                    </span>
-                    {hasTrendData && (
-                      <>
-                        <span style={styles.heroStatusDivider} />
-                        <span style={styles.heroSparklineWrap}>
-                          <Sparkline
-                            data={dimension.trendData!}
-                            trend={sparkTrend}
-                            width={56}
-                            height={20}
-                          />
-                        </span>
-                      </>
-                    )}
-                  </button>
+                  {/* Divider */}
+                  <div style={styles.lensDivider}>
+                    <div style={styles.lensDividerLine} />
+                    <div style={styles.lensDividerDot} />
+                    <div style={styles.lensDividerLine} />
+                  </div>
 
-                  {/* Score history modal */}
+                  {/* Right — score visualization */}
+                  <div style={styles.lensScoreFloat}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column' as const, alignItems: 'center' }}>
+                      <div style={styles.heroTitleRow}>
+                        <span style={styles.heroSubtitle}>Freshness Score</span>
+                        <span style={styles.heroInfoInline}>
+                          <HeroInfoButton title={`About ${dimension.dimensionName}`}>
+                            <div style={styles.infoModalBody}>
+                              <div style={{ padding: '10px 12px', backgroundColor: '#DEEBFF', borderRadius: '6px', border: '1px solid #B3D4FF', marginBottom: '16px' }}>
+                                <p style={{ margin: 0, fontSize: '13px', color: '#0052CC', lineHeight: 1.5 }}>
+                                  {dimension.verdictDescription}
+                                </p>
+                              </div>
+                              <div style={styles.infoSection}>
+                                <h4 style={styles.infoSectionTitle}>What This Shows</h4>
+                                <p style={styles.infoText}>
+                                  We identify stale items, look for bulk updates that suggest catch-up sessions, and check whether parent-child relationships stay in sync.
+                                </p>
+                              </div>
+                              <div style={styles.infoSection}>
+                                <h4 style={styles.infoSectionTitle}>Why It Matters</h4>
+                                <p style={styles.infoText}>
+                                  Stale data leads to bad decisions. If Jira does not reflect reality, standups become status-gathering sessions, and managers make plans based on outdated information.
+                                </p>
+                              </div>
+                              <div style={styles.infoSection}>
+                                <h4 style={styles.infoSectionTitle}>What You Can Do</h4>
+                                <p style={styles.infoText}>
+                                  Encourage real-time updates as part of the workflow. Consider automation that prompts updates when items have been unchanged too long.
+                                </p>
+                              </div>
+                              <div style={styles.infoSection}>
+                                <h4 style={styles.infoSectionTitle}>Health Categories</h4>
+                                <p style={styles.infoText}>Your score maps to one of five health categories.</p>
+                                <div style={styles.healthCategoriesList}>
+                                  {[...INDICATOR_TIERS].reverse().map(t => (
+                                    <div key={t.level} style={styles.healthCategoryRow}>
+                                      <div style={styles.healthCategoryHeader}>
+                                        <span style={{...styles.healthCategoryName, color: t.color}}>{t.name}</span>
+                                        <span style={styles.healthCategoryRange}>{t.minPercentile}–{t.maxPercentile}</span>
+                                      </div>
+                                      <p style={styles.healthCategoryDesc}>{t.detailedDescription}</p>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          </HeroInfoButton>
+                        </span>
+                      </div>
+
+                      <div style={styles.heroDonutDisc}>
+                        <div style={styles.heroDonutBg} />
+                        <svg width={186} height={186} viewBox="0 0 186 186" style={{ display: 'block', position: 'relative' as const, zIndex: 1, transform: 'rotate(-90deg)' }}>
+                          <defs>
+                            <filter id="freshness-hero-glow" x="-20%" y="-20%" width="140%" height="140%">
+                              <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="blur" />
+                              <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                            </filter>
+                          </defs>
+                          <circle cx={93} cy={93} r={donutR} fill="none" stroke={`${freshnessTier.color}14`} strokeWidth={9} />
+                          <circle cx={93} cy={93} r={donutR} fill="none" stroke={freshnessTier.color} strokeWidth={9}
+                            strokeDasharray={`${donutFilled.toFixed(1)} ${donutCirc.toFixed(1)}`} strokeLinecap="round" filter="url(#freshness-hero-glow)" />
+                        </svg>
+                        <div style={styles.heroDonutContent}>
+                          <span style={{ fontSize: '64px', fontWeight: 800, lineHeight: 1, letterSpacing: '-3px', color: freshnessTier.color, position: 'relative' as const }}>
+                            {healthScore}
+                            <button
+                              className="trend-spark-btn"
+                              onClick={hasTrendData ? () => setShowFreshnessScoreHistory(true) : undefined}
+                              type="button"
+                              title={hasTrendData ? 'View score history' : 'Trend'}
+                              style={{
+                                position: 'absolute' as const, top: '-4px', right: '-32px',
+                                width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                borderRadius: '50%', border: 'none', background: 'transparent',
+                                cursor: hasTrendData ? 'pointer' : 'default', padding: 0,
+                                transition: 'background 0.15s, transform 0.15s, box-shadow 0.15s',
+                              }}>
+                              {hasTrendData && <style>{`.trend-spark-btn:hover { background: ${trendColor}18 !important; transform: scale(1.15); box-shadow: 0 0 0 3px ${trendColor}22; } .trend-spark-btn:active { transform: scale(1.05); }`}</style>}
+                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={trendColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                                style={{ transform: freshOverallTrend === 'down' ? 'scaleY(-1)' : 'none', opacity: freshOverallTrend === 'stable' ? 0.7 : 0.9 }}>
+                                <polyline points="3,18 8,13 12,16 21,6" />
+                                <polyline points="16,6 21,6 21,11" />
+                              </svg>
+                            </button>
+                          </span>
+                        </div>
+                      </div>
+
+                      {assessmentResult.comparisonTeamCount > 0 && (
+                        <div style={{ marginTop: '8px' }}>
+                          <button style={styles.heroCompareBtn} onClick={() => {
+                            setComparisonModalContext({
+                              yourRank: Math.round((1 - (dimension.healthScore ?? dimension.overallPercentile) / 100) * assessmentResult.comparisonTeamCount) + 1,
+                              dimensionName: dimension.dimensionName,
+                            });
+                            setIsComparisonModalOpen(true);
+                          }} type="button">
+                            <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" style={{ flexShrink: 0 }}>
+                              <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-5 6c0-2.76 2.24-5 5-5s5 2.24 5 5H3zm10-8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zm1.5 2h-.52a3.98 3.98 0 0 1 1.52 3.13V14H16v-2c0-1.1-.9-2-2-2h-.5zM3 6a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zM.5 8H0c-1.1 0-2 .9-2 2v2h2v-2.13c0-1.2.47-2.3 1.25-3.12L.5 8z" />
+                            </svg>
+                            vs {assessmentResult.comparisonTeamCount} teams
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Vertical trust level spectrum */}
+                    <svg width={90} height={126} viewBox="0 0 90 126">
+                      {(() => {
+                        const levels = [...INDICATOR_TIERS].reverse();
+                        const nodeX = 8; const labelX = 22; const spacing = 26; const startY = 12;
+                        return (
+                          <>
+                            {levels.map((_, j) => {
+                              if (j === levels.length - 1) return null;
+                              const y1 = startY + j * spacing; const y2 = startY + (j + 1) * spacing;
+                              const origIdx = INDICATOR_TIERS.length - 1 - j;
+                              return <line key={`line-${j}`} x1={nodeX} y1={y1} x2={nodeX} y2={y2}
+                                stroke={origIdx <= tierIndex ? levels[j + 1].color : '#DFE1E6'} strokeWidth={2} />;
+                            })}
+                            {levels.map((level, j) => {
+                              const y = startY + j * spacing;
+                              const origIdx = INDICATOR_TIERS.length - 1 - j;
+                              const isCurr = origIdx === tierIndex;
+                              const isReached = origIdx <= tierIndex;
+                              return (
+                                <g key={level.name}>
+                                  {isCurr && <circle cx={nodeX} cy={y} r={10} fill={level.color} opacity={0.12} />}
+                                  <circle cx={nodeX} cy={y} r={isCurr ? 5 : 3}
+                                    fill={isReached ? level.color : '#FFFFFF'}
+                                    stroke={isReached ? level.color : '#DFE1E6'}
+                                    strokeWidth={isReached ? 0 : 1.5} />
+                                  <text x={labelX} y={y} dominantBaseline="central"
+                                    fontSize={isCurr ? '11.5' : '10'} fontWeight={isCurr ? '700' : '400'}
+                                    fill={isCurr ? level.color : '#A5ADBA'}>
+                                    {level.name}
+                                  </text>
+                                </g>
+                              );
+                            })}
+                          </>
+                        );
+                      })()}
+                    </svg>
+                  </div>
+                  </div>
+
                   {showFreshnessScoreHistory && dimension.trendData && dimension.trendData.length >= 2 && (
                     <div style={styles.scoreHistoryOverlay} onClick={() => setShowFreshnessScoreHistory(false)}>
                       <div style={styles.scoreHistoryModal} onClick={(e) => e.stopPropagation()}>
@@ -783,11 +835,7 @@ const LensDetailPage: React.FC<LensDetailPageProps> = ({
                           <button onClick={() => setShowFreshnessScoreHistory(false)} style={styles.scoreHistoryClose}>{'\u2715'}</button>
                         </div>
                         <div style={styles.scoreHistoryBody}>
-                          <TrendChart
-                            data={dimension.trendData}
-                            height={280}
-                            dimensionName="Data Freshness"
-                          />
+                          <TrendChart data={dimension.trendData} height={280} dimensionName="Data Freshness" />
                         </div>
                       </div>
                     </div>
@@ -795,104 +843,6 @@ const LensDetailPage: React.FC<LensDetailPageProps> = ({
                 </>
               );
             })()}
-
-            {/* Description */}
-            <p style={styles.heroDescription}>
-              {dimension.verdictDescription}
-            </p>
-
-            {/* Inline peer comparison spectrum */}
-            {assessmentResult.comparisonTeamCount > 0 && (
-              <div style={styles.inlineSpectrumContainer}>
-                <div style={styles.inlineSpectrumHeader}>
-                  <span style={styles.inlineSpectrumTitle}>Peer Comparison</span>
-                  <button
-                    style={styles.inlineSpectrumLink}
-                    onClick={() => {
-                      setComparisonModalContext({
-                        yourRank: Math.round((1 - freshYourPosition / 100) * assessmentResult.comparisonTeamCount) + 1,
-                        dimensionName: dimension.dimensionName,
-                      });
-                      setIsComparisonModalOpen(true);
-                    }}
-                  >
-                    vs {assessmentResult.comparisonTeamCount} similar teams &rarr;
-                  </button>
-                </div>
-                {(() => {
-                  const sortedPositions = [...freshComparisonPositions].sort((a, b) => a - b);
-                  const peerMin = sortedPositions[0] ?? 0;
-                  const peerMax = sortedPositions[sortedPositions.length - 1] ?? 100;
-                  const peerMedian = sortedPositions.length > 0
-                    ? sortedPositions[Math.floor(sortedPositions.length / 2)]
-                    : 50;
-                  return (
-                    <div style={styles.inlineSpectrumBar}>
-                      <div style={styles.inlineSpectrumTrack} />
-                      <span style={styles.inlineSpectrumMin}>0</span>
-                      <span style={styles.inlineSpectrumMax}>100</span>
-                      <div
-                        style={{
-                          ...styles.inlinePeerRangeBand,
-                          left: `${peerMin}%`,
-                          width: `${peerMax - peerMin}%`,
-                        }}
-                        onMouseEnter={(e) => {
-                          const rect = e.currentTarget.getBoundingClientRect();
-                          setTooltip({
-                            visible: true,
-                            x: rect.left + rect.width / 2,
-                            y: rect.top,
-                            label: `${assessmentResult.comparisonTeamCount} teams`,
-                            value: `Range: ${Math.round(peerMin)}\u2013${Math.round(peerMax)} \u00B7 Median: ${Math.round(peerMedian)}`,
-                          });
-                        }}
-                        onMouseLeave={() => setTooltip(prev => ({ ...prev, visible: false }))}
-                      />
-                      <div
-                        style={{
-                          ...styles.inlinePeerMedianTick,
-                          left: `${peerMedian}%`,
-                        }}
-                      />
-                      <div
-                        style={{
-                          ...styles.inlineYourTeamMarker,
-                          left: `${freshYourPosition}%`,
-                          backgroundColor: freshnessTier.color,
-                          boxShadow: `0 0 0 3px ${freshnessTier.color}40`,
-                        }}
-                        onMouseEnter={(e) => {
-                          const rect = e.currentTarget.getBoundingClientRect();
-                          setTooltip({
-                            visible: true,
-                            x: rect.left + rect.width / 2,
-                            y: rect.top,
-                            label: 'Your Team',
-                            value: `Score: ${dimension.healthScore ?? Math.round(dimension.overallPercentile)}`,
-                          });
-                        }}
-                        onMouseLeave={() => setTooltip(prev => ({ ...prev, visible: false }))}
-                      />
-                    </div>
-                  );
-                })()}
-              </div>
-            )}
-
-            {/* Tooltip */}
-            {tooltip.visible && (
-              <div style={{
-                ...styles.tooltip,
-                left: tooltip.x,
-                top: tooltip.y - 8,
-              }}>
-                <div style={styles.tooltipLabel}>{tooltip.label}</div>
-                <div style={styles.tooltipValue}>{tooltip.value}</div>
-                <div style={styles.tooltipArrow} />
-              </div>
-            )}
-
           </div>
         </div>
 
@@ -965,7 +915,7 @@ const styles: Record<string, React.CSSProperties> = {
   // Hero Banner
   dimensionBlueBanner: {
     background: '#FFFFFF',
-    padding: '36px 48px 40px',
+    padding: '36px 48px 40px 68px',
     borderRadius: '16px',
     marginBottom: '24px',
     position: 'relative' as const,
@@ -979,6 +929,103 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: 'column' as const,
     alignItems: 'center',
     textAlign: 'center' as const,
+  },
+  heroColumnsLayout: {
+    position: 'relative' as const,
+    zIndex: 1,
+    display: 'flex',
+    alignItems: 'center',
+    gap: '32px',
+  },
+  lensQuestionContent: {
+    position: 'relative' as const,
+    zIndex: 1,
+    flex: '1 1 0%',
+    maxWidth: '560px',
+  },
+  lensQuestionEyebrow: {
+    display: 'inline-block',
+    fontSize: '10px',
+    fontWeight: 800,
+    letterSpacing: '2px',
+    color: '#BF6A02',
+    marginBottom: '12px',
+    textTransform: 'uppercase' as const,
+  },
+  lensQuestionText: {
+    margin: '0 0 16px',
+    fontSize: '26px',
+    fontWeight: 800,
+    lineHeight: 1.25,
+    color: '#172B4D',
+    letterSpacing: '-0.5px',
+  },
+  lensHighlight1: {
+    color: '#FF8B00',
+  },
+  lensHighlight2: {
+    color: '#0052CC',
+  },
+  lensQuestionSubtext: {
+    margin: 0,
+    fontSize: '14px',
+    lineHeight: 1.7,
+    color: '#44546F',
+    fontWeight: 400,
+  },
+  lensScoreFloat: {
+    position: 'relative' as const,
+    zIndex: 1,
+    flex: '0 0 auto',
+    display: 'flex',
+    flexDirection: 'column' as const,
+    alignItems: 'center',
+    padding: '0',
+    marginLeft: '16px',
+  },
+  lensDivider: {
+    flex: '0 0 auto',
+    display: 'flex',
+    flexDirection: 'column' as const,
+    alignItems: 'center',
+    alignSelf: 'stretch',
+    gap: '0',
+    padding: '16px 0',
+  },
+  lensDividerLine: {
+    flex: 1,
+    width: '1px',
+    background: 'linear-gradient(to bottom, transparent, rgba(255, 139, 0, 0.25), rgba(255, 139, 0, 0.35))',
+  },
+  lensDividerDot: {
+    width: '8px',
+    height: '8px',
+    borderRadius: '2px',
+    transform: 'rotate(45deg)',
+    background: 'rgba(255, 139, 0, 0.3)',
+    border: '1px solid rgba(255, 139, 0, 0.15)',
+    margin: '8px 0',
+    flexShrink: 0,
+  },
+  lensDecor1: {
+    position: 'absolute' as const,
+    top: '-40px',
+    right: '-30px',
+    width: '180px',
+    height: '180px',
+    borderRadius: '50%',
+    background: 'rgba(255, 139, 0, 0.06)',
+    border: '1px solid rgba(255, 139, 0, 0.08)',
+  },
+  lensDecor2: {
+    position: 'absolute' as const,
+    bottom: '-20px',
+    left: '-40px',
+    width: '120px',
+    height: '120px',
+    borderRadius: '50%',
+    background: 'rgba(0, 82, 204, 0.04)',
+    border: '1px solid rgba(0, 82, 204, 0.06)',
   },
   heroTitleRow: {
     display: 'flex',
@@ -996,59 +1043,53 @@ const styles: Record<string, React.CSSProperties> = {
   heroInfoInline: {
     display: 'inline',
   },
-  heroScoreBlock: {
-    display: 'flex',
-    alignItems: 'baseline',
+  heroDonutDisc: {
+    position: 'relative' as const,
+    width: '186px',
+    height: '186px',
   },
-  heroBigNumber: {
-    fontSize: '96px',
-    fontWeight: 800,
-    lineHeight: 1,
-    letterSpacing: '-4px',
-  },
-  heroBigDenom: {
-    fontSize: '28px',
-    fontWeight: 500,
-    color: '#97A0AF',
-    marginLeft: '4px',
-    alignSelf: 'baseline',
-  },
-  heroStatusChip: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '6px 14px',
-    borderRadius: '20px',
-    marginTop: '12px',
-    fontFamily: 'inherit',
-    outline: 'none',
-    transition: 'filter 0.15s ease',
-  } as React.CSSProperties,
-  heroStatusDot: {
-    width: '7px',
-    height: '7px',
+  heroDonutBg: {
+    position: 'absolute' as const,
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    width: '150px',
+    height: '150px',
     borderRadius: '50%',
-    flexShrink: 0,
+    background: 'rgba(255, 255, 255, 0.92)',
+    boxShadow: '0 6px 40px rgba(9, 30, 66, 0.10), 0 0 0 1px rgba(9, 30, 66, 0.04)',
+    backdropFilter: 'blur(12px)',
+    WebkitBackdropFilter: 'blur(12px)',
   },
-  heroStatusTier: {
-    fontSize: '13px',
-    fontWeight: 700,
+  heroDonutContent: {
+    position: 'absolute' as const,
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
+    display: 'flex',
+    flexDirection: 'column' as const,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 2,
   },
-  heroStatusDivider: {
-    width: '1px',
-    height: '14px',
-    backgroundColor: 'rgba(9, 30, 66, 0.15)',
-  },
-  heroStatusTrend: {
-    fontSize: '13px',
-    fontWeight: 600,
-  },
-  heroSparklineWrap: {
+  heroCompareBtn: {
     display: 'inline-flex',
     alignItems: 'center',
-    flexShrink: 0,
-    opacity: 0.8,
-  } as React.CSSProperties,
+    gap: '4px',
+    padding: '4px 12px',
+    borderRadius: '12px',
+    fontSize: '11.5px',
+    fontWeight: 600,
+    whiteSpace: 'nowrap' as const,
+    background: 'rgba(255, 255, 255, 0.7)',
+    border: '1.5px solid rgba(9, 30, 66, 0.1)',
+    color: '#44546F',
+    backdropFilter: 'blur(6px)',
+    WebkitBackdropFilter: 'blur(6px)',
+    cursor: 'pointer',
+    fontFamily: 'inherit',
+  },
   heroDescription: {
     margin: '16px 0 0',
     fontSize: '14px',
