@@ -445,40 +445,214 @@ const ChartDataPoints: React.FC<{ points: { x: number; y: number; value: number;
   </div>
 );
 
-// ── Confidence Tiles Sub-component ───────────────────────────────────
-const SIGNAL_LEVELS: Record<string, number> = { 'Very low': 1, 'Low': 1, 'Moderate': 2, 'High': 3 };
+// ── Use-Case Score Cards ─────────────────────────────────────────────
 
-const ConfidenceGauges: React.FC<{ composite: number; reliabilityStatuses: ReliabilityStatus[] }> = ({ composite, reliabilityStatuses }) => (
-  <div style={styles.confidenceSection}>
-    <div style={styles.confidenceTitle}>
-      How confidently can you use your Jira data for each purpose?
-    </div>
-    <div style={styles.tileRow}>
+// Bottleneck lenses per use case (what most limits that use case)
+const USE_CASE_BOTTLENECKS = [
+  'Status Accuracy',
+  'Sprint Field Coverage',
+  'Data Freshness',
+  'Estimation Coverage',
+  'Workflow Compliance',
+  'Cross-Team Linking',
+  'Field Completeness',
+];
+
+// Generate a mock per-use-case score from composite + threshold
+function getUseCaseScore(composite: number, threshold: number, seed: number): number {
+  const base = composite + Math.sin(seed * 7919) * 12;
+  const offset = (threshold - 60) * 0.3;
+  return Math.max(10, Math.min(99, Math.round(base - offset)));
+}
+
+// Mock trend delta per use case (seeded from index)
+function getUseCaseTrend(seed: number): number {
+  const val = Math.sin(seed * 1337) * 10;
+  return Math.round(val);
+}
+
+// Tier distribution badges (mock counts per tier for each use case)
+function getTierDistribution(score: number, seed: number): { color: string; count: number }[] {
+  const tiers = [
+    { color: '#DE350B' }, // Critical
+    { color: '#FF8B00' }, // At Risk
+    { color: '#FFAB00' }, // Warning
+    { color: '#00875A' }, // Healthy
+  ];
+  return tiers.map((t, i) => ({
+    color: t.color,
+    count: Math.max(1, Math.round(Math.abs(Math.sin(seed * (i + 3) * 4999) * 12) + (i === 1 ? score / 15 : 2))),
+  }));
+}
+
+// Signal bar levels and descriptions per confidence
+const CONFIDENCE_LEVELS: Record<string, { bars: number; label: string }> = {
+  'High':      { bars: 3, label: 'Strong' },
+  'Moderate':  { bars: 2, label: 'Moderate' },
+  'Low':       { bars: 1, label: 'Weak' },
+  'Very low':  { bars: 1, label: 'Weak' },
+};
+
+// Short explanations per use case at each confidence tier
+const USE_CASE_DESCRIPTIONS: Record<string, string[]> = {
+  Strong: [
+    'Status fields are consistently updated and reflect real work progress. Teams can rely on board views and filters for day-to-day coordination without second-guessing the data.',
+    'Sprint scope, story points, and assignee fields are well-maintained. Planning sessions can trust the backlog to accurately represent upcoming work and team capacity.',
+    'Completed work is reliably tracked with consistent field usage. Velocity charts and throughput metrics reflect actual delivery patterns teams can use for improvement.',
+    'Story point estimates and time tracking fields are filled in consistently. Managers can use this data to make realistic capacity decisions for upcoming sprints.',
+    'Enough historical data exists with consistent patterns to generate meaningful forecasts. Delivery date predictions and burn-down projections carry reasonable confidence.',
+    'Teams follow similar Jira practices, making cross-team comparisons meaningful. Metrics like velocity and cycle time can be used to identify shared challenges.',
+    'Data quality is high enough to feed into executive dashboards and quarterly reviews. Leadership can reference these numbers when making strategic resourcing decisions.',
+  ],
+  Moderate: [
+    'Most tickets have status updates, but some lag behind or skip states. Day-to-day tracking works for the most part — just verify critical items manually before acting on them.',
+    'Sprint fields are partially filled — enough to run planning sessions, but gaps in estimates or acceptance criteria mean some discussions happen without full context.',
+    'Velocity trends point in the right direction but the underlying data is noisy. Use these numbers to spot broad patterns, not to make precise commitments.',
+    'Some teams estimate consistently while others skip it. Capacity plans based on this data will be directionally useful but should be treated as rough guides.',
+    'Data gaps and inconsistencies limit how far out you can reliably forecast. Short-term predictions may work, but multi-sprint forecasts need manual adjustment.',
+    'Differing practices across teams make direct comparisons unreliable. Benchmarking can highlight broad differences but shouldn\'t drive specific decisions.',
+    'Suitable for high-level reporting with caveats. The numbers tell a reasonable story but aren\'t precise enough to anchor major strategic decisions without additional context.',
+  ],
+  Weak: [
+    'Status fields are inconsistently maintained — many tickets sit in incorrect states or are updated in bulk long after work completes. Board views don\'t reflect reality.',
+    'Sprint fields are too sparse to support reliable planning. Missing estimates, undefined scope, and unassigned tickets mean planning sessions rely heavily on tribal knowledge.',
+    'Velocity data is unreliable due to inconsistent completion tracking, reopened tickets, and scope changes that aren\'t reflected in the data. Throughput numbers are misleading.',
+    'Estimation data is too sparse or inconsistent for capacity planning. Most tickets lack story points or time estimates, making workload distribution largely guesswork.',
+    'There isn\'t enough clean historical data to generate meaningful forecasts. Delivery predictions based on this data would be unreliable and potentially misleading.',
+    'Jira practices vary so much across teams that comparing metrics is not meaningful. Any benchmarking exercise would reflect process differences, not performance differences.',
+    'Data quality is insufficient to support strategic decisions. Executive reports built from this data risk presenting a misleading picture of team performance and delivery health.',
+  ],
+};
+
+const ConfidenceGauges: React.FC<{ composite: number; reliabilityStatuses: ReliabilityStatus[]; comparisonTeamCount: number }> = ({ composite, reliabilityStatuses, comparisonTeamCount }) => (
+  <div style={ucStyles.section}>
+    <div style={ucStyles.cardGrid}>
       {CONFIDENCE_SHORT_NAMES.map((name, i) => {
         const confidence = getConfidence(composite, USE_CASE_THRESHOLDS[i]);
         const status = reliabilityStatuses[i];
         const { label, color } = getConfidenceLabel(status, confidence);
-        const bars = SIGNAL_LEVELS[label] ?? 1;
+        const level = CONFIDENCE_LEVELS[label] ?? CONFIDENCE_LEVELS['Weak'];
+        const trendDelta = getUseCaseTrend(i + 1);
+        const trendDir: 'up' | 'down' | 'stable' = trendDelta > 0 ? 'up' : trendDelta < 0 ? 'down' : 'stable';
+        const trendColor = trendDir === 'up' ? '#00875A' : trendDir === 'down' ? '#DE350B' : '#8993A4';
+        const dist = getTierDistribution(composite, i + 1);
+        const description = (USE_CASE_DESCRIPTIONS[level.label] ?? USE_CASE_DESCRIPTIONS['Weak'])[i];
 
         return (
-          <div key={i} style={{
-            ...styles.tile,
-            borderColor: `${color}20`,
-          }}>
-            {/* Signal bars */}
-            <svg width={24} height={20} viewBox="0 0 24 20" style={{ display: 'block', marginBottom: '2px' }}>
-              <rect x={1} y={14} width={5} height={6} rx={1} fill={bars >= 1 ? color : '#DFE1E6'} />
-              <rect x={9} y={8} width={5} height={12} rx={1} fill={bars >= 2 ? color : '#DFE1E6'} />
-              <rect x={17} y={2} width={5} height={18} rx={1} fill={bars >= 3 ? color : '#DFE1E6'} />
-            </svg>
-            <span style={{ ...styles.tileLabel, color }}>{label}</span>
-            <span style={styles.tileName}>{name}</span>
+          <div key={i} style={{ ...ucStyles.item, borderLeftColor: color }}>
+            {/* Header: name + confidence pill */}
+            <div style={ucStyles.cardHeader}>
+              <span style={ucStyles.cardName}>{name}</span>
+              <span style={{
+                ...ucStyles.levelPill,
+                color,
+                backgroundColor: `${color}12`,
+                borderColor: `${color}30`,
+              }}>{level.label}</span>
+            </div>
+
+            {/* Thin confidence gauge */}
+            <div style={ucStyles.gaugeWrapper}>
+              <div style={ucStyles.gaugeTrack}>
+                <div style={{
+                  ...ucStyles.gaugeFill,
+                  width: level.bars === 1 ? '33%' : level.bars === 2 ? '66%' : '100%',
+                  background: color,
+                  boxShadow: `0 0 6px 1px ${color}50`,
+                }} />
+              </div>
+              <div style={{
+                ...ucStyles.gaugeDot,
+                left: level.bars === 1 ? '33%' : level.bars === 2 ? '66%' : '98%',
+                background: color,
+                boxShadow: `0 0 6px 2px ${color}40`,
+              }} />
+            </div>
+
+            {/* Description */}
+            <span style={ucStyles.cardDesc}>{description}</span>
           </div>
         );
       })}
     </div>
   </div>
 );
+
+const ucStyles: Record<string, React.CSSProperties> = {
+  section: {
+    padding: '24px 32px 28px',
+  },
+  sectionTitle: {
+    fontSize: '14px',
+    fontWeight: 600,
+    color: '#44546F',
+    marginBottom: '20px',
+  },
+  cardGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(3, 1fr)',
+    gap: '36px 32px',
+  },
+  item: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: '10px',
+    padding: '16px 20px',
+    borderRadius: '10px',
+    background: '#FAFBFC',
+    borderLeft: '3px solid #E4E6EB',
+  },
+  cardHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+  },
+  cardName: {
+    fontSize: '14px',
+    fontWeight: 700,
+    color: '#172B4D',
+  },
+  levelPill: {
+    fontSize: '10px',
+    fontWeight: 700,
+    padding: '2px 8px',
+    borderRadius: '10px',
+    border: '1px solid',
+    letterSpacing: '0.3px',
+    textTransform: 'uppercase' as const,
+    whiteSpace: 'nowrap' as const,
+  },
+  gaugeWrapper: {
+    position: 'relative' as const,
+    height: '20px',
+    display: 'flex',
+    alignItems: 'center',
+  },
+  gaugeTrack: {
+    width: '100%',
+    height: '2px',
+    borderRadius: '1px',
+    background: '#E4E6EB',
+  },
+  gaugeFill: {
+    height: '100%',
+    borderRadius: '1px',
+    position: 'relative' as const,
+  },
+  gaugeDot: {
+    position: 'absolute' as const,
+    top: '50%',
+    width: '8px',
+    height: '8px',
+    borderRadius: '50%',
+    transform: 'translate(-50%, -50%)',
+  },
+  cardDesc: {
+    fontSize: '12px',
+    color: '#6B778C',
+    lineHeight: 1.4,
+  },
+};
 
 // ── Team Comparison Modal ────────────────────────────────────────────
 interface TeamComparisonModalProps {
@@ -797,6 +971,7 @@ const DataTrustBanner: React.FC<DataTrustBannerProps> = ({
 }) => {
   const [isCompareOpen, setIsCompareOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [isUseCasesOpen, setIsUseCasesOpen] = useState(false);
 
   const scores = computeLensScores(lensResults, integrityScore);
   const { level: trustLevel, index: trustIndex } = getTrustLevel(scores.composite);
@@ -838,6 +1013,21 @@ const DataTrustBanner: React.FC<DataTrustBannerProps> = ({
             <p style={styles.questionSubtext}>
               Your Jira data flows into sprint reviews, capacity planning, velocity reports, and executive dashboards. This assessment measures whether that data is complete, accurate, timely, and fresh enough to rely on. <strong style={{ color: trustLevel.color }}>Right now, your data shows {trustLevel.description}.</strong>
             </p>
+            <button
+              type="button"
+              onClick={() => setIsUseCasesOpen(true)}
+              style={styles.useCasesBtn}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
+                <rect x="9" y="3" width="6" height="4" rx="1" />
+                <path d="M9 14l2 2 4-4" />
+              </svg>
+              Can we trust Jira for these purposes?
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, opacity: 0.5 }}>
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </button>
           </div>
 
           {/* Divider */}
@@ -1031,10 +1221,25 @@ const DataTrustBanner: React.FC<DataTrustBannerProps> = ({
 
     </div>
 
-    {/* Confidence gauges — separate card */}
-    <div style={styles.confidenceCard}>
-      <ConfidenceGauges composite={scores.composite} reliabilityStatuses={reliabilityStatuses} />
-    </div>
+    {/* Use Cases Modal */}
+    {isUseCasesOpen && (
+      <div style={styles.compareOverlay} onClick={() => setIsUseCasesOpen(false)}>
+        <div style={{ ...styles.compareModal, maxWidth: '900px' }} onClick={e => e.stopPropagation()}>
+          <div style={styles.compareHeader}>
+            <h2 style={styles.compareTitle}>Can we trust our Jira data for these purposes?</h2>
+            <button style={styles.compareCloseBtn} onClick={() => setIsUseCasesOpen(false)}>
+              <CrossIcon label="Close" size="small" />
+            </button>
+          </div>
+          <div style={styles.compareBody}>
+            <ConfidenceGauges composite={scores.composite} reliabilityStatuses={reliabilityStatuses} comparisonTeamCount={comparisonTeamCount} />
+          </div>
+          <div style={styles.compareFooter}>
+            <button style={styles.compareCloseButton} onClick={() => setIsUseCasesOpen(false)}>Close</button>
+          </div>
+        </div>
+      </div>
+    )}
 
     {/* Score History Modal */}
     <TrendHistoryModal
@@ -1137,11 +1342,28 @@ const styles: Record<string, React.CSSProperties> = {
     position: 'relative' as const,
   },
   questionSubtext: {
-    margin: 0,
+    margin: '0 0 16px',
     fontSize: '14px',
     lineHeight: 1.7,
     color: '#44546F',
     fontWeight: 400,
+  },
+  useCasesBtn: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '8px 16px',
+    borderRadius: '8px',
+    border: '1px solid rgba(9, 30, 66, 0.12)',
+    background: 'rgba(255, 255, 255, 0.8)',
+    backdropFilter: 'blur(6px)',
+    WebkitBackdropFilter: 'blur(6px)',
+    color: '#172B4D',
+    fontSize: '13px',
+    fontWeight: 600,
+    fontFamily: 'inherit',
+    cursor: 'pointer',
+    transition: 'background 0.15s, box-shadow 0.15s',
   },
   heroDivider: {
     flex: '0 0 auto',
@@ -1537,50 +1759,6 @@ const styles: Record<string, React.CSSProperties> = {
     height: '1px',
     background: '#EBECF0',
     margin: 0,
-  },
-  confidenceSection: {
-    padding: '18px 32px 22px',
-    background: '#FAFBFC',
-  },
-  confidenceTitle: {
-    fontSize: '12.5px',
-    fontWeight: 600,
-    color: '#44546F',
-    marginBottom: '16px',
-    textAlign: 'center' as const,
-  },
-  tileRow: {
-    display: 'flex',
-    justifyContent: 'center',
-    gap: '8px',
-  },
-  tile: {
-    flex: '1',
-    maxWidth: '120px',
-    display: 'flex',
-    flexDirection: 'column' as const,
-    alignItems: 'center',
-    textAlign: 'center' as const,
-    gap: '2px',
-    padding: '10px 6px 8px',
-    borderRadius: '10px',
-    border: '1px solid transparent',
-    background: '#FFFFFF',
-  },
-  tileLabel: {
-    fontSize: '10px',
-    fontWeight: 700,
-    textTransform: 'uppercase' as const,
-    letterSpacing: '0.3px',
-  },
-  tileName: {
-    fontSize: '10.5px',
-    fontWeight: 600,
-    color: '#172B4D',
-    lineHeight: 1.25,
-    minHeight: '26px',
-    display: 'flex',
-    alignItems: 'center',
   },
 };
 
