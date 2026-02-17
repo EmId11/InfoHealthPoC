@@ -436,44 +436,40 @@ const ChartDataPoints: React.FC<{ points: { x: number; y: number; value: number;
   </div>
 );
 
-// ── Confidence Gauges Sub-component ─────────────────────────────────
-const ConfidenceGauges: React.FC<{ composite: number; reliabilityStatuses: ReliabilityStatus[] }> = ({ composite, reliabilityStatuses }) => {
-  const arcRadius = 26;
-  const totalArc = Math.PI * arcRadius; // ~81.68
+// ── Confidence Tiles Sub-component ───────────────────────────────────
+const SIGNAL_LEVELS: Record<string, number> = { 'Very low': 1, 'Low': 1, 'Moderate': 2, 'High': 3 };
 
-  return (
-    <div style={styles.confidenceSection}>
-      <div style={styles.confidenceTitle}>
-        How confidently can you use your Jira data for each purpose?
-      </div>
-      <div style={styles.gaugeRow}>
-        {CONFIDENCE_SHORT_NAMES.map((name, i) => {
-          const confidence = getConfidence(composite, USE_CASE_THRESHOLDS[i]);
-          const status = reliabilityStatuses[i];
-          const { label, color } = getConfidenceLabel(status, confidence);
-          const filled = (confidence / 100) * totalArc;
-
-          return (
-            <div key={i} style={{
-              ...styles.gaugeTile,
-              background: `${color}0A`,
-              borderColor: `${color}14`,
-            }}>
-              <svg width={64} height={40} viewBox="0 0 64 40" style={{ display: 'block' }}>
-                <path d="M 6,34 A 26,26 0 0,1 58,34" fill="none" stroke="#EBECF0" strokeWidth={5.5} strokeLinecap="round" />
-                <path d="M 6,34 A 26,26 0 0,1 58,34" fill="none" stroke={color} strokeWidth={5.5} strokeLinecap="round"
-                  strokeDasharray={`${filled.toFixed(1)} ${totalArc.toFixed(1)}`} />
-              </svg>
-              <span style={{ ...styles.gaugePct, color }}>{confidence}%</span>
-              <span style={styles.gaugeName}>{name}</span>
-              <span style={{ ...styles.gaugeStatus, color }}>{label}</span>
-            </div>
-          );
-        })}
-      </div>
+const ConfidenceGauges: React.FC<{ composite: number; reliabilityStatuses: ReliabilityStatus[] }> = ({ composite, reliabilityStatuses }) => (
+  <div style={styles.confidenceSection}>
+    <div style={styles.confidenceTitle}>
+      How confidently can you use your Jira data for each purpose?
     </div>
-  );
-};
+    <div style={styles.tileRow}>
+      {CONFIDENCE_SHORT_NAMES.map((name, i) => {
+        const confidence = getConfidence(composite, USE_CASE_THRESHOLDS[i]);
+        const status = reliabilityStatuses[i];
+        const { label, color } = getConfidenceLabel(status, confidence);
+        const bars = SIGNAL_LEVELS[label] ?? 1;
+
+        return (
+          <div key={i} style={{
+            ...styles.tile,
+            borderColor: `${color}20`,
+          }}>
+            {/* Signal bars */}
+            <svg width={24} height={20} viewBox="0 0 24 20" style={{ display: 'block', marginBottom: '2px' }}>
+              <rect x={1} y={14} width={5} height={6} rx={1} fill={bars >= 1 ? color : '#DFE1E6'} />
+              <rect x={9} y={8} width={5} height={12} rx={1} fill={bars >= 2 ? color : '#DFE1E6'} />
+              <rect x={17} y={2} width={5} height={18} rx={1} fill={bars >= 3 ? color : '#DFE1E6'} />
+            </svg>
+            <span style={{ ...styles.tileLabel, color }}>{label}</span>
+            <span style={styles.tileName}>{name}</span>
+          </div>
+        );
+      })}
+    </div>
+  </div>
+);
 
 // ── Team Comparison Modal ────────────────────────────────────────────
 interface TeamComparisonModalProps {
@@ -623,6 +619,159 @@ const TeamComparisonModal: React.FC<TeamComparisonModalProps> = ({
   );
 };
 
+// ── Trend History Modal ──────────────────────────────────────────────
+interface TrendHistoryModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  chartPoints: { x: number; y: number; value: number; period: string }[];
+  composite: number;
+  trustLevelColor: string;
+  trendLabel: string;
+}
+
+const MODAL_CHART_W = 560;
+const MODAL_CHART_H = 220;
+
+const TrendHistoryModal: React.FC<TrendHistoryModalProps> = ({
+  isOpen, onClose, chartPoints, composite, trustLevelColor, trendLabel,
+}) => {
+  if (!isOpen) return null;
+
+  // Recompute points scaled to modal chart dimensions
+  const step = chartPoints.length > 1 ? (MODAL_CHART_W - 80) / (chartPoints.length - 1) : 0;
+  const modalPoints = chartPoints.map((p, i) => ({
+    x: 40 + i * step,
+    y: MODAL_CHART_H * (1 - p.value / 100),
+    value: p.value,
+    period: p.period,
+  }));
+
+  const getColor = (v: number) => getTrustLevel(v).level.color;
+
+  return (
+    <div style={styles.compareOverlay} onClick={onClose}>
+      <div style={{ ...styles.compareModal, maxWidth: '640px' }} onClick={e => e.stopPropagation()}>
+        <div style={styles.compareHeader}>
+          <h2 style={styles.compareTitle}>Score History</h2>
+          <button style={styles.compareCloseBtn} onClick={onClose}>
+            <CrossIcon label="Close" size="small" />
+          </button>
+        </div>
+        <div style={styles.compareBody}>
+          <p style={styles.compareIntro}>
+            Current score: <strong style={{ color: trustLevelColor }}>{composite}</strong> &mdash; trend is <strong>{trendLabel.toLowerCase()}</strong> over the last {chartPoints.length} periods.
+          </p>
+
+          {/* Full-width trend chart */}
+          <div style={{ position: 'relative' as const, marginBottom: '16px' }}>
+            <svg width="100%" viewBox={`0 0 ${MODAL_CHART_W} ${MODAL_CHART_H}`} preserveAspectRatio="xMidYMid meet" style={{ display: 'block' }}>
+              <defs>
+                {modalPoints.map((p, i) => {
+                  if (i === 0) return null;
+                  const prev = modalPoints[i - 1];
+                  const c1 = getColor(prev.value);
+                  const c2 = getColor(p.value);
+                  return (
+                    <React.Fragment key={`modal-defs-${i}`}>
+                      <linearGradient id={`modal-seg-line-${i}`} x1={prev.x} y1="0" x2={p.x} y2="0" gradientUnits="userSpaceOnUse">
+                        <stop offset="0%" stopColor={c1} />
+                        <stop offset="100%" stopColor={c2} />
+                      </linearGradient>
+                      <linearGradient id={`modal-seg-area-${i}`} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={c2} stopOpacity={0.18} />
+                        <stop offset="100%" stopColor={c2} stopOpacity={0.02} />
+                      </linearGradient>
+                    </React.Fragment>
+                  );
+                })}
+              </defs>
+
+              {/* Trust level band stripes */}
+              {TRUST_LEVELS.map(tl => {
+                const yTop = MODAL_CHART_H * (1 - tl.range[1] / 100);
+                const yBot = MODAL_CHART_H * (1 - tl.range[0] / 100);
+                return (
+                  <rect key={tl.name} x={0} y={yTop} width={MODAL_CHART_W} height={yBot - yTop}
+                    fill={tl.color} opacity={0.04} />
+                );
+              })}
+
+              {/* Area fills */}
+              {modalPoints.map((p, i) => {
+                if (i === 0) return null;
+                const prev = modalPoints[i - 1];
+                const pts = `${prev.x.toFixed(1)},${prev.y.toFixed(1)} ${p.x.toFixed(1)},${p.y.toFixed(1)} ${p.x.toFixed(1)},${MODAL_CHART_H} ${prev.x.toFixed(1)},${MODAL_CHART_H}`;
+                return <polygon key={`modal-area-${i}`} points={pts} fill={`url(#modal-seg-area-${i})`} />;
+              })}
+
+              {/* Line segments */}
+              {modalPoints.map((p, i) => {
+                if (i === 0) return null;
+                const prev = modalPoints[i - 1];
+                return (
+                  <line key={`modal-line-${i}`}
+                    x1={prev.x.toFixed(1)} y1={prev.y.toFixed(1)}
+                    x2={p.x.toFixed(1)} y2={p.y.toFixed(1)}
+                    stroke={`url(#modal-seg-line-${i})`}
+                    strokeWidth={2.5} strokeLinecap="round"
+                  />
+                );
+              })}
+
+              {/* Data point dots + labels */}
+              {modalPoints.map((p, i) => {
+                const pointColor = getColor(p.value);
+                const isLast = i === modalPoints.length - 1;
+                const dateLabel = formatPeriodLabel(p.period);
+                return (
+                  <React.Fragment key={`modal-pt-${i}`}>
+                    <circle cx={p.x} cy={p.y} r={isLast ? 5 : 4} fill={pointColor} stroke="#fff" strokeWidth={2} />
+                    {/* Value label above */}
+                    <text x={p.x} y={p.y - 10} textAnchor="middle"
+                      fontSize="12" fontWeight="700" fill={pointColor}>
+                      {p.value}
+                    </text>
+                    {/* Date label below */}
+                    <text x={p.x} y={p.y + 18} textAnchor="middle"
+                      fontSize="8.5" fontWeight="600" fill={pointColor} opacity={0.7}
+                      style={{ textTransform: 'uppercase' as const } as React.CSSProperties}>
+                      {dateLabel}
+                    </text>
+                  </React.Fragment>
+                );
+              })}
+            </svg>
+          </div>
+
+          {/* Legend */}
+          <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: '8px', justifyContent: 'center' }}>
+            {TRUST_LEVELS.map(tl => (
+              <span key={tl.name} style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                fontSize: '11px',
+                color: '#6B778C',
+                padding: '3px 8px',
+                backgroundColor: tl.bgTint,
+                borderRadius: '10px',
+                border: `1px solid ${tl.borderTint}`,
+              }}>
+                <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: tl.color, flexShrink: 0 }} />
+                <span style={{ fontWeight: 600, color: tl.color }}>{tl.name}</span>
+                <span>{tl.range[0]}–{tl.range[1]}</span>
+              </span>
+            ))}
+          </div>
+        </div>
+        <div style={styles.compareFooter}>
+          <button style={styles.compareCloseButton} onClick={onClose}>Close</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ── Banner Component (Hero Only) ────────────────────────────────────
 interface DataTrustBannerProps {
   lensResults: AssessmentLensResults;
@@ -638,15 +787,15 @@ const DataTrustBanner: React.FC<DataTrustBannerProps> = ({
   comparisonTeams = [], comparisonTeamCount = 0, comparisonCriteria = [],
 }) => {
   const [isCompareOpen, setIsCompareOpen] = useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
   const scores = computeLensScores(lensResults, integrityScore);
-  const { level: trustLevel } = getTrustLevel(scores.composite);
-  const weakest = getWeakestLens(scores);
+  const { level: trustLevel, index: trustIndex } = getTrustLevel(scores.composite);
 
   const trend = trendData ?? MOCK_COMPOSITE_TREND;
   const overallTrend = computeTrend(trend);
   const trendLabel = overallTrend === 'up' ? 'Improving' : overallTrend === 'down' ? 'Declining' : 'Stable';
-  const trendArrow = overallTrend === 'up' ? '\u2197' : overallTrend === 'down' ? '\u2198' : '\u2192';
+  const trendColor = overallTrend === 'up' ? '#00875A' : overallTrend === 'down' ? '#DE350B' : '#8993A4';
 
   const reliabilityStatuses = getReliabilityStatuses(trustLevel.name);
 
@@ -663,146 +812,203 @@ const DataTrustBanner: React.FC<DataTrustBannerProps> = ({
       {/* Accent bar — gradient stripe */}
       <div style={styles.accentBar} />
 
-      {/* Hero top — chart backdrop + floating score */}
+      {/* Hero top — floating score */}
       <div style={styles.heroTop}>
-        <ChartBackdrop points={chartPoints} />
-        <ChartDataPoints points={chartPoints} />
 
         <div style={styles.scoreFloat}>
-          <div style={styles.scoreLabelRow}>
-            <span style={styles.scoreLabel}>DATA TRUST SCORE</span>
-            <HeroInfoButton title="Understanding Your Data Trust Score">
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                <div>
-                  <h4 style={{ margin: '0 0 8px', fontSize: '13px', fontWeight: 700, color: '#0052CC', textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>What the Score Represents</h4>
-                  <p style={{ margin: 0, fontSize: '14px', color: '#42526E', lineHeight: 1.7 }}>
-                    Your Data Trust Score is a composite measure from 0–100 that reflects the overall trustworthiness of your Jira data across four lenses. A higher score means your data is more reliable for making informed decisions.
-                  </p>
-                </div>
-                <div>
-                  <h4 style={{ margin: '0 0 8px', fontSize: '13px', fontWeight: 700, color: '#0052CC', textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>Lens Weights</h4>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    {[
-                      { name: 'Timeliness', weight: '30%', color: '#0052CC' },
-                      { name: 'Trustworthiness', weight: '30%', color: '#6554C0' },
-                      { name: 'Timing', weight: '20%', color: '#00B8D9' },
-                      { name: 'Freshness', weight: '20%', color: '#36B37E' },
-                    ].map(l => (
-                      <div key={l.name} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 10px', backgroundColor: '#F4F5F7', borderRadius: '6px' }}>
-                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: l.color, flexShrink: 0 }} />
-                        <span style={{ flex: 1, fontSize: '13px', fontWeight: 600, color: '#172B4D' }}>{l.name}</span>
-                        <span style={{ fontSize: '13px', fontWeight: 700, color: l.color }}>{l.weight}</span>
-                      </div>
-                    ))}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column' as const, alignItems: 'center' }}>
+            <div style={styles.scoreLabelRow}>
+              <span style={styles.scoreLabel}>DATA TRUST SCORE</span>
+              <HeroInfoButton title="Understanding Your Data Trust Score">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                  <div>
+                    <h4 style={{ margin: '0 0 8px', fontSize: '13px', fontWeight: 700, color: '#0052CC', textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>What the Score Represents</h4>
+                    <p style={{ margin: 0, fontSize: '14px', color: '#42526E', lineHeight: 1.7 }}>
+                      Your Data Trust Score is a composite measure from 0–100 that reflects the overall trustworthiness of your Jira data across four lenses. A higher score means your data is more reliable for making informed decisions.
+                    </p>
+                  </div>
+                  <div>
+                    <h4 style={{ margin: '0 0 8px', fontSize: '13px', fontWeight: 700, color: '#0052CC', textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>Lens Weights</h4>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      {[
+                        { name: 'Timeliness', weight: '30%', color: '#0052CC' },
+                        { name: 'Trustworthiness', weight: '30%', color: '#6554C0' },
+                        { name: 'Timing', weight: '20%', color: '#00B8D9' },
+                        { name: 'Freshness', weight: '20%', color: '#36B37E' },
+                      ].map(l => (
+                        <div key={l.name} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 10px', backgroundColor: '#F4F5F7', borderRadius: '6px' }}>
+                          <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: l.color, flexShrink: 0 }} />
+                          <span style={{ flex: 1, fontSize: '13px', fontWeight: 600, color: '#172B4D' }}>{l.name}</span>
+                          <span style={{ fontSize: '13px', fontWeight: 700, color: l.color }}>{l.weight}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <h4 style={{ margin: '0 0 8px', fontSize: '13px', fontWeight: 700, color: '#0052CC', textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>Trust Level Thresholds</h4>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      {TRUST_LEVELS.map(tl => (
+                        <div key={tl.name} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '5px 10px', backgroundColor: tl.bgTint, borderRadius: '6px', borderLeft: `3px solid ${tl.color}` }}>
+                          <span style={{ fontSize: '13px', fontWeight: 700, color: tl.color, minWidth: '70px' }}>{tl.name}</span>
+                          <span style={{ fontSize: '12px', color: '#6B778C' }}>{tl.range[0]}–{tl.range[1]}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div style={{ padding: '10px 12px', backgroundColor: '#DEEBFF', borderRadius: '6px', border: '1px solid #B3D4FF' }}>
+                    <p style={{ margin: 0, fontSize: '13px', color: '#0052CC', lineHeight: 1.5 }}>
+                      The confidence gauges below the score show how reliably you can use your Jira data for each purpose, derived from the composite score against use-case-specific thresholds.
+                    </p>
                   </div>
                 </div>
-                <div>
-                  <h4 style={{ margin: '0 0 8px', fontSize: '13px', fontWeight: 700, color: '#0052CC', textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>Trust Level Thresholds</h4>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    {TRUST_LEVELS.map(tl => (
-                      <div key={tl.name} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '5px 10px', backgroundColor: tl.bgTint, borderRadius: '6px', borderLeft: `3px solid ${tl.color}` }}>
-                        <span style={{ fontSize: '13px', fontWeight: 700, color: tl.color, minWidth: '70px' }}>{tl.name}</span>
-                        <span style={{ fontSize: '12px', color: '#6B778C' }}>{tl.range[0]}–{tl.range[1]}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div style={{ padding: '10px 12px', backgroundColor: '#DEEBFF', borderRadius: '6px', border: '1px solid #B3D4FF' }}>
-                  <p style={{ margin: 0, fontSize: '13px', color: '#0052CC', lineHeight: 1.5 }}>
-                    The confidence gauges below the score show how reliably you can use your Jira data for each purpose, derived from the composite score against use-case-specific thresholds.
-                  </p>
-                </div>
-              </div>
-            </HeroInfoButton>
-          </div>
-
-          <div style={styles.scoreDisc}>
-            {/* Halo — fades chart line smoothly behind the donut */}
-            <div style={styles.scoreHalo} />
-            {/* Frosted glass circle */}
-            <div style={styles.scoreDiscBg} />
-            {/* Donut ring SVG */}
-            <svg width={186} height={186} viewBox="0 0 186 186" style={{ ...styles.scoreRing, transform: 'rotate(-90deg)' }}>
-              <defs>
-                <filter id="hero-glow" x="-20%" y="-20%" width="140%" height="140%">
-                  <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="blur" />
-                  <feMerge>
-                    <feMergeNode in="blur" />
-                    <feMergeNode in="SourceGraphic" />
-                  </feMerge>
-                </filter>
-              </defs>
-              {/* Track */}
-              <circle cx={93} cy={93} r={r} fill="none" stroke={`${trustLevel.color}14`} strokeWidth={9} />
-              {/* Filled arc */}
-              <circle cx={93} cy={93} r={r} fill="none" stroke={trustLevel.color} strokeWidth={9}
-                strokeDasharray={`${filled.toFixed(1)} ${circ.toFixed(1)}`} strokeLinecap="round" filter="url(#hero-glow)" />
-            </svg>
-            {/* Score number overlay */}
-            <div style={styles.scoreContent}>
-              <span style={{ ...styles.scoreNumber, color: trustLevel.color }}>{scores.composite}</span>
+              </HeroInfoButton>
             </div>
+            <div style={styles.scoreDisc}>
+              {/* Frosted glass circle */}
+              <div style={styles.scoreDiscBg} />
+              {/* Donut ring SVG */}
+              <svg width={186} height={186} viewBox="0 0 186 186" style={{ ...styles.scoreRing, transform: 'rotate(-90deg)' }}>
+                <defs>
+                  <filter id="hero-glow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="blur" />
+                    <feMerge>
+                      <feMergeNode in="blur" />
+                      <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                  </filter>
+                </defs>
+                {/* Track */}
+                <circle cx={93} cy={93} r={r} fill="none" stroke={`${trustLevel.color}14`} strokeWidth={9} />
+                {/* Filled arc */}
+                <circle cx={93} cy={93} r={r} fill="none" stroke={trustLevel.color} strokeWidth={9}
+                  strokeDasharray={`${filled.toFixed(1)} ${circ.toFixed(1)}`} strokeLinecap="round" filter="url(#hero-glow)" />
+              </svg>
+              {/* Score number overlay */}
+              <div style={styles.scoreContent}>
+                <span style={{ ...styles.scoreNumber, color: trustLevel.color, position: 'relative' as const }}>
+                  {scores.composite}
+                  <button
+                    className="trend-spark-btn"
+                    onClick={() => setIsHistoryOpen(true)}
+                    type="button"
+                    title="View score history"
+                    style={{
+                      position: 'absolute' as const,
+                      top: '-4px',
+                      right: '-32px',
+                      width: '32px',
+                      height: '32px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      borderRadius: '50%',
+                      border: 'none',
+                      background: 'transparent',
+                      cursor: 'pointer',
+                      padding: 0,
+                      transition: 'background 0.15s, transform 0.15s, box-shadow 0.15s',
+                    }}>
+                    <style>{`.trend-spark-btn:hover { background: ${trendColor}18 !important; transform: scale(1.15); box-shadow: 0 0 0 3px ${trendColor}22; } .trend-spark-btn:active { transform: scale(1.05); }`}</style>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={trendColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                      style={{
+                        transform: overallTrend === 'down' ? 'scaleY(-1)' : 'none',
+                        opacity: overallTrend === 'stable' ? 0.5 : 0.9,
+                      }}>
+                      <polyline points="3,18 8,13 12,16 21,6" />
+                      <polyline points="16,6 21,6 21,11" />
+                    </svg>
+                  </button>
+                </span>
+              </div>
+            </div>
+
+            {/* Badge row — centered under donut */}
+            <div style={styles.badgeRow}>
+              {comparisonTeamCount > 0 && (
+                <button
+                  style={styles.compareBadge}
+                  onClick={() => setIsCompareOpen(true)}
+                  type="button"
+                >
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" style={{ flexShrink: 0 }}>
+                    <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-5 6c0-2.76 2.24-5 5-5s5 2.24 5 5H3zm10-8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zm1.5 2h-.52a3.98 3.98 0 0 1 1.52 3.13V14H16v-2c0-1.1-.9-2-2-2h-.5zM3 6a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zM.5 8H0c-1.1 0-2 .9-2 2v2h2v-2.13c0-1.2.47-2.3 1.25-3.12L.5 8z" />
+                  </svg>
+                  vs {comparisonTeamCount} teams
+                </button>
+              )}
+            </div>
+            </div>
+
+            {/* Vertical trust level spectrum */}
+            <svg width={90} height={126} viewBox="0 0 90 126">
+              {(() => {
+                const levels = [...TRUST_LEVELS].reverse(); // Optimal at top
+                const nodeX = 8;
+                const labelX = 22;
+                const spacing = 26;
+                const startY = 12;
+                return (
+                  <>
+                    {/* Connecting lines */}
+                    {levels.map((_, j) => {
+                      if (j === levels.length - 1) return null;
+                      const y1 = startY + j * spacing;
+                      const y2 = startY + (j + 1) * spacing;
+                      const origIdx1 = TRUST_LEVELS.length - 1 - j;
+                      const reached = origIdx1 <= trustIndex;
+                      return (
+                        <line key={`line-${j}`} x1={nodeX} y1={y1} x2={nodeX} y2={y2}
+                          stroke={reached ? levels[j + 1].color : '#DFE1E6'} strokeWidth={2} />
+                      );
+                    })}
+                    {/* Nodes + labels */}
+                    {levels.map((level, j) => {
+                      const y = startY + j * spacing;
+                      const origIdx = TRUST_LEVELS.length - 1 - j;
+                      const isCurr = origIdx === trustIndex;
+                      const isReached = origIdx <= trustIndex;
+                      return (
+                        <g key={level.name}>
+                          {isCurr && (
+                            <circle cx={nodeX} cy={y} r={10} fill={level.color} opacity={0.12} />
+                          )}
+                          <circle cx={nodeX} cy={y} r={isCurr ? 5 : 3}
+                            fill={isReached ? level.color : '#FFFFFF'}
+                            stroke={isReached ? level.color : '#DFE1E6'}
+                            strokeWidth={isReached ? 0 : 1.5} />
+                          <text x={labelX} y={y} dominantBaseline="central"
+                            fontSize={isCurr ? '11.5' : '10'} fontWeight={isCurr ? '700' : '400'}
+                            fill={isCurr ? level.color : '#A5ADBA'}>
+                            {level.name}
+                          </text>
+                        </g>
+                      );
+                    })}
+                  </>
+                );
+              })()}
+            </svg>
           </div>
 
-          {/* Badge row */}
-          <div style={styles.badgeRow}>
-            <span style={{
-              ...styles.badge,
-              background: `${trustLevel.color}1F`,
-              border: `1.5px solid ${trustLevel.color}4D`,
-              color: trustLevel.color,
-            }}>
-              <span style={{ ...styles.badgeDot, backgroundColor: trustLevel.color }} />
-              {trustLevel.name}
-            </span>
-            <span style={styles.badgeTrend}>
-              {trendArrow} {trendLabel}
-            </span>
-            {comparisonTeamCount > 0 && (
-              <button
-                style={styles.compareBadge}
-                onClick={() => setIsCompareOpen(true)}
-                type="button"
-              >
-                <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" style={{ flexShrink: 0 }}>
-                  <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-5 6c0-2.76 2.24-5 5-5s5 2.24 5 5H3zm10-8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zm1.5 2h-.52a3.98 3.98 0 0 1 1.52 3.13V14H16v-2c0-1.1-.9-2-2-2h-.5zM3 6a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zM.5 8H0c-1.1 0-2 .9-2 2v2h2v-2.13c0-1.2.47-2.3 1.25-3.12L.5 8z" />
-                </svg>
-                vs {comparisonTeamCount} teams
-              </button>
-            )}
-          </div>
         </div>
 
       </div>
 
-      {/* Insight callout */}
-      <div style={styles.insightBar}>
-        <div style={styles.insightIcon}>
-          <svg width={12} height={12} viewBox="0 0 16 16" fill="none">
-            <path d="M8 2L2 14h12L8 2z" fill="#fff" />
-            <rect x="7.25" y="6" width="1.5" height="4" rx="0.75" fill="#FF8B00" />
-            <circle cx="8" cy="11.5" r="0.85" fill="#FF8B00" />
-          </svg>
-        </div>
-        <p style={styles.insightText}>
-          {weakest.score < 75 ? (
-            <>
-              <span style={styles.insightHl}>{weakest.label}</span>
-              {' '}is your weakest component at{' '}
-              <span style={styles.insightHl}>{weakest.score}</span>
-              {' '}&mdash; start there to improve fastest.
-            </>
-          ) : (
-            <>All components are performing well. Your data has {trustLevel.description}.</>
-          )}
-        </p>
-      </div>
-
-      <div style={{ height: '12px' }} />
       <div style={styles.sectionDivider} />
 
       {/* Confidence gauges */}
       <ConfidenceGauges composite={scores.composite} reliabilityStatuses={reliabilityStatuses} />
+
+      {/* Score History Modal */}
+      <TrendHistoryModal
+        isOpen={isHistoryOpen}
+        onClose={() => setIsHistoryOpen(false)}
+        chartPoints={chartPoints}
+        composite={scores.composite}
+        trustLevelColor={trustLevel.color}
+        trendLabel={trendLabel}
+      />
 
       {/* Team Comparison Modal */}
       <TeamComparisonModal
@@ -832,25 +1038,8 @@ const styles: Record<string, React.CSSProperties> = {
   },
   heroTop: {
     position: 'relative' as const,
-    minHeight: '290px',
+    minHeight: '240px',
     overflow: 'hidden',
-  },
-  chartBackdrop: {
-    position: 'absolute' as const,
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    width: '100%',
-    height: '100%',
-  },
-  dataPointOverlay: {
-    position: 'absolute' as const,
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    pointerEvents: 'none' as const,
   },
   scoreFloat: {
     position: 'relative' as const,
@@ -877,17 +1066,6 @@ const styles: Record<string, React.CSSProperties> = {
     position: 'relative' as const,
     width: '186px',
     height: '186px',
-  },
-  scoreHalo: {
-    position: 'absolute' as const,
-    top: '50%',
-    left: '50%',
-    transform: 'translate(-50%, -50%)',
-    width: '260px',
-    height: '260px',
-    borderRadius: '50%',
-    background: 'radial-gradient(circle, rgba(255,255,255,0.95) 32%, rgba(255,255,255,0.65) 52%, rgba(255,255,255,0) 72%)',
-    pointerEvents: 'none' as const,
   },
   scoreDiscBg: {
     position: 'absolute' as const,
@@ -1220,41 +1398,6 @@ const styles: Record<string, React.CSSProperties> = {
     lineHeight: 1.5,
     fontStyle: 'italic' as const,
   },
-  insightBar: {
-    position: 'relative' as const,
-    zIndex: 1,
-    margin: '0 28px 0',
-    padding: '10px 16px',
-    background: 'rgba(255, 247, 237, 0.95)',
-    borderLeft: '3px solid #FF8B00',
-    borderRadius: '0 8px 8px 0',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    backdropFilter: 'blur(4px)',
-    WebkitBackdropFilter: 'blur(4px)',
-  },
-  insightIcon: {
-    flexShrink: 0,
-    width: '22px',
-    height: '22px',
-    borderRadius: '50%',
-    background: '#FF8B00',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  insightText: {
-    fontSize: '13px',
-    fontWeight: 500,
-    color: '#44546F',
-    lineHeight: 1.4,
-    margin: 0,
-  },
-  insightHl: {
-    fontWeight: 700,
-    color: '#FF8B00',
-  },
   sectionDivider: {
     height: '1px',
     background: '#EBECF0',
@@ -1271,30 +1414,31 @@ const styles: Record<string, React.CSSProperties> = {
     marginBottom: '16px',
     textAlign: 'center' as const,
   },
-  gaugeRow: {
+  tileRow: {
     display: 'flex',
     justifyContent: 'center',
     gap: '8px',
   },
-  gaugeTile: {
+  tile: {
     flex: '1',
-    maxWidth: '128px',
+    maxWidth: '120px',
     display: 'flex',
     flexDirection: 'column' as const,
     alignItems: 'center',
     textAlign: 'center' as const,
-    gap: '3px',
-    padding: '12px 6px 10px',
-    borderRadius: '12px',
+    gap: '2px',
+    padding: '10px 6px 8px',
+    borderRadius: '10px',
     border: '1px solid transparent',
+    background: '#FFFFFF',
   },
-  gaugePct: {
-    fontSize: '13px',
+  tileLabel: {
+    fontSize: '10px',
     fontWeight: 700,
-    lineHeight: 1,
-    marginTop: '-1px',
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.3px',
   },
-  gaugeName: {
+  tileName: {
     fontSize: '10.5px',
     fontWeight: 600,
     color: '#172B4D',
@@ -1302,12 +1446,6 @@ const styles: Record<string, React.CSSProperties> = {
     minHeight: '26px',
     display: 'flex',
     alignItems: 'center',
-  },
-  gaugeStatus: {
-    fontSize: '9px',
-    fontWeight: 700,
-    textTransform: 'uppercase' as const,
-    letterSpacing: '0.4px',
   },
 };
 
