@@ -5,6 +5,7 @@ import {
   getTrustLevel,
   LENS_CONFIG,
   TRUST_LEVELS,
+  HERO_GRADIENTS,
 } from './DataTrustBanner';
 
 interface ScoreComponentsCardProps {
@@ -13,6 +14,24 @@ interface ScoreComponentsCardProps {
   onLensClick?: (lens: LensType) => void;
 }
 
+/* Per-lens hero-style question data (matches LensDetailPage heroes) */
+const LENS_HERO_DATA: Record<string, {
+  q1: string; h1: string; q2: string; h2: string; q3: string; subtext: string;
+}> = {
+  coverage: {
+    q1: 'Are your tickets ', h1: 'ready', q2: ' before work ', h2: 'begins', q3: '?',
+    subtext: 'Measures whether required fields, descriptions, and acceptance criteria are filled in before a ticket enters a sprint.',
+  },
+  integrity: {
+    q1: 'Is your Jira data ', h1: 'meaningful', q2: ' or just ', h2: 'placeholder', q3: '?',
+    subtext: 'Evaluates whether field values represent genuine work activity rather than placeholder or default values.',
+  },
+  behavioral: {
+    q1: 'Does your Jira ', h1: 'reflect', q2: " what's actually ", h2: 'happening', q3: '?',
+    subtext: 'Checks whether tickets are updated regularly to reflect the current state of work.',
+  },
+};
+
 const ScoreComponentsCard: React.FC<ScoreComponentsCardProps> = ({
   lensResults,
   integrityScore,
@@ -20,73 +39,78 @@ const ScoreComponentsCard: React.FC<ScoreComponentsCardProps> = ({
 }) => {
   const scores = computeLensScores(lensResults, integrityScore);
 
-  const behavioralScore = lensResults.behavioral.patternsChecked > 0
-    ? Math.round((1 - lensResults.behavioral.patternsDetected / lensResults.behavioral.patternsChecked) * 100)
-    : 100;
-
   const LENSES: { lens: LensType; score: number }[] = [
     { lens: 'coverage',   score: scores.coverage },
     { lens: 'integrity',  score: scores.integrity },
-    { lens: 'behavioral', score: behavioralScore },
+    { lens: 'behavioral', score: scores.behavioral },
   ];
 
   const weakestDisplayed = LENSES.reduce((a, b) => a.score < b.score ? a : b);
 
+  const lensColors = LENSES.map(l => getTrustLevel(l.score).level.color);
+
   return (
-    <div style={styles.card}>
-      <div style={styles.header}>
-        <span style={styles.title}>SCORE COMPONENTS</span>
-        <span style={styles.subtitle}>Click any lens to explore details</span>
+    <div style={styles.wrapper}>
+      {/* Connector lines bridging from hero composition footer to cards */}
+      <div style={styles.connectorRow}>
+        {LENSES.map(({ lens }, i) => (
+          <div key={`conn-${lens}`} style={styles.connectorCell}>
+            <svg width="10" height="7" viewBox="0 0 10 7" style={{ display: 'block', flexShrink: 0 }}>
+              <polygon points="1,7 9,7 5,1" fill={lensColors[i]} opacity="0.7" />
+            </svg>
+            <div style={{ ...styles.connectorLine, background: `linear-gradient(to bottom, ${lensColors[i]}30, ${lensColors[i]})` }} />
+          </div>
+        ))}
       </div>
+
       <div style={styles.grid}>
         {LENSES.map(({ lens, score }) => {
           const config = LENS_CONFIG[lens];
           const { level: trustLevel, index: trustIndex } = getTrustLevel(score);
           const isWeakest = lens === weakestDisplayed.lens;
+          const heroData = LENS_HERO_DATA[lens];
+          const gradient = HERO_GRADIENTS[trustLevel.name] || HERO_GRADIENTS['Fair'];
 
           return (
             <button
               key={lens}
               style={{
                 ...styles.lensCard,
-                borderTopColor: trustLevel.color,
-                ...(isWeakest ? {
-                  borderColor: trustLevel.color,
-                  borderTopColor: trustLevel.color,
-                } : {}),
+                ...(isWeakest ? { borderColor: trustLevel.color } : {}),
               }}
               onClick={() => onLensClick?.(lens)}
             >
-              {/* Start here tab on top border */}
-              {isWeakest && (
-                <span style={{
-                  ...styles.startHereBadge,
-                  color: trustLevel.color,
-                  borderColor: trustLevel.color,
-                }}>
-                  START HERE
-                </span>
-              )}
+              {/* Accent bar */}
+              <div style={{ ...styles.accentBar, background: trustLevel.color }} />
 
-              {/* Icon + Lens label */}
-              <div style={styles.labelRow}>
-                <div style={{ ...styles.iconWrap, backgroundColor: `${trustLevel.color}14` }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill={trustLevel.color}>
-                    <path d={config.icon} />
-                  </svg>
+              {/* Question section — hero-style with gradient background */}
+              <div style={{ ...styles.questionSection, background: gradient }}>
+                {/* Decorative circles */}
+                <div style={styles.decor1} />
+                <div style={styles.decor2} />
+
+                <div style={styles.eyebrowRow}>
+                  <span style={styles.eyebrow}>{config.label.toUpperCase()}</span>
+                  {isWeakest && (
+                    <span style={{ ...styles.focusPill, color: trustLevel.color, backgroundColor: `${trustLevel.color}12`, borderColor: `${trustLevel.color}35` }}>
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill={trustLevel.color}>
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                      </svg>
+                      Start here
+                    </span>
+                  )}
                 </div>
-                <span style={styles.lensLabel}>{config.label}</span>
+                <h3 style={styles.questionText}>
+                  {heroData.q1}<span style={styles.highlight1}>{heroData.h1}</span>{heroData.q2}<span style={styles.highlight2}>{heroData.h2}</span>{heroData.q3}
+                </h3>
+                <p style={styles.subtext}>
+                  {heroData.subtext}
+                </p>
               </div>
 
-              {/* Description */}
-              <p style={styles.lensDesc}>{config.description}</p>
-
-              {/* Horizontal divider */}
-              <div style={styles.horizDivider} />
-
-              {/* Bottom: score + vertical spectrum side by side */}
-              <div style={styles.bottomRow}>
-                {/* Left: Health Score */}
+              {/* Score section — white background */}
+              <div style={styles.scoreSection}>
+                {/* Left: Health Score donut */}
                 <div style={styles.scoreColumn}>
                   <span style={styles.columnHeader}>HEALTH SCORE</span>
                   {(() => {
@@ -141,7 +165,6 @@ const ScoreComponentsCard: React.FC<ScoreComponentsCardProps> = ({
 
                     return (
                       <svg width={110} height={svgH} viewBox={`0 0 110 ${svgH}`}>
-                        {/* Connecting lines */}
                         {levels.map((_, j) => {
                           if (j === nodeCount - 1) return null;
                           const y1 = startY + j * spacing;
@@ -157,7 +180,6 @@ const ScoreComponentsCard: React.FC<ScoreComponentsCardProps> = ({
                             />
                           );
                         })}
-                        {/* Nodes + labels */}
                         {levels.map((level, j) => {
                           const y = startY + j * spacing;
                           const origIdx = nodeCount - 1 - j;
@@ -205,105 +227,146 @@ const ScoreComponentsCard: React.FC<ScoreComponentsCardProps> = ({
 };
 
 const styles: Record<string, React.CSSProperties> = {
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: '16px',
-    border: '1px solid #E4E6EB',
-    padding: '28px 32px 32px',
-  },
-  header: {
+  wrapper: {
     display: 'flex',
-    alignItems: 'baseline',
-    justifyContent: 'space-between',
-    marginBottom: '24px',
+    flexDirection: 'column' as const,
   },
-  title: {
-    fontSize: '13px',
-    fontWeight: 700,
-    color: '#6B778C',
-    letterSpacing: '1px',
-    textTransform: 'uppercase' as const,
+  connectorRow: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(3, 1fr)',
+    gap: '20px',
+    marginTop: '-14px',
+    marginBottom: '-2px',
   },
-  subtitle: {
-    fontSize: '12px',
-    color: '#97A0AF',
+  connectorCell: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    alignItems: 'center',
+  },
+  connectorLine: {
+    width: '2px',
+    height: '16px',
   },
   grid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(3, 1fr)',
     gap: '20px',
   },
+
+  /* ── Card shell ─────────────────────────────────────────── */
   lensCard: {
     position: 'relative' as const,
     display: 'flex',
     flexDirection: 'column' as const,
-    alignItems: 'center',
-    gap: '6px',
-    padding: '24px 24px 16px',
     backgroundColor: '#FFFFFF',
     border: '1px solid #E4E6EB',
-    borderTop: '4px solid',
-    borderRadius: '14px',
+    borderRadius: '16px',
+    overflow: 'hidden' as const,
     cursor: 'pointer',
     fontFamily: 'inherit',
-    textAlign: 'center' as const,
+    textAlign: 'left' as const,
+    padding: 0,
     transition: 'box-shadow 0.15s ease, transform 0.15s ease',
+    boxShadow: '0 2px 12px rgba(9, 30, 66, 0.08)',
   },
-  startHereBadge: {
+  accentBar: {
+    height: '5px',
+    flexShrink: 0,
+  },
+
+  /* ── Question section (gradient bg) — exactly 50% ────────── */
+  questionSection: {
+    position: 'relative' as const,
+    overflow: 'hidden' as const,
+    padding: '20px 24px 16px',
+    flex: '1 1 0%',
+    display: 'flex',
+    flexDirection: 'column' as const,
+    justifyContent: 'center' as const,
+  },
+  decor1: {
     position: 'absolute' as const,
-    top: '-10px',
-    left: '50%',
-    transform: 'translateX(-50%)',
-    fontSize: '10px',
-    fontWeight: 700,
-    textTransform: 'uppercase' as const,
-    letterSpacing: '0.5px',
-    padding: '2px 10px',
-    borderRadius: '4px',
-    backgroundColor: '#FFFFFF',
-    border: '1px solid',
-    whiteSpace: 'nowrap' as const,
+    top: '-30px',
+    right: '-20px',
+    width: '120px',
+    height: '120px',
+    borderRadius: '50%',
+    background: 'rgba(255, 139, 0, 0.05)',
+    border: '1px solid rgba(255, 139, 0, 0.07)',
+    pointerEvents: 'none' as const,
   },
-  labelRow: {
+  decor2: {
+    position: 'absolute' as const,
+    bottom: '-15px',
+    left: '-25px',
+    width: '80px',
+    height: '80px',
+    borderRadius: '50%',
+    background: 'rgba(0, 82, 204, 0.04)',
+    border: '1px solid rgba(0, 82, 204, 0.05)',
+    pointerEvents: 'none' as const,
+  },
+  eyebrowRow: {
+    position: 'relative' as const,
+    zIndex: 1,
     display: 'flex',
     alignItems: 'center',
     gap: '10px',
+    marginBottom: '10px',
   },
-  iconWrap: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '36px',
-    height: '36px',
-    borderRadius: '10px',
-    flexShrink: 0,
-  },
-  lensLabel: {
-    fontSize: '11px',
-    fontWeight: 700,
-    color: '#6B778C',
-    letterSpacing: '1px',
+  eyebrow: {
+    fontSize: '10px',
+    fontWeight: 800,
+    letterSpacing: '2px',
+    color: '#BF6A02',
     textTransform: 'uppercase' as const,
   },
-  lensDesc: {
-    margin: '4px 0 0',
-    fontSize: '13px',
-    color: '#6B778C',
-    lineHeight: 1.5,
-    maxWidth: '280px',
+  focusPill: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '4px',
+    fontSize: '10px',
+    fontWeight: 700,
+    padding: '2px 8px',
+    borderRadius: '10px',
+    border: '1px solid',
+    whiteSpace: 'nowrap' as const,
   },
-  horizDivider: {
-    width: '100%',
-    height: '1px',
-    backgroundColor: 'rgba(9, 30, 66, 0.08)',
-    marginTop: '12px',
+  questionText: {
+    position: 'relative' as const,
+    zIndex: 1,
+    margin: '0 0 12px',
+    fontSize: '19px',
+    fontWeight: 800,
+    lineHeight: 1.3,
+    color: '#172B4D',
+    letterSpacing: '-0.3px',
   },
-  bottomRow: {
+  highlight1: {
+    color: '#FF8B00',
+  },
+  highlight2: {
+    color: '#0052CC',
+  },
+  subtext: {
+    position: 'relative' as const,
+    zIndex: 1,
+    margin: 0,
+    fontSize: '12.5px',
+    lineHeight: 1.65,
+    color: '#44546F',
+    fontWeight: 400,
+  },
+
+  /* ── Score section (white bg) — exactly 50% ──────────────── */
+  scoreSection: {
     display: 'flex',
-    alignItems: 'flex-start',
-    gap: '0',
-    marginTop: '12px',
-    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center' as const,
+    flex: '1 1 0%',
+    padding: '16px 20px',
+    borderTop: '1px solid rgba(9, 30, 66, 0.06)',
+    backgroundColor: '#FFFFFF',
   },
   scoreColumn: {
     flex: '1 1 0',
@@ -356,11 +419,12 @@ const styles: Record<string, React.CSSProperties> = {
   },
   arrow: {
     position: 'absolute' as const,
-    top: '18px',
+    top: '28px',
     right: '18px',
     fontSize: '18px',
     color: '#B3BAC5',
     fontWeight: 400,
+    zIndex: 1,
   },
 };
 

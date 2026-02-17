@@ -1219,6 +1219,30 @@ const DataTrustBanner: React.FC<DataTrustBannerProps> = ({
 
       </div>
 
+      {/* Composition footer — shows which dimensions feed into the overall score */}
+      <div style={styles.compositionFooter}>
+        {([
+          { label: 'Timeliness', score: scores.coverage, weight: '30%' },
+          { label: 'Trustworthiness', score: scores.integrity, weight: '30%' },
+          { label: 'Freshness', score: scores.behavioral, weight: '20%' },
+        ] as const).map((seg, i) => {
+          const segTrust = getTrustLevel(seg.score);
+          return (
+            <div
+              key={seg.label}
+              style={{
+                ...styles.compositionSeg,
+                borderBottomColor: segTrust.level.color,
+                ...(i < 2 ? { borderRight: '1px solid rgba(9, 30, 66, 0.06)' } : {}),
+              }}
+            >
+              <span style={{ ...styles.compositionSegLabel, color: segTrust.level.color }}>{seg.label}</span>
+              <span style={styles.compositionSegMeta}>{seg.score} &middot; {seg.weight}</span>
+            </div>
+          );
+        })}
+      </div>
+
     </div>
 
     {/* Use Cases Modal */}
@@ -1272,6 +1296,29 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '16px',
     border: '1px solid #E4E6EB',
     overflow: 'hidden',
+  },
+  compositionFooter: {
+    display: 'flex',
+    borderTop: '1px solid rgba(9, 30, 66, 0.06)',
+  },
+  compositionSeg: {
+    flex: '1 1 0%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '8px',
+    padding: '10px 12px',
+    borderBottom: '3px solid transparent',
+  },
+  compositionSegLabel: {
+    fontSize: '11px',
+    fontWeight: 700,
+    letterSpacing: '0.3px',
+  },
+  compositionSegMeta: {
+    fontSize: '11px',
+    color: '#97A0AF',
+    fontWeight: 500,
   },
   accentBar: {
     height: '5px',
