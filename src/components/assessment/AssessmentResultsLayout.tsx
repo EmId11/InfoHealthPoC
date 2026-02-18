@@ -23,8 +23,13 @@ import ShareIcon from '@atlaskit/icon/glyph/share';
 import { PersonaSwitcher } from '../persona';
 import { LensType } from '../../types/patterns';
 import DataTrustBanner from './patterns/DataTrustBanner';
-import ScoreComponentsCard from './patterns/ScoreComponentsCard';
-import { mockIntegrityDimensionResult } from '../../constants/mockAssessmentData';
+import {
+  computeLensScores,
+  getTrustLevel,
+  LENS_CONFIG,
+} from './patterns/DataTrustBanner';
+import Sparkline from './common/Sparkline';
+import { mockIntegrityDimensionResult, mockDimension6Result, staleFreshFindings } from '../../constants/mockAssessmentData';
 
 // Top-level tabs
 type TopLevelTab = 'assessment-results' | 'improvement-plan' | 'reports';
@@ -239,6 +244,9 @@ const AssessmentResultsLayout: React.FC<AssessmentResultsLayoutProps> = ({
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
         }
+        .comp-summary-row:hover {
+          background-color: #F8F9FA !important;
+        }
       `;
       document.head.appendChild(style);
     }
@@ -428,6 +436,127 @@ const AssessmentResultsLayout: React.FC<AssessmentResultsLayoutProps> = ({
           ═══════════════════════════════════════════════════════════════════ */}
           {activeTab === 'assessment-results' && assessmentResult.lensResults && (() => {
             const intScore = mockIntegrityDimensionResult.healthScore;
+            // Compute data for component summary table
+            const scores = computeLensScores(assessmentResult.lensResults, intScore);
+            const TICKET_READINESS_INDEX = 1;
+            const coverageDim = assessmentResult.dimensions[TICKET_READINESS_INDEX];
+            const integrityDim = mockIntegrityDimensionResult;
+            const behavioralDim = mockDimension6Result;
+
+            const sevFromRate = (rate: number) => rate >= 0.80 ? 'Critical' : rate >= 0.50 ? 'At Risk' : rate >= 0.30 ? 'Fair' : 'Healthy';
+            const sevFromScore = (sc: number) => sc >= 70 ? 'Healthy' : sc >= 50 ? 'Fair' : sc >= 30 ? 'At Risk' : 'Critical';
+            const vtScore = (val: number, bench: number, hib: boolean) => {
+              if (hib) return bench <= 0 ? (val > 0 ? 100 : 0) : Math.max(0, Math.min(100, Math.round((val / bench) * 100)));
+              return bench <= 0 ? (val > 0 ? 0 : 100) : Math.max(0, Math.min(100, Math.round(100 - ((val / bench) - 1) * 50)));
+            };
+            const fieldDisplayNames: Record<string, string> = {
+              acceptanceCriteria: 'Acceptance Criteria', assignee: 'Assignee', dueDate: 'Due Date',
+              estimates: 'Estimates', linksToIssues: 'Related Issues', parentEpic: 'Parent Epic',
+              prioritySet: 'Priority', subTasks: 'Sub-tasks',
+            };
+            const getFieldName = (fid: string) => fieldDisplayNames[fid] || fid.charAt(0).toUpperCase() + fid.slice(1);
+
+            // Coverage stats
+            const coverageIndicators = coverageDim.categories.flatMap(c => c.indicators);
+            const covSev: Record<string, number> = { Critical: 0, 'At Risk': 0, Fair: 0, Healthy: 0 };
+            let covImp = 0, covStab = 0, covDec = 0;
+            let covWorstName = '', covWorstRate = 0;
+            for (const ind of coverageIndicators) {
+              const rate = ind.value / 100;
+              covSev[sevFromRate(rate)]++;
+              if (rate > covWorstRate) {
+                covWorstRate = rate;
+                covWorstName = ind.name.replace(/^What %.*?\?\s*/i, '').replace(/^How.*?\?\s*/i, '') || ind.name;
+              }
+              if (ind.trendData && ind.trendData.length >= 2) {
+                const d = ind.trendData[ind.trendData.length - 1].value - ind.trendData[0].value;
+                if (d > 2) covImp++; else if (d < -2) covDec++; else covStab++;
+              } else covStab++;
+            }
+            const covAvg = coverageIndicators.length > 0 ? coverageIndicators.reduce((s, i) => s + i.value, 0) / coverageIndicators.length / 100 : 0;
+
+            // Integrity stats
+            const intSev: Record<string, number> = { Critical: 0, 'At Risk': 0, Fair: 0, Healthy: 0 };
+            let intImp = 0, intStab = 0, intDec = 0, intFieldCount = 0, intChecks = 0, intFailed = 0;
+            let intWorstFid = '', intWorstFRate = 0;
+            const intFieldMap = new Map<string, { failed: number; passed: number; indicators: any[] }>();
+            for (const cat of integrityDim.categories) {
+              if (cat.id === 'crossField') continue;
+              for (const ind of cat.indicators) {
+                const fid = (ind as any).jiraFieldId || '__unknown__';
+                if (!intFieldMap.has(fid)) intFieldMap.set(fid, { failed: 0, passed: 0, indicators: [] });
+                const e = intFieldMap.get(fid)!;
+                e.failed++; e.indicators.push(ind);
+              }
+              if ((cat as any).passedChecks) {
+                for (const pc of (cat as any).passedChecks) {
+                  const fid = pc.jiraFieldId || '__unknown__';
+                  if (!intFieldMap.has(fid)) intFieldMap.set(fid, { failed: 0, passed: 0, indicators: [] });
+                  intFieldMap.get(fid)!.passed++;
+                }
+              }
+            }
+            intFieldMap.forEach((data, fid) => {
+              intFieldCount++;
+              const tot = data.failed + data.passed;
+              intChecks += tot; intFailed += data.failed;
+              const fr = tot > 0 ? data.failed / tot : 0;
+              intSev[sevFromRate(fr)]++;
+              if (fr > intWorstFRate) { intWorstFRate = fr; intWorstFid = fid; }
+              let up = 0, dn = 0;
+              for (const ind of data.indicators) {
+                if (ind.trendData && ind.trendData.length >= 2) {
+                  const d = ind.trendData[ind.trendData.length - 1].value - ind.trendData[0].value;
+                  if (d > 2) up++; else if (d < -2) dn++;
+                }
+              }
+              if (up > dn) intImp++; else if (dn > up) intDec++; else intStab++;
+            });
+            const intPassRate = intChecks > 0 ? Math.round((1 - intFailed / intChecks) * 100) : 100;
+
+            // Freshness stats
+            const freshSev: Record<string, number> = { Critical: 0, 'At Risk': 0, Fair: 0, Healthy: 0 };
+            let freshImp = 0, freshStab = 0, freshDec = 0;
+            const FRESH_TYPES = ['Story', 'Bug', 'Task', 'Epic', 'Risk', 'Assumption', 'Feature', 'Spike', 'Dependency', 'Impediment', 'Initiative'];
+            let freshWorstName = '', freshWorstScore = 101;
+            for (let i = 0; i < FRESH_TYPES.length && i < staleFreshFindings.length; i++) {
+              const stale = staleFreshFindings[i];
+              const sc = vtScore(stale.value, stale.benchmarkValue, stale.higherIsBetter);
+              freshSev[sevFromScore(sc)]++;
+              if (sc < freshWorstScore) { freshWorstScore = sc; freshWorstName = FRESH_TYPES[i]; }
+              if (stale.trendData && stale.trendData.length >= 2) {
+                const rawD = stale.trendData[stale.trendData.length - 1].value - stale.trendData[0].value;
+                const rawT = rawD > 2 ? 'up' : rawD < -2 ? 'down' : 'stable';
+                const ht = rawT === 'stable' ? 'stable' : stale.higherIsBetter ? (rawT === 'up' ? 'improving' : 'declining') : (rawT === 'up' ? 'declining' : 'improving');
+                if (ht === 'improving') freshImp++; else if (ht === 'declining') freshDec++; else freshStab++;
+              } else freshStab++;
+            }
+            const freshHealth = behavioralDim.healthScore ?? Math.round(behavioralDim.overallPercentile);
+
+            const componentRows = [
+              {
+                key: 'coverage' as LensType, label: 'Timeliness', score: scores.coverage, weight: '30%',
+                dimension: coverageDim, icon: LENS_CONFIG.coverage.icon,
+                sevCounts: covSev, improving: covImp, stable: covStab, declining: covDec,
+                detail: `${coverageIndicators.length} fields`, primaryMetric: `${Math.round((1 - covAvg) * 100)}% complete`,
+                worst: covWorstRate > 0.3 ? `${covWorstName} (${Math.round(covWorstRate * 100)}% incomplete)` : null,
+              },
+              {
+                key: 'integrity' as LensType, label: 'Trustworthiness', score: scores.integrity, weight: '30%',
+                dimension: integrityDim, icon: LENS_CONFIG.integrity.icon,
+                sevCounts: intSev, improving: intImp, stable: intStab, declining: intDec,
+                detail: `${intChecks} checks`, primaryMetric: `${intPassRate}% pass`,
+                worst: intWorstFRate > 0.3 ? `${getFieldName(intWorstFid)} (${Math.round(intWorstFRate * 100)}% fail)` : null,
+              },
+              {
+                key: 'behavioral' as LensType, label: 'Freshness', score: scores.behavioral, weight: '20%',
+                dimension: behavioralDim, icon: LENS_CONFIG.behavioral.icon,
+                sevCounts: freshSev, improving: freshImp, stable: freshStab, declining: freshDec,
+                detail: `${FRESH_TYPES.length} issue types`, primaryMetric: `${freshHealth}/100`,
+                worst: freshWorstScore < 50 ? `${freshWorstName} (score ${freshWorstScore})` : null,
+              },
+            ];
+
             return (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', marginBottom: '24px' }}>
                 <DataTrustBanner
@@ -436,12 +565,131 @@ const AssessmentResultsLayout: React.FC<AssessmentResultsLayoutProps> = ({
                   comparisonTeams={assessmentResult.comparisonTeams}
                   comparisonTeamCount={assessmentResult.comparisonTeamCount}
                   comparisonCriteria={assessmentResult.comparisonCriteria}
-                />
-                <ScoreComponentsCard
-                  lensResults={assessmentResult.lensResults}
-                  integrityScore={intScore}
                   onLensClick={(lens) => onLensClick?.(lens)}
                 />
+
+                {/* ── Component Summary Table ──────────────────────────── */}
+                <div style={compTableStyles.container}>
+                  <div style={compTableStyles.headerRow}>
+                    <span style={compTableStyles.headerLabel}>COMPONENT OVERVIEW</span>
+                    <span style={compTableStyles.headerSub}>Click a component to explore detailed analysis</span>
+                  </div>
+                  {componentRows.map((comp, idx) => {
+                    const trust = getTrustLevel(comp.score);
+                    return (
+                      <button
+                        key={comp.key}
+                        className="comp-summary-row"
+                        onClick={() => onLensClick?.(comp.key)}
+                        style={{
+                          ...compTableStyles.row,
+                          borderTop: idx > 0 ? '1px solid #F4F5F7' : 'none',
+                        }}
+                      >
+                        {/* Score Donut + Name */}
+                        <div style={compTableStyles.scoreCol}>
+                          {(() => {
+                            const r = 24;
+                            const circ = 2 * Math.PI * r;
+                            const filled = (comp.score / 100) * circ;
+                            return (
+                              <div style={compTableStyles.donutWrap}>
+                                <svg width={58} height={58} viewBox="0 0 58 58" style={{ transform: 'rotate(-90deg)' }}>
+                                  <defs>
+                                    <filter id={`glow-comp-${comp.key}`} x="-30%" y="-30%" width="160%" height="160%">
+                                      <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur" />
+                                      <feMerge>
+                                        <feMergeNode in="blur" />
+                                        <feMergeNode in="SourceGraphic" />
+                                      </feMerge>
+                                    </filter>
+                                  </defs>
+                                  <circle cx={29} cy={29} r={r - 4} fill={`${trust.level.color}08`} />
+                                  <circle cx={29} cy={29} r={r} fill="none" stroke={`${trust.level.color}15`} strokeWidth={5} />
+                                  <circle
+                                    cx={29} cy={29} r={r}
+                                    fill="none"
+                                    stroke={trust.level.color}
+                                    strokeWidth={5}
+                                    strokeDasharray={`${filled} ${circ}`}
+                                    strokeLinecap="round"
+                                    filter={`url(#glow-comp-${comp.key})`}
+                                  />
+                                </svg>
+                                <div style={compTableStyles.donutLabel}>
+                                  <span style={{ fontSize: '18px', fontWeight: 800, color: trust.level.color, letterSpacing: '-0.5px', lineHeight: 1 }}>{comp.score}</span>
+                                </div>
+                              </div>
+                            );
+                          })()}
+                          <div style={compTableStyles.nameBlock}>
+                            <div style={compTableStyles.compNameRow}>
+                              <span style={compTableStyles.compName}>{comp.label}</span>
+                              <span style={compTableStyles.weightPill}>{comp.weight}</span>
+                              <span style={compTableStyles.detailPill}>{comp.detail}</span>
+                            </div>
+                            <div style={compTableStyles.compDesc}>{LENS_CONFIG[comp.key].description}</div>
+                          </div>
+                        </div>
+
+                        {/* Divider */}
+                        <div style={compTableStyles.colDivider} />
+
+                        {/* Severity Distribution */}
+                        <div style={compTableStyles.sevCol}>
+                          <div style={compTableStyles.colLabel}>SEVERITY</div>
+                          <div style={compTableStyles.sevBar}>
+                            {comp.sevCounts.Critical > 0 && <div style={{ flex: comp.sevCounts.Critical, backgroundColor: '#DE350B' }} />}
+                            {comp.sevCounts['At Risk'] > 0 && <div style={{ flex: comp.sevCounts['At Risk'], backgroundColor: '#FF8B00' }} />}
+                            {comp.sevCounts.Fair > 0 && <div style={{ flex: comp.sevCounts.Fair, backgroundColor: '#FFAB00' }} />}
+                            {comp.sevCounts.Healthy > 0 && <div style={{ flex: comp.sevCounts.Healthy, backgroundColor: '#36B37E' }} />}
+                          </div>
+                          <div style={compTableStyles.sevLegend}>
+                            {comp.sevCounts.Critical > 0 && <span style={compTableStyles.sevItem}><span style={{ ...compTableStyles.sevDot, backgroundColor: '#DE350B' }} />{comp.sevCounts.Critical} Crit</span>}
+                            {comp.sevCounts['At Risk'] > 0 && <span style={compTableStyles.sevItem}><span style={{ ...compTableStyles.sevDot, backgroundColor: '#FF8B00' }} />{comp.sevCounts['At Risk']} At Risk</span>}
+                            {comp.sevCounts.Fair > 0 && <span style={compTableStyles.sevItem}><span style={{ ...compTableStyles.sevDot, backgroundColor: '#FFAB00' }} />{comp.sevCounts.Fair} Fair</span>}
+                            {comp.sevCounts.Healthy > 0 && <span style={compTableStyles.sevItem}><span style={{ ...compTableStyles.sevDot, backgroundColor: '#36B37E' }} />{comp.sevCounts.Healthy} OK</span>}
+                          </div>
+                          {comp.worst && (
+                            <div style={compTableStyles.worstCallout}>Worst: {comp.worst}</div>
+                          )}
+                        </div>
+
+                        {/* Divider */}
+                        <div style={compTableStyles.colDivider} />
+
+                        {/* Trend */}
+                        <div style={compTableStyles.trendCol}>
+                          <div style={compTableStyles.colLabel}>TREND</div>
+                          <div style={compTableStyles.sparklineWrap}>
+                            <Sparkline data={comp.dimension.trendData} trend={comp.dimension.trend} width={110} height={28} />
+                          </div>
+                          <div style={compTableStyles.trendCounts}>
+                            <span style={{ color: '#36B37E', fontWeight: 600, fontSize: '10px', display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
+                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#36B37E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3,18 8,13 12,16 21,6" /><polyline points="16,6 21,6 21,11" /></svg>
+                              {comp.improving}
+                            </span>
+                            <span style={{ color: '#6B778C', fontWeight: 600, fontSize: '10px', display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
+                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#6B778C" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4,12 C8,8 16,16 20,12" /></svg>
+                              {comp.stable}
+                            </span>
+                            <span style={{ color: '#DE350B', fontWeight: 600, fontSize: '10px', display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
+                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#DE350B" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3,6 8,11 12,8 21,18" /><polyline points="16,18 21,18 21,13" /></svg>
+                              {comp.declining}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Arrow */}
+                        <div style={compTableStyles.arrowCol}>
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B3BAC5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="9,18 15,12 9,6" />
+                          </svg>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             );
           })()}
@@ -2513,6 +2761,189 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '13px',
     color: '#6B778C',
     lineHeight: 1.5,
+  },
+};
+
+/* ── Component Summary Table Styles ────────────────────────────────── */
+const compTableStyles: Record<string, React.CSSProperties> = {
+  container: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: '12px',
+    border: '1px solid #E4E6EB',
+    overflow: 'hidden',
+    boxShadow: '0 2px 8px rgba(9, 30, 66, 0.06)',
+  },
+  headerRow: {
+    display: 'flex',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    padding: '14px 20px',
+    borderBottom: '1px solid #F4F5F7',
+    backgroundColor: '#FAFBFC',
+  },
+  headerLabel: {
+    fontSize: '10px',
+    fontWeight: 700,
+    color: '#7A869A',
+    letterSpacing: '1px',
+    textTransform: 'uppercase' as const,
+  },
+  headerSub: {
+    fontSize: '11px',
+    color: '#97A0AF',
+    fontWeight: 400,
+  },
+  row: {
+    display: 'flex',
+    alignItems: 'center',
+    padding: '18px 20px',
+    width: '100%',
+    backgroundColor: 'transparent',
+    border: 'none',
+    cursor: 'pointer',
+    fontFamily: 'inherit',
+    textAlign: 'left' as const,
+    transition: 'background-color 0.1s ease',
+    gap: '0',
+  },
+  scoreCol: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '14px',
+    minWidth: '280px',
+    flex: '0 0 280px',
+  },
+  donutWrap: {
+    position: 'relative' as const,
+    width: '58px',
+    height: '58px',
+    flexShrink: 0,
+  },
+  donutLabel: {
+    position: 'absolute' as const,
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  nameBlock: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: '4px',
+    flex: 1,
+    minWidth: 0,
+  },
+  compNameRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+  },
+  compName: {
+    fontSize: '14px',
+    fontWeight: 700,
+    color: '#172B4D',
+  },
+  weightPill: {
+    fontSize: '10px',
+    fontWeight: 600,
+    color: '#6B778C',
+    backgroundColor: '#F4F5F7',
+    padding: '1px 7px',
+    borderRadius: '8px',
+    whiteSpace: 'nowrap' as const,
+  },
+  detailPill: {
+    fontSize: '10px',
+    fontWeight: 600,
+    color: '#6B778C',
+    backgroundColor: '#F4F5F7',
+    padding: '1px 7px',
+    borderRadius: '8px',
+    whiteSpace: 'nowrap' as const,
+  },
+  compDesc: {
+    fontSize: '11.5px',
+    lineHeight: 1.45,
+    color: '#626F86',
+    fontWeight: 400,
+  },
+  colDivider: {
+    width: '1px',
+    alignSelf: 'stretch',
+    backgroundColor: '#F4F5F7',
+    margin: '0 16px',
+    flexShrink: 0,
+  },
+  sevCol: {
+    flex: '1 1 0',
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: '5px',
+    minWidth: 0,
+  },
+  colLabel: {
+    fontSize: '9px',
+    fontWeight: 700,
+    color: '#97A0AF',
+    letterSpacing: '0.8px',
+    textTransform: 'uppercase' as const,
+  },
+  sevBar: {
+    display: 'flex',
+    height: '20px',
+    borderRadius: '10px',
+    overflow: 'hidden',
+    backgroundColor: '#F4F5F7',
+  },
+  sevLegend: {
+    display: 'flex',
+    flexWrap: 'wrap' as const,
+    gap: '8px',
+  },
+  sevItem: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '3px',
+    fontSize: '10px',
+    fontWeight: 600,
+    color: '#505F79',
+  },
+  sevDot: {
+    width: '5px',
+    height: '5px',
+    borderRadius: '50%',
+    flexShrink: 0,
+  },
+  worstCallout: {
+    fontSize: '10px',
+    fontWeight: 500,
+    color: '#6B778C',
+    fontStyle: 'italic' as const,
+  },
+  trendCol: {
+    flex: '0 0 140px',
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: '4px',
+    alignItems: 'flex-start',
+  },
+  sparklineWrap: {
+    overflow: 'hidden',
+    width: '100%',
+  },
+  trendCounts: {
+    display: 'flex',
+    gap: '8px',
+  },
+  arrowCol: {
+    flex: '0 0 24px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: '8px',
   },
 };
 
