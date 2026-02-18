@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { MultiTeamAssessmentResult, TeamRollup } from '../../../types/multiTeamAssessment';
-import { LensType, AssessmentLensResults } from '../../../types/patterns';
+import { LensType } from '../../../types/patterns';
 import {
   computeLensScores,
   getTrustLevel,
@@ -8,7 +8,6 @@ import {
   HERO_GRADIENTS,
   LENS_CONFIG,
 } from '../patterns/DataTrustBanner';
-import ScoreComponentsCard from '../patterns/ScoreComponentsCard';
 import { PersonaSwitcher } from '../../persona';
 import ArrowLeftIcon from '@atlaskit/icon/glyph/arrow-left';
 import CrossIcon from '@atlaskit/icon/glyph/cross';
@@ -181,9 +180,9 @@ const TeamOfTeamsLayout: React.FC<TeamOfTeamsLayoutProps> = ({
                 <div style={styles.heroDividerLine} />
               </div>
 
-              {/* Right — score donut */}
+              {/* Right — score donut + component breakdown */}
               <div style={styles.scoreFloat}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column' as const, alignItems: 'center' }}>
                     <span style={styles.scoreLabel}>DATA TRUST SCORE</span>
                     <div style={styles.scoreDisc}>
@@ -237,138 +236,73 @@ const TeamOfTeamsLayout: React.FC<TeamOfTeamsLayoutProps> = ({
                     </div>
                   </div>
 
-                  {/* Vertical trust level spectrum */}
-                  <svg width={200} height={126} viewBox="0 0 200 126">
-                    {(() => {
-                      const levels = [...TRUST_LEVELS].reverse();
-                      const nodeX = 8;
-                      const labelX = 22;
-                      const spacing = 26;
-                      const startY = 12;
-                      // Approximate label end x by character count (≈6.5px/char at 11.5px bold)
-                      const currLevelName = trustLevel.name;
-                      const linkX = labelX + currLevelName.length * 7 + 8;
-                      return (
-                        <>
-                          {levels.map((_, j) => {
-                            if (j === levels.length - 1) return null;
-                            const y1 = startY + j * spacing;
-                            const y2 = startY + (j + 1) * spacing;
-                            const origIdx = TRUST_LEVELS.length - 1 - j;
-                            const reached = origIdx <= trustIndex;
-                            return (
-                              <line key={`line-${j}`} x1={nodeX} y1={y1} x2={nodeX} y2={y2}
-                                stroke={reached ? levels[j + 1].color : '#DFE1E6'} strokeWidth={2} />
-                            );
-                          })}
-                          {levels.map((level, j) => {
-                            const y = startY + j * spacing;
-                            const origIdx = TRUST_LEVELS.length - 1 - j;
-                            const isCurr = origIdx === trustIndex;
-                            const isReached = origIdx <= trustIndex;
-                            return (
-                              <g key={level.name}>
-                                {isCurr && <circle cx={nodeX} cy={y} r={10} fill={level.color} opacity={0.12} />}
-                                <circle cx={nodeX} cy={y} r={isCurr ? 5 : 3}
-                                  fill={isReached ? level.color : '#FFFFFF'}
-                                  stroke={isReached ? level.color : '#DFE1E6'}
-                                  strokeWidth={isReached ? 0 : 1.5} />
-                                <text x={labelX} y={y} dominantBaseline="central"
-                                  fontSize={isCurr ? '11.5' : '10'} fontWeight={isCurr ? '700' : '400'}
-                                  fill={isCurr ? level.color : '#A5ADBA'}>
-                                  {level.name}
-                                </text>
-                                {isCurr && (
-                                  <g
-                                    style={{ cursor: 'pointer' }}
-                                    onClick={(e) => { e.stopPropagation(); setIsUseCasesOpen(true); }}
-                                    className="tot-spectrum-link"
-                                  >
-                                    {/* Small ? circle */}
-                                    <circle cx={linkX} cy={y} r={5.5} fill="none" stroke={level.color} strokeWidth={1} opacity={0.5} />
-                                    <text x={linkX} y={y} textAnchor="middle" dominantBaseline="central"
-                                      fontSize="7.5" fontWeight="700" fill={level.color} opacity={0.6}>?</text>
-                                    {/* Link text */}
-                                    <text x={linkX + 10} y={y} dominantBaseline="central"
-                                      fontSize="9" fontWeight="500" fill={level.color} opacity={0.6}>
-                                      What does this mean?
-                                    </text>
-                                  </g>
-                                )}
-                              </g>
-                            );
-                          })}
-                        </>
-                      );
-                    })()}
-                  </svg>
-                  <style>{`.tot-spectrum-link:hover text { opacity: 1 !important; } .tot-spectrum-link:hover circle { opacity: 0.8 !important; }`}</style>
+                  {/* Component score breakdown — replaces the trust spectrum */}
+                  <div style={styles.breakdownPanel}>
+                    <span style={styles.breakdownTitle}>SCORE BREAKDOWN</span>
+                    <div style={styles.breakdownList}>
+                      {([
+                        { key: 'coverage' as LensType, label: 'Timeliness', score: aggregateLens.coverage, weight: '30%' },
+                        { key: 'integrity' as LensType, label: 'Trustworthiness', score: aggregateLens.integrity, weight: '30%' },
+                        { key: 'behavioral' as LensType, label: 'Freshness', score: aggregateLens.behavioral, weight: '20%' },
+                      ]).map((comp) => {
+                        const compTrust = getTrustLevel(comp.score);
+                        return (
+                          <button
+                            key={comp.key}
+                            className="tot-breakdown-row"
+                            style={styles.breakdownRow}
+                            onClick={() => onLensClick(comp.key)}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                              <span style={{ fontSize: '11px', fontWeight: 600, color: '#172B4D' }}>{comp.label}</span>
+                              <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                                <span style={{ fontSize: '14px', fontWeight: 800, color: compTrust.level.color, letterSpacing: '-0.5px' }}>{comp.score}</span>
+                                <span style={{ fontSize: '9px', color: '#97A0AF', fontWeight: 500 }}>{comp.weight}</span>
+                              </div>
+                            </div>
+                            <div style={styles.barTrack}>
+                              <div style={{
+                                ...styles.barFill,
+                                width: `${comp.score}%`,
+                                background: `linear-gradient(90deg, ${compTrust.level.color}90, ${compTrust.level.color})`,
+                                boxShadow: `0 0 6px ${compTrust.level.color}40`,
+                              }} />
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <style>{`.tot-breakdown-row:hover { background: rgba(255,255,255,0.5) !important; } .tot-breakdown-row:hover .bar-chevron { opacity: 1 !important; }`}</style>
+
+                    {/* Trust level + info link */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '12px', paddingTop: '10px', borderTop: '1px solid rgba(9,30,66,0.06)' }}>
+                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: trustLevel.color, flexShrink: 0 }} />
+                      <span style={{ fontSize: '11px', fontWeight: 700, color: trustLevel.color }}>{trustLevel.name}</span>
+                      <button
+                        type="button"
+                        onClick={() => setIsUseCasesOpen(true)}
+                        className="tot-whatmean-btn"
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: '3px',
+                          background: 'none', border: 'none', padding: '1px 3px',
+                          fontSize: '9.5px', fontWeight: 500, color: trustLevel.color,
+                          opacity: 0.55, cursor: 'pointer', borderRadius: '4px',
+                          transition: 'opacity 0.15s', marginLeft: 'auto',
+                        }}
+                      >
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><line x1="12" y1="17" x2="12.01" y2="17" />
+                        </svg>
+                        What does this mean?
+                      </button>
+                      <style>{`.tot-whatmean-btn:hover { opacity: 1 !important; }`}</style>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-
-          {/* Composition footer — aggregate lens scores */}
-          <div style={styles.compositionFooter}>
-            {([
-              { label: 'Timeliness', score: aggregateLens.coverage, weight: '30%' },
-              { label: 'Trustworthiness', score: aggregateLens.integrity, weight: '30%' },
-              { label: 'Freshness', score: aggregateLens.behavioral, weight: '20%' },
-            ] as const).map((seg, i) => {
-              const segTrust = getTrustLevel(seg.score);
-              return (
-                <div key={seg.label} style={{
-                  ...styles.compositionSeg,
-                  borderBottomColor: segTrust.level.color,
-                  ...(i < 2 ? { borderRight: '1px solid rgba(9, 30, 66, 0.06)' } : {}),
-                }}>
-                  <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.3px', color: segTrust.level.color }}>{seg.label}</span>
-                  <span style={{ fontSize: '11px', color: '#97A0AF', fontWeight: 500 }}>{seg.score} &middot; {seg.weight}</span>
-                </div>
-              );
-            })}
-          </div>
         </div>
-
-        {/* ── SECTION 2: Score Component Cards (aggregate) ────────── */}
-        {(() => {
-          // Construct synthetic AssessmentLensResults that produce the correct aggregate scores
-          const syntheticLensResults: AssessmentLensResults = {
-            coverage: {
-              coveragePercent: aggregateLens.coverage,
-              totalFields: 100,
-              populatedFields: aggregateLens.coverage,
-            },
-            integrity: {
-              lens: 'integrity' as LensType,
-              patternsChecked: 100,
-              patternsDetected: 100 - aggregateLens.integrity,
-              results: [],
-              overallSeverity: 'clean',
-            },
-            timing: {
-              lens: 'timing' as LensType,
-              patternsChecked: 0,
-              patternsDetected: 0,
-              results: [],
-              overallSeverity: 'clean',
-            },
-            behavioral: {
-              lens: 'behavioral' as LensType,
-              patternsChecked: 100,
-              patternsDetected: 100 - aggregateLens.behavioral,
-              results: [],
-              overallSeverity: 'clean',
-            },
-          };
-          return (
-            <ScoreComponentsCard
-              lensResults={syntheticLensResults}
-              integrityScore={aggregateLens.integrity}
-              onLensClick={onLensClick}
-            />
-          );
-        })()}
 
         {/* Visual separator between aggregate view and team breakdown */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '8px 0' }}>
@@ -1169,18 +1103,46 @@ const styles: Record<string, React.CSSProperties> = {
     lineHeight: 1,
     letterSpacing: '-3px',
   },
-  compositionFooter: {
+  breakdownPanel: {
     display: 'flex',
-    borderTop: '1px solid rgba(9, 30, 66, 0.06)',
+    flexDirection: 'column' as const,
+    minWidth: '200px',
   },
-  compositionSeg: {
-    flex: '1 1 0%',
+  breakdownTitle: {
+    fontSize: '9px',
+    fontWeight: 700,
+    color: '#97A0AF',
+    letterSpacing: '1.2px',
+    marginBottom: '10px',
+  },
+  breakdownList: {
     display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: 'column' as const,
     gap: '8px',
-    padding: '10px 12px',
-    borderBottom: '3px solid transparent',
+  },
+  breakdownRow: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    padding: '6px 8px',
+    borderRadius: '8px',
+    border: 'none',
+    background: 'transparent',
+    cursor: 'pointer',
+    fontFamily: 'inherit',
+    textAlign: 'left' as const,
+    transition: 'background 0.15s',
+  },
+  barTrack: {
+    width: '100%',
+    height: '5px',
+    borderRadius: '3px',
+    background: 'rgba(9, 30, 66, 0.06)',
+    overflow: 'hidden' as const,
+  },
+  barFill: {
+    height: '100%',
+    borderRadius: '3px',
+    transition: 'width 0.5s ease',
   },
   // Table section
   tableSection: {

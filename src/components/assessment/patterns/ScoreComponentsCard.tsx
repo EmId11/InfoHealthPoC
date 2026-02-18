@@ -47,22 +47,8 @@ const ScoreComponentsCard: React.FC<ScoreComponentsCardProps> = ({
 
   const weakestDisplayed = LENSES.reduce((a, b) => a.score < b.score ? a : b);
 
-  const lensColors = LENSES.map(l => getTrustLevel(l.score).level.color);
-
   return (
     <div style={styles.wrapper}>
-      {/* Connector lines bridging from hero composition footer to cards */}
-      <div style={styles.connectorRow}>
-        {LENSES.map(({ lens }, i) => (
-          <div key={`conn-${lens}`} style={styles.connectorCell}>
-            <svg width="10" height="7" viewBox="0 0 10 7" style={{ display: 'block', flexShrink: 0 }}>
-              <polygon points="1,7 9,7 5,1" fill={lensColors[i]} opacity="0.7" />
-            </svg>
-            <div style={{ ...styles.connectorLine, background: `linear-gradient(to bottom, ${lensColors[i]}30, ${lensColors[i]})` }} />
-          </div>
-        ))}
-      </div>
-
       <div style={styles.grid}>
         {LENSES.map(({ lens, score }) => {
           const config = LENS_CONFIG[lens];
@@ -230,22 +216,6 @@ const styles: Record<string, React.CSSProperties> = {
   wrapper: {
     display: 'flex',
     flexDirection: 'column' as const,
-  },
-  connectorRow: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(3, 1fr)',
-    gap: '20px',
-    marginTop: '-14px',
-    marginBottom: '-2px',
-  },
-  connectorCell: {
-    display: 'flex',
-    flexDirection: 'column' as const,
-    alignItems: 'center',
-  },
-  connectorLine: {
-    width: '2px',
-    height: '16px',
   },
   grid: {
     display: 'grid',
