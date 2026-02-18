@@ -47,7 +47,7 @@ export const ImpactSummaryHero: React.FC<ImpactSummaryHeroProps> = ({
               </span>
               <div style={styles.outcomeValues}>
                 <span style={styles.outcomeValue}>{primaryOutcome.baselineScore.toFixed(0)}</span>
-                <span style={styles.outcomeArrow}>{'\u2192'}</span>
+                <span style={styles.outcomeArrow}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B778C" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4,12 C8,8 16,16 20,12" /></svg></span>
                 <span style={{
                   ...styles.outcomeValue,
                   color: primaryOutcome.changePoints > 0 ? '#006644' : '#DE350B',

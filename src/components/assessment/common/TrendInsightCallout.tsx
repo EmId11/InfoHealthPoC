@@ -60,7 +60,7 @@ const generateChangeInsights = (data: TrendDataPoint[], trend: TrendDirection, t
       : `Risk decreased by ${Math.abs(riskChange)} points since ${formatPeriod(firstPoint.period)}`;
 
     insights.push({
-      icon: riskChange > 0 ? '↑' : '↓',
+      icon: riskChange > 0 ? 'up' : 'down',
       headline,
       detail: riskChange > 0
         ? 'Review the indicators below to identify what changed.'
@@ -69,7 +69,7 @@ const generateChangeInsights = (data: TrendDataPoint[], trend: TrendDirection, t
     });
   } else {
     insights.push({
-      icon: '→',
+      icon: 'stable',
       headline: `Risk score has remained stable at ${currentRiskScore}`,
       detail: 'No significant changes over this period.',
       direction: 'neutral',
@@ -121,7 +121,15 @@ const TrendInsightCallout: React.FC<TrendInsightCalloutProps> = ({
               ...styles.iconWrapper,
               color: insight.direction === 'up' ? '#DE350B' : insight.direction === 'down' ? '#36B37E' : '#5E6C84',
             }}>
-              {insight.icon}
+              {insight.icon === 'up' && (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3,18 8,13 12,16 21,6" /><polyline points="16,6 21,6 21,11" /></svg>
+              )}
+              {insight.icon === 'down' && (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3,6 8,11 12,8 21,18" /><polyline points="16,18 21,18 21,13" /></svg>
+              )}
+              {insight.icon === 'stable' && (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4,12 C8,8 16,16 20,12" /></svg>
+              )}
             </div>
             <div style={styles.insightContent}>
               <p style={styles.headline}>{insight.headline}</p>

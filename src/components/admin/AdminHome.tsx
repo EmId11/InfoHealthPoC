@@ -302,14 +302,14 @@ const AdminHome: React.FC<AdminHomeProps> = ({
   };
 
   const getTrendIcon = (trend: 'improving' | 'stable' | 'declining') => {
-    switch (trend) {
-      case 'improving':
-        return <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 8l4-4 4 4" stroke="#36B37E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>;
-      case 'declining':
-        return <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="#DE350B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>;
-      case 'stable':
-        return <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6h8" stroke="#6B778C" strokeWidth="2" strokeLinecap="round"/></svg>;
-    }
+    const color = trend === 'improving' ? '#36B37E' : trend === 'declining' ? '#DE350B' : '#6B778C';
+    return (
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        {trend === 'improving' && (<><polyline points="3,18 8,13 12,16 21,6" /><polyline points="16,6 21,6 21,11" /></>)}
+        {trend === 'declining' && (<><polyline points="3,6 8,11 12,8 21,18" /><polyline points="16,18 21,18 21,13" /></>)}
+        {trend === 'stable' && (<><path d="M4,12 C8,8 16,16 20,12" /></>)}
+      </svg>
+    );
   };
 
   // Calculate setup progress

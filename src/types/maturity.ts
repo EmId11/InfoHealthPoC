@@ -413,12 +413,12 @@ export function getTrendConfig(trend: TrendDirection): {
 } {
   switch (trend) {
     case 'improving':
-      return { label: 'Improving', icon: '↑', color: '#36B37E' };
+      return { label: 'Improving', icon: 'improving', color: '#36B37E' };
     case 'declining':
-      return { label: 'Declining', icon: '↓', color: '#DE350B' };
+      return { label: 'Declining', icon: 'declining', color: '#DE350B' };
     case 'stable':
     default:
-      return { label: 'Stable', icon: '→', color: '#6B778C' };
+      return { label: 'Stable', icon: 'stable', color: '#6B778C' };
   }
 }
 

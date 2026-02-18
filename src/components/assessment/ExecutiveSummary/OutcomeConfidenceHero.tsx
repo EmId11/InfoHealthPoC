@@ -61,9 +61,9 @@ const generateComparisonTeams = (outcomeId: string, teamCount: number = 47): Com
 // Get trend display with badge styling
 const getTrendDisplay = (trend: 'up' | 'down' | 'stable'): { icon: string; label: string; color: string; bgColor: string } => {
   switch (trend) {
-    case 'up': return { icon: '↑', label: 'Improving', color: '#006644', bgColor: '#E3FCEF' };
-    case 'down': return { icon: '↓', label: 'Declining', color: '#DE350B', bgColor: '#FFEBE6' };
-    case 'stable': return { icon: '→', label: 'Stable', color: '#5E6C84', bgColor: '#F4F5F7' };
+    case 'up': return { icon: 'up', label: 'Improving', color: '#006644', bgColor: '#E3FCEF' };
+    case 'down': return { icon: 'down', label: 'Declining', color: '#DE350B', bgColor: '#FFEBE6' };
+    case 'stable': return { icon: 'stable', label: 'Stable', color: '#5E6C84', bgColor: '#F4F5F7' };
   }
 };
 
@@ -230,7 +230,10 @@ const OutcomeRow: React.FC<OutcomeRowProps> = ({ outcome, onClick, showDivider, 
             backgroundColor: trendDisplay.bgColor,
             color: trendDisplay.color
           }}>
-            {trendDisplay.icon} {trendDisplay.label}
+            {trendDisplay.icon === 'up' && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={trendDisplay.color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3,18 8,13 12,16 21,6" /><polyline points="16,6 21,6 21,11" /></svg>}
+            {trendDisplay.icon === 'down' && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={trendDisplay.color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3,6 8,11 12,8 21,18" /><polyline points="16,18 21,18 21,13" /></svg>}
+            {trendDisplay.icon === 'stable' && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={trendDisplay.color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4,12 C8,8 16,16 20,12" /></svg>}
+            {' '}{trendDisplay.label}
           </span>
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={styles.chevron}>
             <path

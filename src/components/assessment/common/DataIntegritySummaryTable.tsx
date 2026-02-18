@@ -182,7 +182,7 @@ const DataIntegritySummaryTable: React.FC<DataIntegritySummaryTableProps> = ({ d
         severityColor: severity.color,
         severityBg: severity.bg,
         trendDirection: trendDir,
-        trendArrow: trendDir === 'up' ? '\u2197' : trendDir === 'down' ? '\u2198' : '\u2014',
+        trendArrow: trendDir === 'up' ? 'up' : trendDir === 'down' ? 'down' : 'stable',
         trendColor: trendDir === 'up' ? '#36B37E' : trendDir === 'down' ? '#DE350B' : '#6B778C',
         syntheticTrendData: syntheticData,
         syntheticTrend: trendDir === 'up' ? 'improving' : trendDir === 'down' ? 'declining' : 'stable',
@@ -214,7 +214,7 @@ const DataIntegritySummaryTable: React.FC<DataIntegritySummaryTableProps> = ({ d
       severityColor: cfSev.color,
       severityBg: cfSev.bg,
       trendDirection: cfTrend,
-      trendArrow: cfTrend === 'up' ? '\u2197' : cfTrend === 'down' ? '\u2198' : '\u2014',
+      trendArrow: cfTrend === 'up' ? 'up' : cfTrend === 'down' ? 'down' : 'stable',
       trendColor: cfTrend === 'up' ? '#36B37E' : cfTrend === 'down' ? '#DE350B' : '#6B778C',
       syntheticTrendData: cfSynthData,
       syntheticTrend: cfTrend === 'up' ? 'improving' : cfTrend === 'down' ? 'declining' : 'stable',
@@ -312,7 +312,7 @@ const DataIntegritySummaryTable: React.FC<DataIntegritySummaryTableProps> = ({ d
         severityColor: severity.color,
         severityBg: severity.bg,
         trendDirection: trendDir,
-        trendArrow: trendDir === 'up' ? '\u2197' : trendDir === 'down' ? '\u2198' : '\u2014',
+        trendArrow: trendDir === 'up' ? 'up' : trendDir === 'down' ? 'down' : 'stable',
         trendColor: trendDir === 'up' ? '#36B37E' : trendDir === 'down' ? '#DE350B' : '#6B778C',
         syntheticTrendData: syntheticData,
         syntheticTrend: trendDir === 'up' ? 'improving' : trendDir === 'down' ? 'declining' : 'stable',
@@ -383,7 +383,7 @@ const DataIntegritySummaryTable: React.FC<DataIntegritySummaryTableProps> = ({ d
   const passAngle = Math.round(passRate * 360);
 
   // Trend helpers (from dimension prop — stable across filters)
-  const trendArrow = dimension.trend === 'improving' ? '↗' : dimension.trend === 'declining' ? '↘' : '→';
+  const trendIcon = dimension.trend === 'improving' ? 'up' : dimension.trend === 'declining' ? 'down' : 'stable';
   const trendLabel = dimension.trend === 'improving' ? 'Improving' : dimension.trend === 'declining' ? 'Declining' : 'Stable';
   const trendColor = dimension.trend === 'improving' ? '#36B37E' : dimension.trend === 'declining' ? '#DE350B' : '#6B778C';
   const trendBg = dimension.trend === 'improving' ? '#E3FCEF' : dimension.trend === 'declining' ? '#FFEBE6' : '#F4F5F7';
@@ -451,7 +451,10 @@ const DataIntegritySummaryTable: React.FC<DataIntegritySummaryTableProps> = ({ d
 
           {/* Trend badge */}
           <span style={{ ...bannerStyles.trendBadge, backgroundColor: trendBg, color: trendColor }}>
-            {trendArrow} {trendLabel}
+            {trendIcon === 'up' && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={trendColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3,18 8,13 12,16 21,6" /><polyline points="16,6 21,6 21,11" /></svg>}
+            {trendIcon === 'down' && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={trendColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3,6 8,11 12,8 21,18" /><polyline points="16,18 21,18 21,13" /></svg>}
+            {trendIcon === 'stable' && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={trendColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4,12 C8,8 16,16 20,12" /></svg>}
+            {' '}{trendLabel}
           </span>
 
           {/* Total checks */}
@@ -562,14 +565,14 @@ const DataIntegritySummaryTable: React.FC<DataIntegritySummaryTableProps> = ({ d
                 unit="%"
               />
               <div style={bannerStyles.trendTokenRow}>
-                <span style={{ color: '#36B37E', fontWeight: 600, fontSize: '11px' }}>
-                  ↗{filteredStats.improving}
+                <span style={{ color: '#36B37E', fontWeight: 600, fontSize: '11px', display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#36B37E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3,18 8,13 12,16 21,6" /><polyline points="16,6 21,6 21,11" /></svg>{filteredStats.improving}
                 </span>
-                <span style={{ color: '#6B778C', fontWeight: 600, fontSize: '11px' }}>
-                  →{filteredStats.stable}
+                <span style={{ color: '#6B778C', fontWeight: 600, fontSize: '11px', display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6B778C" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4,12 C8,8 16,16 20,12" /></svg>{filteredStats.stable}
                 </span>
-                <span style={{ color: '#DE350B', fontWeight: 600, fontSize: '11px' }}>
-                  ↘{filteredStats.declining}
+                <span style={{ color: '#DE350B', fontWeight: 600, fontSize: '11px', display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#DE350B" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3,6 8,11 12,8 21,18" /><polyline points="16,18 21,18 21,13" /></svg>{filteredStats.declining}
                 </span>
               </div>
             </div>

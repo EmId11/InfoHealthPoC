@@ -221,7 +221,15 @@ const IndicatorTrendsChart: React.FC<IndicatorTrendsChartProps> = ({
         <div style={styles.summaryItem}>
           <span style={styles.summaryLabel}>Trend</span>
           <span style={{ ...styles.summaryValue, color: trendColor }}>
-            {improved ? '↑ Improving' : lastValue === firstValue ? '→ Stable' : '↓ Declining'}
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+              {improved ? (
+                <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3,18 8,13 12,16 21,6" /><polyline points="16,6 21,6 21,11" /></svg> Improving</>
+              ) : lastValue === firstValue ? (
+                <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4,12 C8,8 16,16 20,12" /></svg> Stable</>
+              ) : (
+                <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3,6 8,11 12,8 21,18" /><polyline points="16,18 21,18 21,13" /></svg> Declining</>
+              )}
+            </span>
           </span>
         </div>
       </div>

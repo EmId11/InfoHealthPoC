@@ -23,17 +23,6 @@ const TrendIndicator: React.FC<TrendIndicatorProps> = ({
 
   const { icon: iconSize, font: fontSize, weight: fontWeight } = sizeMap[size];
 
-  const getArrowPath = (): string => {
-    switch (direction) {
-      case 'improving':
-        return 'M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z';
-      case 'declining':
-        return 'M20 12l-1.41-1.41L13 16.17V4h-2v12.17l-5.58-5.59L4 12l8 8 8-8z';
-      case 'stable':
-        return 'M4 11h16v2H4z';
-    }
-  };
-
   const getLabel = (): string => {
     switch (direction) {
       case 'improving':
@@ -57,16 +46,37 @@ const TrendIndicator: React.FC<TrendIndicatorProps> = ({
     fontWeight,
   };
 
+  const renderIcon = () => {
+    if (direction === 'improving') {
+      return (
+        <svg width={iconSize} height={iconSize} viewBox="0 0 24 24" fill="none"
+          stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="3,18 8,13 12,16 21,6" />
+          <polyline points="16,6 21,6 21,11" />
+        </svg>
+      );
+    }
+    if (direction === 'declining') {
+      return (
+        <svg width={iconSize} height={iconSize} viewBox="0 0 24 24" fill="none"
+          stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="3,6 8,11 12,8 21,18" />
+          <polyline points="16,18 21,18 21,13" />
+        </svg>
+      );
+    }
+    // stable — smooth S-curve tilde
+    return (
+      <svg width={iconSize} height={iconSize} viewBox="0 0 24 24" fill="none"
+        stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M4,12 C8,8 16,16 20,12" />
+      </svg>
+    );
+  };
+
   return (
     <span style={containerStyle}>
-      <svg
-        width={iconSize}
-        height={iconSize}
-        viewBox="0 0 24 24"
-        fill={color}
-      >
-        <path d={getArrowPath()} />
-      </svg>
+      {renderIcon()}
       {showLabel && <span style={labelStyle}>{getLabel()}</span>}
     </span>
   );

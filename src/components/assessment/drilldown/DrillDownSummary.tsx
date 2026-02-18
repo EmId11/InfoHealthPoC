@@ -1,7 +1,4 @@
 import React from 'react';
-import ArrowUpIcon from '@atlaskit/icon/glyph/arrow-up';
-import ArrowDownIcon from '@atlaskit/icon/glyph/arrow-down';
-import MediaServicesActualSizeIcon from '@atlaskit/icon/glyph/media-services/actual-size';
 import { IndicatorResult, DimensionResult } from '../../../types/assessment';
 import { IndicatorMetadata } from '../../../constants/indicatorMetadata';
 import { getIndicatorTier } from '../../../types/indicatorTiers';
@@ -20,14 +17,14 @@ const DrillDownSummary: React.FC<DrillDownSummaryProps> = ({
   similarTeamCount,
 }) => {
   const getTrendIcon = (trend: IndicatorResult['trend']) => {
-    switch (trend) {
-      case 'improving':
-        return <ArrowUpIcon label="" size="small" primaryColor="#36B37E" />;
-      case 'declining':
-        return <ArrowDownIcon label="" size="small" primaryColor="#DE350B" />;
-      default:
-        return <MediaServicesActualSizeIcon label="" size="small" primaryColor="#6B778C" />;
-    }
+    const color = trend === 'improving' ? '#36B37E' : trend === 'declining' ? '#DE350B' : '#6B778C';
+    return (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        {trend === 'improving' && (<><polyline points="3,18 8,13 12,16 21,6" /><polyline points="16,6 21,6 21,11" /></>)}
+        {trend === 'declining' && (<><polyline points="3,6 8,11 12,8 21,18" /><polyline points="16,18 21,18 21,13" /></>)}
+        {trend === 'stable' && (<><path d="M4,12 C8,8 16,16 20,12" /></>)}
+      </svg>
+    );
   };
 
   const getTrendLabel = (trend: IndicatorResult['trend']) => {

@@ -972,6 +972,7 @@ const DataTrustBanner: React.FC<DataTrustBannerProps> = ({
   const [isCompareOpen, setIsCompareOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isUseCasesOpen, setIsUseCasesOpen] = useState(false);
+  const [isImproveOpen, setIsImproveOpen] = useState(false);
 
   const scores = computeLensScores(lensResults, integrityScore);
   const { level: trustLevel, index: trustIndex } = getTrustLevel(scores.composite);
@@ -1013,21 +1014,29 @@ const DataTrustBanner: React.FC<DataTrustBannerProps> = ({
             <p style={styles.questionSubtext}>
               Your Jira data flows into sprint reviews, capacity planning, velocity reports, and executive dashboards. This assessment measures whether that data is complete, accurate, timely, and fresh enough to rely on. <strong style={{ color: trustLevel.color }}>Right now, your data shows {trustLevel.description}.</strong>
             </p>
-            <button
-              type="button"
-              onClick={() => setIsUseCasesOpen(true)}
-              style={styles.useCasesBtn}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
-                <rect x="9" y="3" width="6" height="4" rx="1" />
-                <path d="M9 14l2 2 4-4" />
-              </svg>
-              Can we trust Jira for these purposes?
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, opacity: 0.5 }}>
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-            </button>
+            <div style={styles.dualActionBar}>
+              <button type="button" onClick={() => setIsUseCasesOpen(true)} style={styles.dualBtnLeft}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                  <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
+                  <rect x="9" y="3" width="6" height="4" rx="1" />
+                  <path d="M9 14l2 2 4-4" />
+                </svg>
+                Can we trust Jira?
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, opacity: 0.4 }}>
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </button>
+              <div style={styles.dualDivider} />
+              <button type="button" onClick={() => setIsImproveOpen(true)} style={styles.dualBtnRight}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+                </svg>
+                How might we improve?
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, opacity: 0.4 }}>
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </button>
+            </div>
           </div>
 
           {/* Divider */}
@@ -1133,13 +1142,10 @@ const DataTrustBanner: React.FC<DataTrustBannerProps> = ({
                       transition: 'background 0.15s, transform 0.15s, box-shadow 0.15s',
                     }}>
                     <style>{`.trend-spark-btn:hover { background: ${trendColor}18 !important; transform: scale(1.15); box-shadow: 0 0 0 3px ${trendColor}22; } .trend-spark-btn:active { transform: scale(1.05); }`}</style>
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={trendColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-                      style={{
-                        transform: overallTrend === 'down' ? 'scaleY(-1)' : 'none',
-                        opacity: overallTrend === 'stable' ? 0.5 : 0.9,
-                      }}>
-                      <polyline points="3,18 8,13 12,16 21,6" />
-                      <polyline points="16,6 21,6 21,11" />
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={trendColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      {overallTrend === 'up' && (<><polyline points="3,18 8,13 12,16 21,6" /><polyline points="16,6 21,6 21,11" /></>)}
+                      {overallTrend === 'down' && (<><polyline points="3,6 8,11 12,8 21,18" /><polyline points="16,18 21,18 21,13" /></>)}
+                      {overallTrend === 'stable' && (<><path d="M4,12 C8,8 16,16 20,12" /></>)}
                     </svg>
                   </button>
                 </span>
@@ -1164,13 +1170,15 @@ const DataTrustBanner: React.FC<DataTrustBannerProps> = ({
             </div>
 
             {/* Vertical trust level spectrum */}
-            <svg width={90} height={126} viewBox="0 0 90 126">
+            <svg width={200} height={126} viewBox="0 0 200 126">
               {(() => {
                 const levels = [...TRUST_LEVELS].reverse(); // Optimal at top
                 const nodeX = 8;
                 const labelX = 22;
                 const spacing = 26;
                 const startY = 12;
+                const currLevelName = trustLevel.name;
+                const linkX = labelX + currLevelName.length * 7 + 8;
                 return (
                   <>
                     {/* Connecting lines */}
@@ -1205,6 +1213,21 @@ const DataTrustBanner: React.FC<DataTrustBannerProps> = ({
                             fill={isCurr ? level.color : '#A5ADBA'}>
                             {level.name}
                           </text>
+                          {isCurr && (
+                            <g
+                              style={{ cursor: 'pointer' }}
+                              onClick={(e) => { e.stopPropagation(); setIsUseCasesOpen(true); }}
+                              className="dtb-spectrum-link"
+                            >
+                              <circle cx={linkX} cy={y} r={5.5} fill="none" stroke={level.color} strokeWidth={1} opacity={0.5} />
+                              <text x={linkX} y={y} textAnchor="middle" dominantBaseline="central"
+                                fontSize="7.5" fontWeight="700" fill={level.color} opacity={0.6}>?</text>
+                              <text x={linkX + 10} y={y} dominantBaseline="central"
+                                fontSize="9" fontWeight="500" fill={level.color} opacity={0.6}>
+                                What does this mean?
+                              </text>
+                            </g>
+                          )}
                         </g>
                       );
                     })}
@@ -1212,6 +1235,7 @@ const DataTrustBanner: React.FC<DataTrustBannerProps> = ({
                 );
               })()}
             </svg>
+            <style>{`.dtb-spectrum-link:hover text { opacity: 1 !important; } .dtb-spectrum-link:hover circle { opacity: 0.8 !important; }`}</style>
           </div>
 
         </div>
@@ -1264,6 +1288,84 @@ const DataTrustBanner: React.FC<DataTrustBannerProps> = ({
         </div>
       </div>
     )}
+
+    {/* Improvement Roadmap Modal */}
+    {isImproveOpen && (() => {
+      const allLenses = [
+        { label: LENS_CONFIG.coverage.label, score: scores.coverage, lensType: 'coverage' as LensType },
+        { label: LENS_CONFIG.integrity.label, score: scores.integrity, lensType: 'integrity' as LensType },
+        { label: LENS_CONFIG.behavioral.label, score: scores.behavioral, lensType: 'behavioral' as LensType },
+      ].sort((a, b) => a.score - b.score);
+
+      const IMPROVEMENT_TIPS: Record<string, { quick: string; medium: string; strategic: string }> = {
+        coverage: {
+          quick: 'Set up required-field rules so tickets can\'t be created without key information like description, acceptance criteria, and priority.',
+          medium: 'Run a weekly backlog triage where the team reviews and fills in incomplete tickets before they enter a sprint.',
+          strategic: 'Create issue templates per work type (bug, story, task) that pre-populate required fields and guide contributors.',
+        },
+        integrity: {
+          quick: 'Identify and clean up tickets with placeholder values like "TBD", "N/A", or default story points that were never updated.',
+          medium: 'Add validation rules that flag suspiciously uniform fields — e.g., all stories estimated at the same point value.',
+          strategic: 'Build a quarterly data-quality review into your process where leads audit a sample of tickets for genuine, meaningful content.',
+        },
+        behavioral: {
+          quick: 'Close or archive tickets that haven\'t been updated in 30+ days — if they\'re still relevant, refresh their status.',
+          medium: 'Set up automated reminders for tickets that go stale, nudging assignees to update status, comments, or estimates.',
+          strategic: 'Establish a "definition of current" standard: every in-progress ticket must be updated at least once per sprint.',
+        },
+      };
+
+      return (
+        <div style={styles.compareOverlay} onClick={() => setIsImproveOpen(false)}>
+          <div style={{ ...styles.compareModal, maxWidth: '680px' }} onClick={e => e.stopPropagation()}>
+            <div style={styles.compareHeader}>
+              <h2 style={styles.compareTitle}>How might we improve?</h2>
+              <button style={styles.compareCloseBtn} onClick={() => setIsImproveOpen(false)}>
+                <CrossIcon label="Close" size="small" />
+              </button>
+            </div>
+            <div style={styles.compareBody}>
+              <p style={styles.roadmapIntro}>
+                Based on your current scores, here's a prioritised roadmap. Focus areas are ordered by impact — start with your weakest dimension and work up.
+              </p>
+
+              {allLenses.map((lens, i) => {
+                const { level } = getTrustLevel(lens.score);
+                const tips = IMPROVEMENT_TIPS[lens.lensType];
+                return (
+                  <div key={lens.lensType} style={{ ...styles.roadmapCard, borderLeftColor: level.color }}>
+                    <div style={styles.roadmapCardHeader}>
+                      <span style={styles.roadmapPriority}>
+                        {i === 0 ? 'Priority 1' : i === 1 ? 'Priority 2' : 'Priority 3'}
+                      </span>
+                      <span style={{ ...styles.roadmapLensName, color: level.color }}>{lens.label}</span>
+                      <span style={styles.roadmapScore}>{lens.score}/100</span>
+                    </div>
+                    <div style={styles.roadmapTips}>
+                      <div style={styles.roadmapTip}>
+                        <span style={styles.roadmapTipTag}>Quick win</span>
+                        <span style={styles.roadmapTipText}>{tips.quick}</span>
+                      </div>
+                      <div style={styles.roadmapTip}>
+                        <span style={{ ...styles.roadmapTipTag, backgroundColor: '#DEEBFF', color: '#0052CC' }}>Medium term</span>
+                        <span style={styles.roadmapTipText}>{tips.medium}</span>
+                      </div>
+                      <div style={styles.roadmapTip}>
+                        <span style={{ ...styles.roadmapTipTag, backgroundColor: '#EAE6FF', color: '#6554C0' }}>Strategic</span>
+                        <span style={styles.roadmapTipText}>{tips.strategic}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div style={styles.compareFooter}>
+              <button style={styles.compareCloseButton} onClick={() => setIsImproveOpen(false)}>Close</button>
+            </div>
+          </div>
+        </div>
+      );
+    })()}
 
     {/* Score History Modal */}
     <TrendHistoryModal
@@ -1395,22 +1497,113 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#44546F',
     fontWeight: 400,
   },
-  useCasesBtn: {
+  dualActionBar: {
     display: 'inline-flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '8px 16px',
+    alignItems: 'stretch',
     borderRadius: '8px',
     border: '1px solid rgba(9, 30, 66, 0.12)',
     background: 'rgba(255, 255, 255, 0.8)',
     backdropFilter: 'blur(6px)',
     WebkitBackdropFilter: 'blur(6px)',
+    overflow: 'hidden' as const,
+  },
+  dualBtnLeft: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '6px',
+    padding: '8px 14px',
+    border: 'none',
+    background: 'transparent',
     color: '#172B4D',
-    fontSize: '13px',
+    fontSize: '12.5px',
     fontWeight: 600,
     fontFamily: 'inherit',
     cursor: 'pointer',
-    transition: 'background 0.15s, box-shadow 0.15s',
+    transition: 'background 0.15s',
+  },
+  dualDivider: {
+    width: '1px',
+    backgroundColor: 'rgba(9, 30, 66, 0.1)',
+    margin: '6px 0',
+  },
+  dualBtnRight: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '6px',
+    padding: '8px 14px',
+    border: 'none',
+    background: 'transparent',
+    color: '#172B4D',
+    fontSize: '12.5px',
+    fontWeight: 600,
+    fontFamily: 'inherit',
+    cursor: 'pointer',
+    transition: 'background 0.15s',
+  },
+  roadmapIntro: {
+    margin: '0 0 20px',
+    fontSize: '14px',
+    color: '#44546F',
+    lineHeight: 1.6,
+  },
+  roadmapCard: {
+    borderLeft: '4px solid transparent',
+    borderRadius: '8px',
+    backgroundColor: '#FAFBFC',
+    padding: '16px 20px',
+    marginBottom: '16px',
+  },
+  roadmapCardHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    marginBottom: '14px',
+  },
+  roadmapPriority: {
+    fontSize: '10px',
+    fontWeight: 700,
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.5px',
+    color: '#6B778C',
+    backgroundColor: '#EBECF0',
+    padding: '2px 8px',
+    borderRadius: '4px',
+  },
+  roadmapLensName: {
+    fontSize: '14px',
+    fontWeight: 700,
+    flex: 1,
+  },
+  roadmapScore: {
+    fontSize: '13px',
+    fontWeight: 600,
+    color: '#6B778C',
+  },
+  roadmapTips: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: '10px',
+  },
+  roadmapTip: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: '10px',
+  },
+  roadmapTipTag: {
+    flexShrink: 0,
+    fontSize: '10px',
+    fontWeight: 700,
+    padding: '2px 8px',
+    borderRadius: '4px',
+    backgroundColor: '#E3FCEF',
+    color: '#006644',
+    whiteSpace: 'nowrap' as const,
+    marginTop: '2px',
+  },
+  roadmapTipText: {
+    fontSize: '13px',
+    color: '#44546F',
+    lineHeight: 1.55,
   },
   heroDivider: {
     flex: '0 0 auto',

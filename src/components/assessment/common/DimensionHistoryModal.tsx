@@ -26,15 +26,15 @@ const formatPeriod = (period: string): string => {
   return monthNames[monthIndex] || period;
 };
 
-const getTrendText = (trend: TrendDirection): { text: string; color: string } => {
+const getTrendText = (trend: TrendDirection): { text: string; icon: 'up' | 'down' | 'stable'; color: string } => {
   switch (trend) {
     case 'improving':
-      return { text: '↑ Improving', color: '#36B37E' };
+      return { text: 'Improving', icon: 'up', color: '#36B37E' };
     case 'declining':
-      return { text: '↓ Declining', color: '#DE350B' };
+      return { text: 'Declining', icon: 'down', color: '#DE350B' };
     case 'stable':
     default:
-      return { text: '→ Stable', color: '#6B778C' };
+      return { text: 'Stable', icon: 'stable', color: '#6B778C' };
   }
 };
 
@@ -124,7 +124,10 @@ const DimensionHistoryModal: React.FC<DimensionHistoryModalProps> = ({
             </div>
             <div style={styles.summaryItem}>
               <span style={styles.summaryLabel}>TREND</span>
-              <span style={{ ...styles.summaryValue, color: trendInfo.color }}>
+              <span style={{ ...styles.summaryValue, color: trendInfo.color, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                {trendInfo.icon === 'up' && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={trendInfo.color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3,18 8,13 12,16 21,6" /><polyline points="16,6 21,6 21,11" /></svg>}
+                {trendInfo.icon === 'down' && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={trendInfo.color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3,6 8,11 12,8 21,18" /><polyline points="16,18 21,18 21,13" /></svg>}
+                {trendInfo.icon === 'stable' && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={trendInfo.color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4,12 C8,8 16,16 20,12" /></svg>}
                 {trendInfo.text}
               </span>
             </div>

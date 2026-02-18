@@ -6,9 +6,6 @@ import ClusterMaturityBar from '../common/ClusterMaturityBar';
 import ChevronRightIcon from '@atlaskit/icon/glyph/chevron-right';
 import WarningIcon from '@atlaskit/icon/glyph/warning';
 import CheckCircleIcon from '@atlaskit/icon/glyph/check-circle';
-import ArrowUpIcon from '@atlaskit/icon/glyph/arrow-up';
-import ArrowDownIcon from '@atlaskit/icon/glyph/arrow-down';
-import MediaServicesActualSizeIcon from '@atlaskit/icon/glyph/media-services/actual-size';
 import InfoIcon from '@atlaskit/icon/glyph/info';
 // Dimension icons
 import WatchIcon from '@atlaskit/icon/glyph/watch';
@@ -46,14 +43,15 @@ const calculateThemePercentile = (dimensions: DimensionSummary[]): number => {
 
 // Trend icon helper
 const getTrendIcon = (trend: TrendDirection, size: 'small' | 'medium' = 'small') => {
-  switch (trend) {
-    case 'improving':
-      return <ArrowUpIcon label="Improving" size={size} primaryColor="#006644" />;
-    case 'declining':
-      return <ArrowDownIcon label="Declining" size={size} primaryColor="#DE350B" />;
-    default:
-      return <MediaServicesActualSizeIcon label="Stable" size={size} primaryColor="#6B778C" />;
-  }
+  const color = trend === 'improving' ? '#006644' : trend === 'declining' ? '#DE350B' : '#6B778C';
+  const px = size === 'small' ? 16 : 20;
+  return (
+    <svg width={px} height={px} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      {trend === 'improving' && (<><polyline points="3,18 8,13 12,16 21,6" /><polyline points="16,6 21,6 21,11" /></>)}
+      {trend === 'declining' && (<><polyline points="3,6 8,11 12,8 21,18" /><polyline points="16,18 21,18 21,13" /></>)}
+      {trend === 'stable' && (<><path d="M4,12 C8,8 16,16 20,12" /></>)}
+    </svg>
+  );
 };
 
 // Dimension icons mapping
@@ -381,7 +379,7 @@ const DimensionCard: React.FC<DimensionCardProps> = ({
                 title={`${dim.improvingIndicators} indicator${dim.improvingIndicators > 1 ? 's' : ''} improving`}
                 style={styles.trendBadgeUp}
               >
-                <ArrowUpIcon label="" size="small" primaryColor="#006644" />
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#006644" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3,18 8,13 12,16 21,6" /><polyline points="16,6 21,6 21,11" /></svg>
                 {dim.improvingIndicators}
               </span>
             )}
@@ -390,7 +388,7 @@ const DimensionCard: React.FC<DimensionCardProps> = ({
                 title={`${dim.decliningIndicators} indicator${dim.decliningIndicators > 1 ? 's' : ''} declining`}
                 style={styles.trendBadgeDown}
               >
-                <ArrowDownIcon label="" size="small" primaryColor="#DE350B" />
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#DE350B" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3,6 8,11 12,8 21,18" /><polyline points="16,18 21,18 21,13" /></svg>
                 {dim.decliningIndicators}
               </span>
             )}
@@ -399,7 +397,7 @@ const DimensionCard: React.FC<DimensionCardProps> = ({
                 title={`${dim.stableIndicators} indicator${dim.stableIndicators > 1 ? 's' : ''} stable`}
                 style={styles.trendBadgeStable}
               >
-                <MediaServicesActualSizeIcon label="" size="small" primaryColor="#6B778C" />
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B778C" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4,12 C8,8 16,16 20,12" /></svg>
                 {dim.stableIndicators}
               </span>
             )}

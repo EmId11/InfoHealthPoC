@@ -153,8 +153,15 @@ const AssessmentQueryResults: React.FC<AssessmentQueryResultsProps> = ({
   const formatDisplayValue = (value: unknown, column: AssessmentQueryColumn): React.ReactNode => {
     if (column.type === 'trend') {
       const strVal = String(value).toLowerCase();
-      const arrow = strVal === 'improving' ? '\u2191' : strVal === 'declining' ? '\u2193' : '\u2192';
-      return `${arrow} ${value}`;
+      const color = strVal === 'improving' ? '#36B37E' : strVal === 'declining' ? '#DE350B' : '#6B778C';
+      return (
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+          {strVal === 'improving' && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3,18 8,13 12,16 21,6" /><polyline points="16,6 21,6 21,11" /></svg>}
+          {strVal === 'declining' && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3,6 8,11 12,8 21,18" /><polyline points="16,18 21,18 21,13" /></svg>}
+          {strVal === 'stable' && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4,12 C8,8 16,16 20,12" /></svg>}
+          {String(value)}
+        </span>
+      );
     }
     if (column.type === 'riskLevel') {
       const strVal = String(value).toLowerCase();

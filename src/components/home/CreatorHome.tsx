@@ -16,6 +16,7 @@ interface CreatorHomeProps {
   onDuplicateAssessment: (assessment: SavedAssessment) => void;
   onRenameAssessment: (assessment: SavedAssessment) => void;
   onViewSettings?: () => void;
+  onViewTeamOfTeams?: () => void;
 }
 
 const CreatorHome: React.FC<CreatorHomeProps> = ({
@@ -31,6 +32,7 @@ const CreatorHome: React.FC<CreatorHomeProps> = ({
   onDeleteAssessment,
   onDuplicateAssessment,
   onRenameAssessment,
+  onViewTeamOfTeams,
 }) => {
   const [hoveredRow, setHoveredRow] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
@@ -421,6 +423,72 @@ const CreatorHome: React.FC<CreatorHomeProps> = ({
                     </tr>
                   </thead>
                   <tbody>
+                    {/* Pinned Team of Teams assessment row */}
+                    {onViewTeamOfTeams && (
+                      <tr
+                        style={{
+                          ...styles.tableRow,
+                          ...(hoveredRow === '__tot__' ? styles.tableRowHovered : {}),
+                          background: 'linear-gradient(90deg, #F0F5FF 0%, #FAFBFC 100%)',
+                        }}
+                        onMouseEnter={() => setHoveredRow('__tot__')}
+                        onMouseLeave={() => setHoveredRow(null)}
+                      >
+                        <td style={styles.tableCell}>
+                          <div style={styles.dragStarCell}>
+                            <div style={{ width: '12px' }} />
+                            <div style={{
+                              width: '16px',
+                              height: '16px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}>
+                              <svg width="14" height="14" viewBox="0 0 16 16" fill="#0052CC" opacity={0.6}>
+                                <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-5 6c0-2.76 2.24-5 5-5s5 2.24 5 5H3zm10-8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zm1.5 2h-.52a3.98 3.98 0 0 1 1.52 3.13V14H16v-2c0-1.1-.9-2-2-2h-.5z" />
+                              </svg>
+                            </div>
+                          </div>
+                        </td>
+                        <td style={styles.tableCell}>
+                          <div style={styles.assessmentNameCell}>
+                            <div style={{ ...styles.statusIndicator, backgroundColor: '#0052CC' }} />
+                            <div>
+                              <div style={styles.assessmentName}>Engineering Team of Teams</div>
+                              <span style={styles.multiTeamBadge}>
+                                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ flexShrink: 0 }}>
+                                  <path d="M8 10v-1a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v1" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+                                  <circle cx="5" cy="4" r="1.5" stroke="currentColor" strokeWidth="1.2"/>
+                                  <path d="M10.5 10v-1a2 2 0 0 0-1.5-1.93M7.5 2.07a2 2 0 0 1 0 3.86" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+                                </svg>
+                                8 teams
+                              </span>
+                            </div>
+                          </div>
+                        </td>
+                        <td style={styles.tableCell}>
+                          <span style={{ ...styles.statusBadge, backgroundColor: '#E3FCEF', color: '#006644' }}>
+                            Completed
+                          </span>
+                        </td>
+                        <td style={styles.tableCell}>
+                          <span style={styles.timeText}>Jan 15, 2026</span>
+                        </td>
+                        <td style={styles.tableCell}>
+                          <span style={styles.timeText}>Feb 1, 2026</span>
+                        </td>
+                        <td style={styles.tableCell}>
+                          <span style={styles.noShareText}>—</span>
+                        </td>
+                        <td style={{ ...styles.tableCell, textAlign: 'right' }}>
+                          <div style={styles.actionsCell}>
+                            <button style={styles.viewButton} onClick={onViewTeamOfTeams}>
+                              View
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
                     {getDisplayAssessments(myAssessments).map((assessment, index, arr) => {
                       const isCompleted = assessment.status === 'completed';
                       const isHovered = hoveredRow === assessment.id;

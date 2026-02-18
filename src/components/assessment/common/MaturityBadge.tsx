@@ -105,8 +105,12 @@ const MaturityBadge: React.FC<MaturityBadgeProps> = ({
           </span>
         )}
         {showTrendIcon && trendConfig && (
-          <span style={{ ...styles.trendIcon, color: trendConfig.color, fontSize: sizeConfig.fontSize }}>
-            {trendConfig.icon}
+          <span style={{ ...styles.trendIcon, color: trendConfig.color, display: 'inline-flex', alignItems: 'center' }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={trendConfig.color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              {trendConfig.icon === 'improving' && (<><polyline points="3,18 8,13 12,16 21,6" /><polyline points="16,6 21,6 21,11" /></>)}
+              {trendConfig.icon === 'declining' && (<><polyline points="3,6 8,11 12,8 21,18" /><polyline points="16,18 21,18 21,13" /></>)}
+              {trendConfig.icon === 'stable' && (<><path d="M4,12 C8,8 16,16 20,12" /></>)}
+            </svg>
           </span>
         )}
       </span>
@@ -128,8 +132,12 @@ const MaturityBadge: React.FC<MaturityBadgeProps> = ({
       >
         {showLabel ? config.name : config.level}
         {showTrendIcon && trendConfig && (
-          <span style={{ ...styles.trendIcon, color: trendConfig.color }}>
-            {trendConfig.icon}
+          <span style={{ ...styles.trendIcon, color: trendConfig.color, display: 'inline-flex', alignItems: 'center' }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={trendConfig.color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              {trendConfig.icon === 'improving' && (<><polyline points="3,18 8,13 12,16 21,6" /><polyline points="16,6 21,6 21,11" /></>)}
+              {trendConfig.icon === 'declining' && (<><polyline points="3,6 8,11 12,8 21,18" /><polyline points="16,18 21,18 21,13" /></>)}
+              {trendConfig.icon === 'stable' && (<><path d="M4,12 C8,8 16,16 20,12" /></>)}
+            </svg>
           </span>
         )}
       </span>
@@ -161,8 +169,12 @@ const MaturityBadge: React.FC<MaturityBadgeProps> = ({
       />
       {showLabel && <span>{config.name}</span>}
       {showTrendIcon && trendConfig && (
-        <span style={{ ...styles.trendIcon, color: trendConfig.color }}>
-          {trendConfig.icon}
+        <span style={{ ...styles.trendIcon, color: trendConfig.color, display: 'inline-flex', alignItems: 'center' }}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={trendConfig.color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            {trendConfig.icon === 'improving' && (<><polyline points="3,18 8,13 12,16 21,6" /><polyline points="16,6 21,6 21,11" /></>)}
+            {trendConfig.icon === 'declining' && (<><polyline points="3,6 8,11 12,8 21,18" /><polyline points="16,18 21,18 21,13" /></>)}
+            {trendConfig.icon === 'stable' && (<><path d="M4,12 C8,8 16,16 20,12" /></>)}
+          </svg>
         </span>
       )}
     </span>

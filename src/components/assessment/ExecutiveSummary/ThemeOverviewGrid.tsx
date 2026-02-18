@@ -1,9 +1,6 @@
 import React from 'react';
 import { ThemeSummary, RiskLevel, TrendDirection } from '../../../types/assessment';
 import ChevronRightIcon from '@atlaskit/icon/glyph/chevron-right';
-import ArrowUpIcon from '@atlaskit/icon/glyph/arrow-up';
-import ArrowDownIcon from '@atlaskit/icon/glyph/arrow-down';
-import EditorHorizontalRuleIcon from '@atlaskit/icon/glyph/editor/horizontal-rule';
 
 interface ThemeOverviewGridProps {
   themes: ThemeSummary[];
@@ -27,14 +24,15 @@ const ThemeCard: React.FC<ThemeCardProps> = ({ theme, onClick }) => {
   const accentColor = theme.concernCount > 0 ? '#DE350B' : '#36B37E';
 
   const getTrendIcon = (trend: TrendDirection, size: 'small' | 'medium' = 'small') => {
-    switch (trend) {
-      case 'improving':
-        return <ArrowUpIcon label="" size={size} primaryColor="#36B37E" />;
-      case 'declining':
-        return <ArrowDownIcon label="" size={size} primaryColor="#DE350B" />;
-      default:
-        return <EditorHorizontalRuleIcon label="" size={size} primaryColor="#6B778C" />;
-    }
+    const color = trend === 'improving' ? '#36B37E' : trend === 'declining' ? '#DE350B' : '#6B778C';
+    const px = size === 'small' ? 16 : 20;
+    return (
+      <svg width={px} height={px} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        {trend === 'improving' && (<><polyline points="3,18 8,13 12,16 21,6" /><polyline points="16,6 21,6 21,11" /></>)}
+        {trend === 'declining' && (<><polyline points="3,6 8,11 12,8 21,18" /><polyline points="16,18 21,18 21,13" /></>)}
+        {trend === 'stable' && (<><path d="M4,12 C8,8 16,16 20,12" /></>)}
+      </svg>
+    );
   };
 
   return (

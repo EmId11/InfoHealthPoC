@@ -53,6 +53,8 @@ interface AssessmentResultsLayoutProps {
   onClearNewlyCreatedPlanFromApp?: () => void;
   // Lens detail navigation
   onLensClick?: (lens: LensType) => void;
+  // Team of Teams breadcrumb
+  onBackToTeamOfTeams?: () => void;
 }
 
 const AssessmentResultsLayout: React.FC<AssessmentResultsLayoutProps> = ({
@@ -74,6 +76,7 @@ const AssessmentResultsLayout: React.FC<AssessmentResultsLayoutProps> = ({
   newlyCreatedPlanIdFromApp,
   onClearNewlyCreatedPlanFromApp,
   onLensClick,
+  onBackToTeamOfTeams,
 }) => {
   const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
@@ -273,16 +276,37 @@ const AssessmentResultsLayout: React.FC<AssessmentResultsLayoutProps> = ({
             <button
               style={styles.iconButton}
               onClick={onBackToHome || onBackToSetup}
-              title={onBackToHome ? 'Back to Home' : 'Back to Setup'}
+              title={onBackToTeamOfTeams ? 'Back to Team of Teams' : onBackToHome ? 'Back to Home' : 'Back to Setup'}
             >
               <ArrowLeftIcon label="Back" primaryColor="white" size="medium" />
             </button>
-            <h1 style={styles.title}>
-              Data Trust Assessment
-              {assessmentResult.teamName && (
-                <span style={styles.teamNameInline}> — {assessmentResult.teamName}</span>
+            <div style={{ display: 'flex', flexDirection: 'column' as const }}>
+              {onBackToTeamOfTeams && (
+                <button
+                  onClick={onBackToTeamOfTeams}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    padding: 0,
+                    color: 'rgba(255, 255, 255, 0.7)',
+                    fontSize: '11px',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    textAlign: 'left' as const,
+                    marginBottom: '2px',
+                  }}
+                >
+                  ← Back to Team of Teams
+                </button>
               )}
-            </h1>
+              <h1 style={styles.title}>
+                Data Trust Assessment
+                {assessmentResult.teamName && (
+                  <span style={styles.teamNameInline}> — {assessmentResult.teamName}</span>
+                )}
+              </h1>
+            </div>
           </div>
 
           {/* Right side: metadata + action buttons */}

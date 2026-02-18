@@ -26,11 +26,11 @@ const getAnswerTier = (tierLevel: number): { word: string; insight: string; colo
 const getTrendDisplay = (trend: 'up' | 'down' | 'stable'): { icon: string; label: string; color: string } => {
   switch (trend) {
     case 'up':
-      return { icon: '↑', label: 'Improving', color: '#216E4E' };
+      return { icon: 'up', label: 'Improving', color: '#216E4E' };
     case 'down':
-      return { icon: '↓', label: 'Declining', color: '#CA3521' };
+      return { icon: 'down', label: 'Declining', color: '#CA3521' };
     case 'stable':
-      return { icon: '→', label: 'Stable', color: '#6B778C' };
+      return { icon: 'stable', label: 'Stable', color: '#6B778C' };
   }
 };
 
@@ -97,7 +97,10 @@ const OutcomeCard: React.FC<OutcomeCardProps> = ({
       <div style={styles.bottomRow}>
         <span style={{ ...styles.insight, color: answerTier.color }}>{answerTier.insight}</span>
         <span style={{ ...styles.trend, color: trendDisplay.color }}>
-          {trendDisplay.icon} {trendDisplay.label}
+          {trendDisplay.icon === 'up' && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={trendDisplay.color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3,18 8,13 12,16 21,6" /><polyline points="16,6 21,6 21,11" /></svg>}
+          {trendDisplay.icon === 'down' && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={trendDisplay.color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3,6 8,11 12,8 21,18" /><polyline points="16,18 21,18 21,13" /></svg>}
+          {trendDisplay.icon === 'stable' && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={trendDisplay.color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4,12 C8,8 16,16 20,12" /></svg>}
+          {' '}{trendDisplay.label}
         </span>
       </div>
 

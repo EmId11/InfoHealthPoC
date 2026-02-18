@@ -43,9 +43,9 @@ interface TooltipState {
 // Get trend display with colors optimized for blue background
 const getTrendDisplay = (trend: 'up' | 'down' | 'stable'): { icon: string; label: string; color: string } => {
   switch (trend) {
-    case 'up': return { icon: '↑', label: 'Improving', color: '#57D9A3' }; // Vibrant green
-    case 'down': return { icon: '↓', label: 'Declining', color: '#FF7452' }; // Vibrant coral
-    case 'stable': return { icon: '→', label: 'Stable', color: '#FFFFFF' }; // Full white
+    case 'up': return { icon: 'up', label: 'Improving', color: '#57D9A3' }; // Vibrant green
+    case 'down': return { icon: 'down', label: 'Declining', color: '#FF7452' }; // Vibrant coral
+    case 'stable': return { icon: 'stable', label: 'Stable', color: '#FFFFFF' }; // Full white
   }
 };
 
@@ -691,17 +691,17 @@ const OutcomeDetailPage: React.FC<OutcomeDetailPageProps> = ({
                 </div>
                 <div style={styles.trendStats}>
                   <div style={styles.trendItem}>
-                    <span style={{ ...styles.trendIcon, color: '#36B37E' }}>↑</span>
+                    <span style={{ ...styles.trendIcon, color: '#36B37E' }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#36B37E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3,18 8,13 12,16 21,6" /><polyline points="16,6 21,6 21,11" /></svg></span>
                     <span style={styles.trendCount}>{dimensionStats.improved}</span>
                     <span style={styles.trendLabel}>improved</span>
                   </div>
                   <div style={styles.trendItem}>
-                    <span style={{ ...styles.trendIcon, color: '#DE350B' }}>↓</span>
+                    <span style={{ ...styles.trendIcon, color: '#DE350B' }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#DE350B" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3,6 8,11 12,8 21,18" /><polyline points="16,18 21,18 21,13" /></svg></span>
                     <span style={styles.trendCount}>{dimensionStats.declined}</span>
                     <span style={styles.trendLabel}>declined</span>
                   </div>
                   <div style={styles.trendItem}>
-                    <span style={{ ...styles.trendIcon, color: '#6B778C' }}>→</span>
+                    <span style={{ ...styles.trendIcon, color: '#6B778C' }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B778C" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4,12 C8,8 16,16 20,12" /></svg></span>
                     <span style={styles.trendCount}>{dimensionStats.stable}</span>
                     <span style={styles.trendLabel}>stable</span>
                   </div>
@@ -726,9 +726,9 @@ const OutcomeDetailPage: React.FC<OutcomeDetailPageProps> = ({
                   <span style={styles.attentionLabel}>need attention ({attentionPct}%)</span>
                 </div>
                 <div style={styles.indicatorTrends}>
-                  <span style={{ ...styles.miniTrend, color: '#36B37E' }}>↑{indicatorStats.improving}</span>
-                  <span style={{ ...styles.miniTrend, color: '#DE350B' }}>↓{indicatorStats.declining}</span>
-                  <span style={{ ...styles.miniTrend, color: '#6B778C' }}>→{indicatorStats.stable}</span>
+                  <span style={{ ...styles.miniTrend, color: '#36B37E', display: 'inline-flex', alignItems: 'center', gap: '2px' }}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#36B37E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3,18 8,13 12,16 21,6" /><polyline points="16,6 21,6 21,11" /></svg>{indicatorStats.improving}</span>
+                  <span style={{ ...styles.miniTrend, color: '#DE350B', display: 'inline-flex', alignItems: 'center', gap: '2px' }}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#DE350B" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3,6 8,11 12,8 21,18" /><polyline points="16,18 21,18 21,13" /></svg>{indicatorStats.declining}</span>
+                  <span style={{ ...styles.miniTrend, color: '#6B778C', display: 'inline-flex', alignItems: 'center', gap: '2px' }}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6B778C" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4,12 C8,8 16,16 20,12" /></svg>{indicatorStats.stable}</span>
                 </div>
               </div>
             </div>

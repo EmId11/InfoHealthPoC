@@ -119,14 +119,14 @@ const DimensionDistributionView: React.FC<DimensionDistributionViewProps> = ({
                     <span style={styles.avgScoreLabel}>Avg</span>
                   </div>
                   <div style={styles.trendStats}>
-                    <span style={{ ...styles.trendStat, color: '#00875A' }}>
-                      ↑ {agg.teamsImproving}
+                    <span style={{ ...styles.trendStat, color: '#00875A', display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#00875A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3,18 8,13 12,16 21,6" /><polyline points="16,6 21,6 21,11" /></svg> {agg.teamsImproving}
                     </span>
-                    <span style={{ ...styles.trendStat, color: '#6B778C' }}>
-                      → {agg.teamsStable}
+                    <span style={{ ...styles.trendStat, color: '#6B778C', display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6B778C" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4,12 C8,8 16,16 20,12" /></svg> {agg.teamsStable}
                     </span>
-                    <span style={{ ...styles.trendStat, color: '#DE350B' }}>
-                      ↓ {agg.teamsDeclining}
+                    <span style={{ ...styles.trendStat, color: '#DE350B', display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#DE350B" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3,6 8,11 12,8 21,18" /><polyline points="16,18 21,18 21,13" /></svg> {agg.teamsDeclining}
                     </span>
                   </div>
                 </div>

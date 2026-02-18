@@ -240,8 +240,8 @@ export const getConfidenceLevelConfig = (score: number): ConfidenceLevelConfig =
  */
 export const getTrendIcon = (trend: 'up' | 'down' | 'stable'): string => {
   switch (trend) {
-    case 'up': return '↑';
-    case 'down': return '↓';
-    case 'stable': return '→';
+    case 'up': return 'up';
+    case 'down': return 'down';
+    case 'stable': return 'stable';
   }
 };

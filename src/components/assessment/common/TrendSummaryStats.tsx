@@ -93,9 +93,15 @@ const TrendSummaryStats: React.FC<TrendSummaryStatsProps> = ({ data, totalTeams 
   };
 
   const getChangeArrow = () => {
-    if (stats.periodChange.direction === 'up') return '↑';
-    if (stats.periodChange.direction === 'down') return '↓';
-    return '→';
+    if (stats.periodChange.direction === 'up') return (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3,18 8,13 12,16 21,6" /><polyline points="16,6 21,6 21,11" /></svg>
+    );
+    if (stats.periodChange.direction === 'down') return (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3,6 8,11 12,8 21,18" /><polyline points="16,18 21,18 21,13" /></svg>
+    );
+    return (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4,12 C8,8 16,16 20,12" /></svg>
+    );
   };
 
   const riskInfo = getRiskInfo(stats.currentRiskScore);

@@ -15,6 +15,8 @@ import { AdminState, AdminSection, OrganizationDefaults, ManagedUser, UserGroup,
 import { SetupType, isAllSetupComplete } from './types/adminSetup';
 import { SavedReport, generateShareToken } from './types/reports';
 import { generateMockAssessmentResultWithDim3 } from './constants/mockAssessmentData';
+import { MOCK_TEAM_OF_TEAMS_RESULT } from './constants/mockMultiTeamData';
+import { MultiTeamAssessmentResult } from './types/multiTeamAssessment';
 import { generateMockPatternResults } from './constants/mockPatternData';
 import { initializeMockHistory } from './utils/historicalDataStorage';
 import {
@@ -52,6 +54,8 @@ import DataIntegrityCategoryDetailPage from './components/assessment/dataIntegri
 import LensDetailPage from './components/assessment/patterns/LensDetailPage';
 import { LensType } from './types/patterns';
 import { mockIntegrityDimensionResult } from './constants/mockAssessmentData';
+import TeamOfTeamsLayout from './components/assessment/teamOfTeams/TeamOfTeamsLayout';
+import TeamOfTeamsLensDetailPage from './components/assessment/teamOfTeams/TeamOfTeamsLensDetailPage';
 
 type AppView =
   | 'creator-home'
@@ -69,7 +73,9 @@ type AppView =
   | 'improvement-plan-wizard'
   | 'improvement-plan-detail'
   | 'data-integrity-category-detail'
-  | 'lens-detail';
+  | 'lens-detail'
+  | 'team-of-teams'
+  | 'team-of-teams-lens-detail';
 
 // Get initial app view based on stored persona
 const getInitialAppView = (): AppView => {
@@ -133,6 +139,11 @@ const App: React.FC = () => {
 
   // Lens detail state
   const [selectedLens, setSelectedLens] = useState<LensType | null>(null);
+
+  // Team of Teams state
+  const [multiTeamResult, setMultiTeamResult] = useState<MultiTeamAssessmentResult | null>(null);
+  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
+  const [returnToTeamOfTeams, setReturnToTeamOfTeams] = useState(false);
 
   // Comparison modal state (for outcome detail page)
   const [isComparisonModalOpen, setIsComparisonModalOpen] = useState(false);
@@ -461,9 +472,41 @@ const App: React.FC = () => {
     setAppView('lens-detail');
   };
 
+  const handleLensClickFromTeamOfTeams = (lens: LensType) => {
+    setSelectedLens(lens);
+    setAppView('team-of-teams-lens-detail');
+  };
+
   const handleBackFromLensDetail = () => {
     setSelectedLens(null);
     setAppView('assessment-results');
+  };
+
+  const handleBackFromTeamOfTeamsLensDetail = () => {
+    setSelectedLens(null);
+    setAppView('team-of-teams');
+  };
+
+  // Team of Teams navigation handlers
+  const handleTeamOfTeamsView = () => {
+    setMultiTeamResult(MOCK_TEAM_OF_TEAMS_RESULT);
+    setAppView('team-of-teams');
+  };
+
+  const handleTeamClickFromPortfolio = (teamId: string) => {
+    const teamRollup = multiTeamResult?.teamResults.find(t => t.teamId === teamId);
+    if (teamRollup) {
+      setAssessmentResult(teamRollup.assessmentResult);
+      setSelectedTeamId(teamId);
+      setReturnToTeamOfTeams(true);
+      setAppView('assessment-results');
+    }
+  };
+
+  const handleBackToTeamOfTeams = () => {
+    setReturnToTeamOfTeams(false);
+    setSelectedTeamId(null);
+    setAppView('team-of-teams');
   };
 
   // Home page handlers
@@ -978,6 +1021,7 @@ const App: React.FC = () => {
             onDeleteAssessment={handleDeleteAssessment}
             onDuplicateAssessment={handleDuplicateAssessment}
             onRenameAssessment={handleRenameAssessment}
+            onViewTeamOfTeams={handleTeamOfTeamsView}
           />
           {shareModalAssessment && (
             <ShareModal
@@ -1185,6 +1229,30 @@ const App: React.FC = () => {
       );
     }
 
+    // Team of Teams view
+    if (appView === 'team-of-teams' && multiTeamResult) {
+      return (
+        <TeamOfTeamsLayout
+          multiTeamResult={multiTeamResult}
+          onBack={handleBackToHome}
+          onTeamClick={handleTeamClickFromPortfolio}
+          onLensClick={handleLensClickFromTeamOfTeams}
+        />
+      );
+    }
+
+    // Team of Teams lens detail view
+    if (appView === 'team-of-teams-lens-detail' && multiTeamResult && selectedLens) {
+      return (
+        <TeamOfTeamsLensDetailPage
+          lens={selectedLens}
+          multiTeamResult={multiTeamResult}
+          onBack={handleBackFromTeamOfTeamsLensDetail}
+          onTeamClick={handleTeamClickFromPortfolio}
+        />
+      );
+    }
+
     // Lens detail view
     if (appView === 'lens-detail' && assessmentResult && selectedLens) {
       return (
@@ -1218,7 +1286,7 @@ const App: React.FC = () => {
             assessmentResult={assessmentResult}
             wizardState={wizardState}
             onBackToSetup={handleEditSettings}
-            onBackToHome={handleBackToHome}
+            onBackToHome={returnToTeamOfTeams ? handleBackToTeamOfTeams : handleBackToHome}
             onLensClick={handleLensClick}
             onRerun={handleRerunAssessment}
             onShare={() => {
@@ -1238,6 +1306,7 @@ const App: React.FC = () => {
             onOpenPlanDetail={handleOpenPlanDetail}
             newlyCreatedPlanIdFromApp={newlyCreatedPlanId}
             onClearNewlyCreatedPlanFromApp={() => setNewlyCreatedPlanId(null)}
+            onBackToTeamOfTeams={returnToTeamOfTeams ? handleBackToTeamOfTeams : undefined}
           />
           {shareModalAssessment && (
             <ShareModal

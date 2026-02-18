@@ -4,8 +4,6 @@ import { useBuilderContext } from '../BuilderContext';
 import { DIMENSION_EXPLANATIONS } from '../../../../types/actionPlanBuilder';
 import DragHandlerIcon from '@atlaskit/icon/glyph/drag-handler';
 import EditorInfoIcon from '@atlaskit/icon/glyph/editor/info';
-import ArrowUpIcon from '@atlaskit/icon/glyph/arrow-up';
-import ArrowDownIcon from '@atlaskit/icon/glyph/arrow-down';
 
 const PrioritizeDimensionsStep: React.FC = () => {
   const { actions, computed } = useBuilderContext();
@@ -17,14 +15,14 @@ const PrioritizeDimensionsStep: React.FC = () => {
 
   // Get trend icon
   const getTrendIcon = (trend: 'improving' | 'stable' | 'declining') => {
-    switch (trend) {
-      case 'improving':
-        return <ArrowUpIcon label="" size="small" primaryColor="#006644" />;
-      case 'declining':
-        return <ArrowDownIcon label="" size="small" primaryColor="#DE350B" />;
-      default:
-        return <span style={styles.stableTrend}>—</span>;
-    }
+    const color = trend === 'improving' ? '#006644' : trend === 'declining' ? '#DE350B' : '#6B778C';
+    return (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        {trend === 'improving' && (<><polyline points="3,18 8,13 12,16 21,6" /><polyline points="16,6 21,6 21,11" /></>)}
+        {trend === 'declining' && (<><polyline points="3,6 8,11 12,8 21,18" /><polyline points="16,18 21,18 21,13" /></>)}
+        {trend === 'stable' && (<><path d="M4,12 C8,8 16,16 20,12" /></>)}
+      </svg>
+    );
   };
 
   return (

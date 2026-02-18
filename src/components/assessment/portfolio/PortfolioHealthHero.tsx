@@ -87,7 +87,7 @@ const PortfolioHealthHero: React.FC<PortfolioHealthHeroProps> = ({
           <div style={styles.statCard}>
             <div style={{ ...styles.statValue, color: '#00875A' }}>
               {summary.teamsImproving}
-              <span style={styles.trendIcon}>↑</span>
+              <span style={styles.trendIcon}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00875A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3,18 8,13 12,16 21,6" /><polyline points="16,6 21,6 21,11" /></svg></span>
             </div>
             <div style={styles.statLabel}>Improving</div>
           </div>
@@ -95,7 +95,7 @@ const PortfolioHealthHero: React.FC<PortfolioHealthHeroProps> = ({
           <div style={styles.statCard}>
             <div style={{ ...styles.statValue, color: '#6B778C' }}>
               {summary.teamsStable}
-              <span style={styles.trendIcon}>→</span>
+              <span style={styles.trendIcon}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B778C" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4,12 C8,8 16,16 20,12" /></svg></span>
             </div>
             <div style={styles.statLabel}>Stable</div>
           </div>
@@ -103,7 +103,7 @@ const PortfolioHealthHero: React.FC<PortfolioHealthHeroProps> = ({
           <div style={styles.statCard}>
             <div style={{ ...styles.statValue, color: '#DE350B' }}>
               {summary.teamsDeclining}
-              <span style={styles.trendIcon}>↓</span>
+              <span style={styles.trendIcon}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#DE350B" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3,6 8,11 12,8 21,18" /><polyline points="16,18 21,18 21,13" /></svg></span>
             </div>
             <div style={styles.statLabel}>Declining</div>
           </div>
@@ -169,9 +169,9 @@ const PortfolioHealthHero: React.FC<PortfolioHealthHeroProps> = ({
                     : '#6B778C',
               }}
             >
-              {executiveSummary.headline.healthTrend === 'improving' && '↑ Improving'}
-              {executiveSummary.headline.healthTrend === 'declining' && '↓ Declining'}
-              {executiveSummary.headline.healthTrend === 'stable' && '→ Stable'}
+              {executiveSummary.headline.healthTrend === 'improving' && <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3,18 8,13 12,16 21,6" /><polyline points="16,6 21,6 21,11" /></svg> Improving</>}
+              {executiveSummary.headline.healthTrend === 'declining' && <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3,6 8,11 12,8 21,18" /><polyline points="16,18 21,18 21,13" /></svg> Declining</>}
+              {executiveSummary.headline.healthTrend === 'stable' && <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4,12 C8,8 16,16 20,12" /></svg> Stable</>}
             </span>
           </div>
 
