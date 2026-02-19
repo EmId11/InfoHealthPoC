@@ -33,9 +33,9 @@ function getFieldDisplayName(fieldId: string): string {
 // ============================================================================
 
 function getSeverityFromScore(score: number): { label: string; color: string; bg: string } {
-  if (score >= 70) return { label: 'Healthy', color: '#006644', bg: '#E3FCEF' };
-  if (score >= 50) return { label: 'Fair', color: '#FFAB00', bg: '#FFFAE6' };
-  if (score >= 30) return { label: 'At Risk', color: '#FF8B00', bg: '#FFF7E6' };
+  if (score >= 70) return { label: 'Healthy', color: '#00875A', bg: '#E3FCEF' };
+  if (score >= 50) return { label: 'Fair', color: '#2684FF', bg: '#DEEBFF' };
+  if (score >= 30) return { label: 'At Risk', color: '#FF8B00', bg: '#FFF7ED' };
   return { label: 'Critical', color: '#DE350B', bg: '#FFEBE6' };
 }
 

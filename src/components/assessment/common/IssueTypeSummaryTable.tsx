@@ -57,9 +57,9 @@ function getFieldDisplayName(fieldId: string): string {
 // ============================================================================
 
 function getSeverityFromScore(score: number): { label: string; color: string; bg: string } {
-  if (score >= 70) return { label: 'Healthy', color: '#006644', bg: '#E3FCEF' };
-  if (score >= 50) return { label: 'Fair', color: '#FFAB00', bg: '#FFFAE6' };
-  if (score >= 30) return { label: 'At Risk', color: '#FF8B00', bg: '#FFF7E6' };
+  if (score >= 70) return { label: 'Healthy', color: '#00875A', bg: '#E3FCEF' };
+  if (score >= 50) return { label: 'Fair', color: '#2684FF', bg: '#DEEBFF' };
+  if (score >= 30) return { label: 'At Risk', color: '#FF8B00', bg: '#FFF7ED' };
   return { label: 'Critical', color: '#DE350B', bg: '#FFEBE6' };
 }
 
@@ -134,7 +134,7 @@ const TRUSTWORTHINESS_TRENDS: Record<string, { data: TrendDataPoint[]; dir: 'up'
 // ============================================================================
 
 const ScorePill: React.FC<{ score: number }> = ({ score }) => {
-  const greenColor = score >= 70 ? '#36B37E' : score >= 50 ? '#FFAB00' : score >= 30 ? '#FF8B00' : '#DE350B';
+  const greenColor = score >= 70 ? '#00875A' : score >= 50 ? '#2684FF' : score >= 30 ? '#FF8B00' : '#DE350B';
   const remainder = 100 - score;
 
   return (
@@ -500,12 +500,12 @@ const IssueTypeSummaryTable: React.FC<IssueTypeSummaryTableProps> = ({ dimension
                 </div>
               )}
               {sevCounts.Fair > 0 && (
-                <div style={{ flex: sevCounts.Fair, backgroundColor: '#FFAB00', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ flex: sevCounts.Fair, backgroundColor: '#2684FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {sevCounts.Fair > 1 && <span style={bannerStyles.sevBarText}>{sevCounts.Fair}</span>}
                 </div>
               )}
               {sevCounts.Healthy > 0 && (
-                <div style={{ flex: sevCounts.Healthy, backgroundColor: '#36B37E', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ flex: sevCounts.Healthy, backgroundColor: '#00875A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {sevCounts.Healthy > 1 && <span style={bannerStyles.sevBarText}>{sevCounts.Healthy}</span>}
                 </div>
               )}
@@ -525,13 +525,13 @@ const IssueTypeSummaryTable: React.FC<IssueTypeSummaryTableProps> = ({ dimension
               )}
               {sevCounts.Fair > 0 && (
                 <span style={bannerStyles.sevLabelItem}>
-                  <span style={{ ...bannerStyles.sevDot, backgroundColor: '#FFAB00' }} />
+                  <span style={{ ...bannerStyles.sevDot, backgroundColor: '#2684FF' }} />
                   {sevCounts.Fair} Fair
                 </span>
               )}
               {sevCounts.Healthy > 0 && (
                 <span style={bannerStyles.sevLabelItem}>
-                  <span style={{ ...bannerStyles.sevDot, backgroundColor: '#36B37E' }} />
+                  <span style={{ ...bannerStyles.sevDot, backgroundColor: '#00875A' }} />
                   {sevCounts.Healthy} Healthy
                 </span>
               )}
@@ -552,7 +552,7 @@ const IssueTypeSummaryTable: React.FC<IssueTypeSummaryTableProps> = ({ dimension
                     title={`${r.displayName} — ${r.severityLabel} (score ${r.score})`}
                     style={{
                       width: '20px', height: '20px', borderRadius: '3px',
-                      backgroundColor: r.severityColor === '#006644' ? '#36B37E' : r.severityColor,
+                      backgroundColor: r.severityColor,
                       cursor: 'pointer',
                     }}
                   />

@@ -35,9 +35,9 @@ const ISSUE_TYPE_FIELDS: Record<string, string[]> = {
 // ============================================================================
 
 function getSeverityFromScore(score: number): { label: string; color: string; bg: string } {
-  if (score >= 70) return { label: 'Healthy', color: '#006644', bg: '#E3FCEF' };
-  if (score >= 50) return { label: 'Fair', color: '#FFAB00', bg: '#FFFAE6' };
-  if (score >= 30) return { label: 'At Risk', color: '#FF8B00', bg: '#FFF7E6' };
+  if (score >= 70) return { label: 'Healthy', color: '#00875A', bg: '#E3FCEF' };
+  if (score >= 50) return { label: 'Fair', color: '#2684FF', bg: '#DEEBFF' };
+  if (score >= 30) return { label: 'At Risk', color: '#FF8B00', bg: '#FFF7ED' };
   return { label: 'Critical', color: '#DE350B', bg: '#FFEBE6' };
 }
 
@@ -84,7 +84,7 @@ function valueToScore(value: number, benchmark: number, higherIsBetter: boolean)
 // ============================================================================
 
 const ScorePill: React.FC<{ score: number }> = ({ score }) => {
-  const greenColor = score >= 70 ? '#36B37E' : score >= 50 ? '#FFAB00' : score >= 30 ? '#FF8B00' : '#DE350B';
+  const greenColor = score >= 70 ? '#00875A' : score >= 50 ? '#2684FF' : score >= 30 ? '#FF8B00' : '#DE350B';
   const remainder = 100 - score;
 
   return (
@@ -218,7 +218,7 @@ const DataFreshnessSummaryTable: React.FC<DataFreshnessSummaryTableProps> = ({ d
   // Overall health score
   const healthScore = dimension.healthScore ?? Math.round(dimension.overallPercentile);
   const scoreAngle = Math.round((healthScore / 100) * 360);
-  const scoreColor = healthScore >= 70 ? '#36B37E' : healthScore >= 50 ? '#FFAB00' : healthScore >= 30 ? '#FF8B00' : '#DE350B';
+  const scoreColor = healthScore >= 70 ? '#00875A' : healthScore >= 50 ? '#2684FF' : healthScore >= 30 ? '#FF8B00' : '#DE350B';
 
   // Trend from dimension
   const trendIcon = dimension.trend === 'improving' ? 'up' : dimension.trend === 'declining' ? 'down' : 'stable';
@@ -297,12 +297,12 @@ const DataFreshnessSummaryTable: React.FC<DataFreshnessSummaryTableProps> = ({ d
                 </div>
               )}
               {stats.sevCounts.Fair > 0 && (
-                <div style={{ flex: stats.sevCounts.Fair, backgroundColor: '#FFAB00', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ flex: stats.sevCounts.Fair, backgroundColor: '#2684FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {stats.sevCounts.Fair > 1 && <span style={bannerStyles.sevBarText}>{stats.sevCounts.Fair}</span>}
                 </div>
               )}
               {stats.sevCounts.Healthy > 0 && (
-                <div style={{ flex: stats.sevCounts.Healthy, backgroundColor: '#36B37E', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ flex: stats.sevCounts.Healthy, backgroundColor: '#00875A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {stats.sevCounts.Healthy > 1 && <span style={bannerStyles.sevBarText}>{stats.sevCounts.Healthy}</span>}
                 </div>
               )}
@@ -323,13 +323,13 @@ const DataFreshnessSummaryTable: React.FC<DataFreshnessSummaryTableProps> = ({ d
               )}
               {stats.sevCounts.Fair > 0 && (
                 <span style={bannerStyles.sevLabelItem}>
-                  <span style={{ ...bannerStyles.sevDot, backgroundColor: '#FFAB00' }} />
+                  <span style={{ ...bannerStyles.sevDot, backgroundColor: '#2684FF' }} />
                   {stats.sevCounts.Fair} Fair
                 </span>
               )}
               {stats.sevCounts.Healthy > 0 && (
                 <span style={bannerStyles.sevLabelItem}>
-                  <span style={{ ...bannerStyles.sevDot, backgroundColor: '#36B37E' }} />
+                  <span style={{ ...bannerStyles.sevDot, backgroundColor: '#00875A' }} />
                   {stats.sevCounts.Healthy} Healthy
                 </span>
               )}
@@ -351,7 +351,7 @@ const DataFreshnessSummaryTable: React.FC<DataFreshnessSummaryTableProps> = ({ d
                     title={`${r.issueType} \u2014 ${r.severityLabel} (${r.score})`}
                     style={{
                       width: '20px', height: '20px', borderRadius: '3px',
-                      backgroundColor: r.severityColor === '#006644' ? '#36B37E' : r.severityColor,
+                      backgroundColor: r.severityColor,
                       cursor: 'pointer',
                     }}
                   />

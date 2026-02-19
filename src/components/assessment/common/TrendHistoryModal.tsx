@@ -54,8 +54,8 @@ const getTrendText = (trend: TrendDirection): { text: string; icon: 'up' | 'down
 };
 
 function getSeverityFromScore(score: number): { label: string; color: string } {
-  if (score >= 70) return { label: 'Healthy', color: '#006644' };
-  if (score >= 50) return { label: 'Fair', color: '#FFAB00' };
+  if (score >= 70) return { label: 'Healthy', color: '#00875A' };
+  if (score >= 50) return { label: 'Fair', color: '#2684FF' };
   if (score >= 30) return { label: 'At Risk', color: '#FF8B00' };
   return { label: 'Critical', color: '#DE350B' };
 }
