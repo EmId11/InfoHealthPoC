@@ -14,6 +14,8 @@ import { HERO_GRADIENTS } from './DataTrustBanner';
 import MediaServicesActualSizeIcon from '@atlaskit/icon/glyph/media-services/actual-size';
 import Dimension2Results from '../dimension2/Dimension2Results';
 import IndicatorsTab from '../common/IndicatorsTab';
+import IssueTypeSummaryTable, { IssueTypeRow } from '../common/IssueTypeSummaryTable';
+import IssueTypeFieldDetailPage from '../common/IssueTypeFieldDetailPage';
 import PatternLensDetailView from './PatternLensDetailView';
 import ComparisonGroupModal from '../common/ComparisonGroupModal';
 
@@ -67,6 +69,13 @@ const LensDetailPage: React.FC<LensDetailPageProps> = ({
   const [showScoreHistory, setShowScoreHistory] = useState(false);
   const [showIntegrityScoreHistory, setShowIntegrityScoreHistory] = useState(false);
   const [showFreshnessScoreHistory, setShowFreshnessScoreHistory] = useState(false);
+
+  // Issue type drill-down state
+  const [issueTypeDrillDown, setIssueTypeDrillDown] = useState<{
+    issueType: string;
+    displayName: string;
+    row: IssueTypeRow;
+  } | null>(null);
 
   const openComparisonModal = (dimensionIndex?: number) => {
     if (dimensionIndex !== undefined && assessmentResult.dimensions[dimensionIndex]) {
@@ -356,18 +365,13 @@ const LensDetailPage: React.FC<LensDetailPageProps> = ({
           </div>
         </div>
 
-        {/* Ticket Readiness Dimension Detail */}
+        {/* Ticket Readiness: Issue Type Summary Table */}
         <div style={styles.dimensionContentSection}>
-          <Dimension2Results
+          <IssueTypeSummaryTable
             dimension={assessmentResult.dimensions[TICKET_READINESS_INDEX]}
-            reportOptions={wizardState.step6}
-            teamId={assessmentResult.teamId}
-            dateRange={assessmentResult.dateRange}
-            similarTeamsCount={assessmentResult.comparisonTeamCount}
-            comparisonTeamNames={assessmentResult.comparisonTeams.map(t => t.name)}
-            onViewSimilarTeams={() => openComparisonModal(TICKET_READINESS_INDEX)}
-            dimensionIndex={TICKET_READINESS_INDEX}
-            onIndicatorDrillDown={onIndicatorDrillDown}
+            onIssueTypeDrillDown={(issueType, row) => {
+              setIssueTypeDrillDown({ issueType, displayName: row.displayName, row });
+            }}
           />
         </div>
       </>
@@ -603,14 +607,13 @@ const LensDetailPage: React.FC<LensDetailPageProps> = ({
           </div>
         </div>
 
-        {/* Indicators */}
+        {/* Data Integrity: Issue Type Summary Table */}
         <div style={styles.dimensionContentSection}>
-          <IndicatorsTab
+          <IssueTypeSummaryTable
             dimension={mockIntegrityDimensionResult}
-            dimensionIndex={0}
-            onIndicatorDrillDown={onIndicatorDrillDown}
-            comparisonTeamCount={assessmentResult.comparisonTeamCount}
-            comparisonTeamNames={assessmentResult.comparisonTeams.map(t => t.name)}
+            onIssueTypeDrillDown={(issueType, row) => {
+              setIssueTypeDrillDown({ issueType, displayName: row.displayName, row });
+            }}
           />
         </div>
       </>
@@ -861,6 +864,24 @@ const LensDetailPage: React.FC<LensDetailPageProps> = ({
   };
 
   const renderLensContent = () => {
+    // Issue type drill-down: show field detail page instead of the hero + table
+    if (issueTypeDrillDown && (lens === 'coverage' || lens === 'integrity')) {
+      const dimKey = lens === 'coverage' ? 'ticketReadiness' : 'dataIntegrity';
+      const dimName = lens === 'coverage' ? 'Timeliness' : 'Trustworthiness';
+      return (
+        <IssueTypeFieldDetailPage
+          issueType={issueTypeDrillDown.issueType}
+          displayName={issueTypeDrillDown.displayName}
+          dimensionKey={dimKey}
+          dimensionName={dimName}
+          indicators={issueTypeDrillDown.row.indicators}
+          passedChecks={issueTypeDrillDown.row.passedChecks}
+          totalChecks={issueTypeDrillDown.row.totalChecks}
+          onBack={() => setIssueTypeDrillDown(null)}
+        />
+      );
+    }
+
     switch (lens) {
       case 'coverage':
         return renderCoverageDetail();
@@ -882,8 +903,12 @@ const LensDetailPage: React.FC<LensDetailPageProps> = ({
       <div style={styles.pageContent}>
         <NavigationBar
           backLabel="Back to Assessment"
-          onBack={onBack}
-          breadcrumbItems={['Assessment', lensLabel]}
+          onBack={issueTypeDrillDown ? () => setIssueTypeDrillDown(null) : onBack}
+          breadcrumbItems={
+            issueTypeDrillDown
+              ? ['Assessment', lensLabel, issueTypeDrillDown.displayName]
+              : ['Assessment', lensLabel]
+          }
         />
         {renderLensContent()}
       </div>
