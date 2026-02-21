@@ -71,6 +71,7 @@ const TeamOfTeamsLayout: React.FC<TeamOfTeamsLayoutProps> = ({
   const [hoveredTeamId, setHoveredTeamId] = useState<string | null>(null);
   const [isUseCasesOpen, setIsUseCasesOpen] = useState(false);
   const [isImproveOpen, setIsImproveOpen] = useState(false);
+  const [orgShowPrevious, setOrgShowPrevious] = useState(false);
 
   const { portfolioSummary, teamResults } = multiTeamResult;
   const overallScore = portfolioSummary.overallHealthScore;
@@ -347,21 +348,115 @@ const TeamOfTeamsLayout: React.FC<TeamOfTeamsLayoutProps> = ({
 
             return (
               <div style={styles.statsBanner}>
-                {/* ── ROW 1: Portfolio Health Distribution Bar ── */}
+                {/* ── ROW 1: Team Health Strip ── */}
                 <div style={styles.statsDistRow}>
-                  <span style={styles.statsSectionLabel}>PORTFOLIO HEALTH DISTRIBUTION</span>
-                  <div style={{ display: 'flex', height: '38px', borderRadius: '6px', overflow: 'hidden' as const, gap: '2px' }}>
-                    {trustDist.filter(d => d.count > 0).map(d => (
-                      <div key={d.name} style={{ flex: d.count, backgroundColor: d.color, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', transition: 'flex 0.3s', minWidth: '60px' }}>
-                        <span style={{ fontSize: '16px', fontWeight: 800, color: '#FFFFFF' }}>{d.count}</span>
-                        <span style={{ fontSize: '12px', fontWeight: 700, color: 'rgba(255,255,255,0.9)', textShadow: '0 1px 2px rgba(0,0,0,0.15)' }}>{d.name}</span>
+                  <span style={styles.statsSectionLabel}>PORTFOLIO HEALTH &amp; TREND</span>
+                  {/* Team chips grouped by tier — single row */}
+                  {(() => {
+                    // Group teams by tier
+                    const tierGroups = TRUST_LEVELS.map(tl => ({
+                      ...tl,
+                      teams: [...sortedTeams]
+                        .filter(t => {
+                          const { level } = getTrustLevel(t.overallHealthScore);
+                          return level.name === tl.name;
+                        })
+                        .sort((a, b) => a.overallHealthScore - b.overallHealthScore)
+                        .map(team => {
+                          const dims = team.assessmentResult.dimensions;
+                          const tC = dims.reduce((acc, d) => { acc[d.trend]++; return acc; }, { improving: 0, stable: 0, declining: 0 } as Record<string, number>);
+                          const tt = (tC.improving || 0) > (tC.declining || 0) ? 'improving' : (tC.declining || 0) > (tC.improving || 0) ? 'declining' : 'stable';
+                          const ta = trendArrow(tt as 'improving' | 'stable' | 'declining');
+                          const scores = getTeamLensScores(team);
+                          return { team, ta, trendLabel: tt, scores };
+                        }),
+                    })).filter(g => g.teams.length > 0);
+
+                    return (
+                      <div style={{ display: 'flex', gap: '3px', marginTop: '6px' }}>
+                        {tierGroups.map(group => (
+                          <div
+                            key={group.name}
+                            style={{
+                              flex: group.teams.length,
+                              backgroundColor: `${group.color}10`,
+                              border: `1px solid ${group.color}20`,
+                              borderRadius: '8px',
+                              padding: '6px 10px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              minWidth: 0,
+                            }}
+                          >
+                            {/* Tier label */}
+                            <span style={{ fontSize: '9px', fontWeight: 700, color: group.color, letterSpacing: '0.3px', textTransform: 'uppercase' as const, whiteSpace: 'nowrap' as const, flexShrink: 0 }}>{group.name}</span>
+                            {/* Team chips — single row */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' as const }}>
+                              {group.teams.map(({ team, ta, trendLabel, scores }) => (
+                                <div
+                                  key={team.teamId}
+                                  style={{
+                                    position: 'relative' as const,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '3px',
+                                    padding: '3px 8px',
+                                    borderRadius: '10px',
+                                    backgroundColor: '#FFFFFF',
+                                    border: `1.5px solid ${group.color}40`,
+                                    boxShadow: '0 1px 3px rgba(9, 30, 66, 0.08)',
+                                    whiteSpace: 'nowrap' as const,
+                                    cursor: 'default',
+                                  }}
+                                  className="health-chip"
+                                  title={`${team.teamName}\nScore: ${team.overallHealthScore} · Trend: ${trendLabel}\nTimeliness: ${scores.coverage} · Trustworthiness: ${scores.integrity} · Freshness: ${scores.behavioral}\nRank: #${team.overallRank} of ${sortedTeams.length}`}
+                                >
+                                  <span style={{ fontSize: '11px', fontWeight: 800, color: group.color }}>{team.overallHealthScore}</span>
+                                  <span style={{ fontSize: '9px', color: ta.color, lineHeight: 1 }}>{ta.symbol}</span>
+                                </div>
+                              ))}
+                            </div>
+                            {/* Count badge */}
+                            <span style={{ fontSize: '10px', fontWeight: 700, color: group.color, opacity: 0.5, marginLeft: 'auto', flexShrink: 0 }}>{group.teams.length}</span>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    );
+                  })()}
+                  {/* Summary counts row */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      {trustDist.filter(d => d.count > 0).map(d => (
+                        <div key={d.name} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                          <span style={{ width: '8px', height: '8px', borderRadius: '2px', backgroundColor: d.color, flexShrink: 0 }} />
+                          <span style={{ fontSize: '11px', fontWeight: 700, color: d.color }}>{d.count}</span>
+                          <span style={{ fontSize: '11px', fontWeight: 600, color: '#6B778C' }}>{d.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#00875A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3,18 8,13 12,16 21,6" /><polyline points="16,6 21,6 21,11" /></svg>
+                        <span style={{ fontSize: '11px', fontWeight: 700, color: '#00875A' }}>{teamsImproving}</span>
+                        <span style={{ fontSize: '11px', fontWeight: 500, color: '#6B778C' }}>improved</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8993A4" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4,12 C8,8 16,16 20,12" /></svg>
+                        <span style={{ fontSize: '11px', fontWeight: 700, color: '#8993A4' }}>{teamsStable}</span>
+                        <span style={{ fontSize: '11px', fontWeight: 500, color: '#6B778C' }}>stable</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#DE350B" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3,6 8,11 12,8 21,18" /><polyline points="16,18 21,18 21,13" /></svg>
+                        <span style={{ fontSize: '11px', fontWeight: 700, color: '#DE350B' }}>{teamsDeclining}</span>
+                        <span style={{ fontSize: '11px', fontWeight: 500, color: '#6B778C' }}>declined</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                {/* ── ROW 2: Four Insight Tiles ── */}
-                <div style={styles.statsInsightsRow}>
+                {/* ── ROW 2: Three Insight Tiles ── */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 0.8fr 1.8fr', borderTop: '1.5px solid #D5D9E0' }}>
                   {/* Tile 1: Component Scores (score pills) */}
                   <div style={styles.statsInsightTile}>
                     <div style={styles.statsSectionLabel}>COMPONENT SCORES</div>
@@ -384,194 +479,190 @@ const TeamOfTeamsLayout: React.FC<TeamOfTeamsLayoutProps> = ({
                     </div>
                   </div>
 
-                  {/* Tile 2: Needs Attention */}
+                  {/* Tile 2: Key Stats */}
                   <div style={styles.statsInsightTile}>
-                    <div style={styles.statsSectionLabel}>NEEDS ATTENTION</div>
-                    {atRiskTeams.length === 0 ? (
-                      <div style={{ fontSize: '13px', fontWeight: 600, color: '#00875A', marginTop: '2px' }}>All teams above 50</div>
-                    ) : (
-                      <>
-                        <div style={{ fontSize: '15px', fontWeight: 700, color: '#FF8B00', lineHeight: 1.3 }}>
-                          {atRiskTeams.length} <span style={{ fontSize: '12px', fontWeight: 500, color: '#6B778C' }}>of {totalTeams} teams below 50</span>
-                        </div>
-                        <div style={{ marginTop: '8px' }}>
-                          {atRiskTeams.map(team => {
-                            const { level } = getTrustLevel(team.overallHealthScore);
-                            return (
-                              <div key={team.teamId} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px' }}>
-                                <span style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: level.color, flexShrink: 0 }} />
-                                <span style={{ fontSize: '11px', fontWeight: 600, color: '#172B4D', flex: 1 }}>{team.teamName}</span>
-                                <span style={{ fontSize: '11px', fontWeight: 700, color: level.color }}>{team.overallHealthScore}</span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </>
-                    )}
-                  </div>
-
-                  {/* Tile 3: Trend + Score Distribution */}
-                  <div style={styles.statsInsightTile}>
-                    <div style={styles.statsSectionLabel}>TREND</div>
-                    {/* Trend counts — proper sizing */}
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '4px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00875A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3,18 8,13 12,16 21,6" /><polyline points="16,6 21,6 21,11" /></svg>
-                        <span style={{ fontSize: '15px', fontWeight: 800, color: '#00875A' }}>{teamsImproving}</span>
-                        <span style={{ fontSize: '11px', fontWeight: 500, color: '#6B778C' }}>improved</span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8993A4" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4,12 C8,8 16,16 20,12" /></svg>
-                        <span style={{ fontSize: '15px', fontWeight: 800, color: '#8993A4' }}>{teamsStable}</span>
-                        <span style={{ fontSize: '11px', fontWeight: 500, color: '#6B778C' }}>stable</span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#DE350B" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3,6 8,11 12,8 21,18" /><polyline points="16,18 21,18 21,13" /></svg>
-                        <span style={{ fontSize: '15px', fontWeight: 800, color: '#DE350B' }}>{teamsDeclining}</span>
-                        <span style={{ fontSize: '11px', fontWeight: 500, color: '#6B778C' }}>declined</span>
-                      </div>
-                    </div>
-                    {/* Divider */}
-                    <div style={{ height: '1px', background: '#EBECF0', margin: '10px 0 8px' }} />
-                    {/* Score distribution — density ridge over gradient */}
-                    <div style={styles.statsSectionLabel}>SCORE SPREAD</div>
+                    <div style={styles.statsSectionLabel}>KEY STATS</div>
                     {(() => {
-                      const w = 1000;
-                      const curveH = 60;
-                      const barH = 10;
-                      const barY = curveH;
-                      const totalH = curveH + barH;
-                      // Kernel density estimation (Gaussian, bandwidth ~8)
-                      const bw = 8;
-                      const steps = 100;
-                      const density: number[] = [];
-                      let maxD = 0;
-                      for (let i = 0; i <= steps; i++) {
-                        const x = (i / steps) * 100;
-                        let d = 0;
-                        allScores.forEach(s => {
-                          const z = (x - s) / bw;
-                          d += Math.exp(-0.5 * z * z);
-                        });
-                        density.push(d);
-                        if (d > maxD) maxD = d;
-                      }
-                      // Build SVG path for the density curve
-                      const points = density.map((d, i) => {
-                        const x = (i / steps) * w;
-                        const y = curveH - (maxD > 0 ? (d / maxD) * (curveH - 4) : 0);
-                        return `${x.toFixed(1)},${y.toFixed(1)}`;
-                      });
-                      const areaPath = `M0,${curveH} L${points.join(' L')} L${w},${curveH} Z`;
-                      // Median line
-                      const sortedScores = [...allScores].sort((a, b) => a - b);
-                      const mid = sortedScores.length;
-                      const median = mid % 2 === 0
-                        ? (sortedScores[mid / 2 - 1] + sortedScores[mid / 2]) / 2
-                        : sortedScores[Math.floor(mid / 2)];
-                      const medianX = (median / 100) * w;
-                      // Spread stats
-                      const minScore = sortedScores[0];
-                      const maxScore = sortedScores[sortedScores.length - 1];
-                      const range = maxScore - minScore;
-                      const mean = allScores.reduce((a, b) => a + b, 0) / allScores.length;
+                      const mean = Math.round(allScores.reduce((a, b) => a + b, 0) / allScores.length);
+                      const sortedS = [...allScores].sort((a, b) => a - b);
                       const stdDev = Math.round(Math.sqrt(allScores.reduce((sum, s) => sum + (s - mean) ** 2, 0) / allScores.length));
-                      // IQR
-                      const q1Idx = Math.floor(sortedScores.length * 0.25);
-                      const q3Idx = Math.floor(sortedScores.length * 0.75);
-                      const iqr = sortedScores[q3Idx] - sortedScores[q1Idx];
+                      const statItems = [
+                        { label: 'Below 50', value: `${atRiskTeams.length} of ${totalTeams}`, sub: `${Math.round((atRiskTeams.length / totalTeams) * 100)}%`, color: atRiskTeams.length > 0 ? '#FF8B00' : '#00875A' },
+                        { label: 'Lowest score', value: String(bottomTeam.overallHealthScore), sub: bottomTeam.teamName, color: getTrustLevel(bottomTeam.overallHealthScore).level.color },
+                        { label: 'Top – bottom gap', value: `${scoreGap}pts`, sub: `${sortedS[0]}–${sortedS[sortedS.length - 1]}`, color: scoreGap > 40 ? '#DE350B' : scoreGap > 25 ? '#FF8B00' : '#00875A' },
+                        { label: 'Std deviation', value: `±${stdDev}`, sub: stdDev > 15 ? 'High variance' : 'Moderate', color: stdDev > 15 ? '#FF8B00' : '#42526E' },
+                      ];
                       return (
-                        <>
-                        <svg width="100%" viewBox={`0 0 ${w} ${totalH}`} preserveAspectRatio="xMidYMid meet" style={{ display: 'block', marginTop: '4px' }}>
-                          <defs>
-                            <linearGradient id="tot-dist-grad" x1="0" y1="0" x2="1" y2="0">
-                              <stop offset="0%" stopColor="#DE350B" />
-                              <stop offset="25%" stopColor="#FF8B00" />
-                              <stop offset="50%" stopColor="#FFAB00" />
-                              <stop offset="75%" stopColor="#2684FF" />
-                              <stop offset="90%" stopColor="#00875A" />
-                              <stop offset="100%" stopColor="#006644" />
-                            </linearGradient>
-                            <linearGradient id="tot-curve-grad" x1="0" y1="0" x2="1" y2="0">
-                              <stop offset="0%" stopColor="#DE350B" stopOpacity="0.18" />
-                              <stop offset="25%" stopColor="#FF8B00" stopOpacity="0.18" />
-                              <stop offset="50%" stopColor="#FFAB00" stopOpacity="0.18" />
-                              <stop offset="75%" stopColor="#2684FF" stopOpacity="0.18" />
-                              <stop offset="90%" stopColor="#00875A" stopOpacity="0.18" />
-                              <stop offset="100%" stopColor="#006644" stopOpacity="0.18" />
-                            </linearGradient>
-                            <linearGradient id="tot-stroke-grad" x1="0" y1="0" x2="1" y2="0">
-                              <stop offset="0%" stopColor="#DE350B" stopOpacity="0.5" />
-                              <stop offset="25%" stopColor="#FF8B00" stopOpacity="0.5" />
-                              <stop offset="50%" stopColor="#FFAB00" stopOpacity="0.5" />
-                              <stop offset="75%" stopColor="#2684FF" stopOpacity="0.5" />
-                              <stop offset="90%" stopColor="#00875A" stopOpacity="0.5" />
-                              <stop offset="100%" stopColor="#006644" stopOpacity="0.5" />
-                            </linearGradient>
-                          </defs>
-                          {/* Filled density area */}
-                          <path d={areaPath} fill="url(#tot-curve-grad)" />
-                          {/* Density outline */}
-                          <polyline points={points.join(' ')} fill="none" stroke="url(#tot-stroke-grad)" strokeWidth={2} />
-                          {/* Gradient bar */}
-                          <rect x={0} y={barY} width={w} height={barH} rx={barH / 2} fill="url(#tot-dist-grad)" opacity={0.45} />
-                          {/* Median marker */}
-                          <line x1={medianX} y1={4} x2={medianX} y2={barY + barH} stroke="#42526E" strokeWidth={2} strokeDasharray="6,4" opacity={0.35} />
-                          {/* Individual team tick marks on the bar */}
-                          {allScores.map((score, i) => {
-                            const x = (score / 100) * w;
-                            const { level } = getTrustLevel(score);
-                            return (
-                              <line key={i} x1={x} y1={barY - 1} x2={x} y2={barY + barH + 1}
-                                stroke={level.color} strokeWidth={6} strokeLinecap="round" opacity={0.7} />
-                            );
-                          })}
-                        </svg>
-                        {/* Spread stats row */}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px', padding: '0 2px' }}>
-                          <div style={{ textAlign: 'center' as const }}>
-                            <span style={{ fontSize: '10px', fontWeight: 700, color: getTrustLevel(Math.round(median)).level.color }}>{Math.round(median)}</span>
-                            <span style={{ fontSize: '9px', fontWeight: 500, color: '#8993A4', marginLeft: '2px' }}>median</span>
-                          </div>
-                          <div style={{ textAlign: 'center' as const }}>
-                            <span style={{ fontSize: '10px', fontWeight: 700, color: '#42526E' }}>{minScore}–{maxScore}</span>
-                            <span style={{ fontSize: '9px', fontWeight: 500, color: '#8993A4', marginLeft: '2px' }}>range</span>
-                          </div>
-                          <div style={{ textAlign: 'center' as const }}>
-                            <span style={{ fontSize: '10px', fontWeight: 700, color: '#42526E' }}>{iqr}</span>
-                            <span style={{ fontSize: '9px', fontWeight: 500, color: '#8993A4', marginLeft: '2px' }}>IQR</span>
-                          </div>
-                          <div style={{ textAlign: 'center' as const }}>
-                            <span style={{ fontSize: '10px', fontWeight: 700, color: stdDev > 15 ? '#FF8B00' : '#42526E' }}>±{stdDev}</span>
-                            <span style={{ fontSize: '9px', fontWeight: 500, color: '#8993A4', marginLeft: '2px' }}>std dev</span>
-                          </div>
+                        <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '6px', marginTop: '2px' }}>
+                          {statItems.map(s => (
+                            <div key={s.label} style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+                              <span style={{ fontSize: '13px', fontWeight: 800, color: s.color, minWidth: '36px', flexShrink: 0 }}>{s.value}</span>
+                              <div style={{ minWidth: 0 }}>
+                                <div style={{ fontSize: '10px', fontWeight: 600, color: '#42526E', lineHeight: 1.2 }}>{s.label}</div>
+                                <div style={{ fontSize: '9px', fontWeight: 500, color: '#8993A4', lineHeight: 1.2 }}>{s.sub}</div>
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                        </>
                       );
                     })()}
                   </div>
 
-                  {/* Tile 4: Top & Bottom */}
+                  {/* Tile 3: Org Comparison (wide) */}
                   <div style={{ ...styles.statsInsightTile, borderRight: 'none' }}>
-                    <div style={styles.statsSectionLabel}>TOP &amp; BOTTOM</div>
-                    <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '10px', marginTop: '2px' }}>
-                      <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <span style={{ fontSize: '9px', fontWeight: 700, color: '#00875A', background: '#E3FCEF', padding: '1px 6px', borderRadius: '4px' }}>BEST</span>
-                          <span style={{ fontSize: '12px', fontWeight: 600, color: '#172B4D' }}>{topTeam.teamName}</span>
-                          <span style={{ fontSize: '14px', fontWeight: 800, color: getTrustLevel(topTeam.overallHealthScore).level.color, marginLeft: 'auto' }}>{topTeam.overallHealthScore}</span>
-                        </div>
-                      </div>
-                      <div style={{ height: '1px', background: '#EBECF0' }} />
-                      <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <span style={{ fontSize: '9px', fontWeight: 700, color: '#DE350B', background: '#FFEBE6', padding: '1px 6px', borderRadius: '4px' }}>LOW</span>
-                          <span style={{ fontSize: '12px', fontWeight: 600, color: '#172B4D' }}>{bottomTeam.teamName}</span>
-                          <span style={{ fontSize: '14px', fontWeight: 800, color: getTrustLevel(bottomTeam.overallHealthScore).level.color, marginLeft: 'auto' }}>{bottomTeam.overallHealthScore}</span>
-                        </div>
-                        <div style={{ fontSize: '11px', fontWeight: 500, color: '#6B778C', marginTop: '4px', lineHeight: 1.4 }}>{scoreGap}pt gap between top and bottom</div>
-                      </div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2px' }}>
+                      <div style={styles.statsSectionLabel}>ORG COMPARISON</div>
+                      <button
+                        onClick={() => setOrgShowPrevious(p => !p)}
+                        style={{
+                          fontSize: '9px', fontWeight: 600, color: orgShowPrevious ? '#0052CC' : '#6B778C',
+                          background: orgShowPrevious ? '#DEEBFF' : '#F4F5F7', border: `1px solid ${orgShowPrevious ? '#B3D4FF' : '#DFE1E6'}`,
+                          borderRadius: '4px', padding: '2px 8px', cursor: 'pointer', transition: 'all 0.15s',
+                        }}
+                      >
+                        {orgShowPrevious ? 'Showing previous' : 'Show previous'}
+                      </button>
                     </div>
+                    {(() => {
+                      // Current org scores (~100 teams)
+                      const orgAllScores = [
+                        72, 68, 55, 61, 43, 77, 84, 50, 63, 47, 59, 71, 66, 38, 82, 74, 56, 45, 69, 53,
+                        78, 41, 64, 58, 75, 33, 70, 62, 80, 49, 67, 54, 73, 46, 81, 57, 65, 44, 76, 52,
+                        60, 42, 79, 48, 83, 36, 51, 88, 29, 74, 63, 58, 71, 55, 67, 85, 40, 53, 69, 46,
+                        61, 77, 34, 50, 72, 59, 44, 66, 81, 48, 57, 37, 73, 64, 52, 86, 43, 70, 56, 62,
+                        78, 39, 68, 54, 75, 47, 60, 83, 41, 65, 51, 79, 35, 58, 74, 45, 69, 53, 87, 42,
+                      ];
+                      // Previous period scores (slightly lower to simulate improvement)
+                      const orgPrevScores = orgAllScores.map((s, i) => Math.max(10, Math.min(100, s - Math.round(Math.sin(i * 2.1) * 6 + 3))));
+                      const portPrevScores = allScores.map((s, i) => Math.max(10, Math.min(100, s - Math.round(Math.sin(i * 3.7) * 8 + 4))));
+
+                      const portfolioScores = orgShowPrevious ? portPrevScores : allScores;
+                      const orgScores = orgShowPrevious ? orgPrevScores : orgAllScores;
+
+                      // Deterministic jitter
+                      const jitterY = (i: number, seed: number, areaH: number, radius: number) => {
+                        const h = Math.sin((i + 1) * 12.9898 + seed * 78.233) * 43758.5453;
+                        return radius + (h - Math.floor(h)) * (areaH - radius * 2);
+                      };
+
+                      const svgW = 400;
+                      const dotArea = 30;
+                      const barH = 5;
+                      const dotR = 3.5;
+                      const scoreToX = (s: number) => (s / 100) * svgW;
+
+                      // Stats helpers
+                      const medianOf = (arr: number[]) => {
+                        const sorted = [...arr].sort((a, b) => a - b);
+                        return sorted.length % 2 === 0
+                          ? (sorted[sorted.length / 2 - 1] + sorted[sorted.length / 2]) / 2
+                          : sorted[Math.floor(sorted.length / 2)];
+                      };
+                      const pMed = Math.round(medianOf(portfolioScores));
+                      const oMed = Math.round(medianOf(orgScores));
+                      const pMean = Math.round(portfolioScores.reduce((a, b) => a + b, 0) / portfolioScores.length);
+                      const oMean = Math.round(orgScores.reduce((a, b) => a + b, 0) / orgScores.length);
+
+                      // Tier distribution
+                      const tierPct = (scores: number[], lo: number, hi: number) =>
+                        Math.round((scores.filter(s => s >= lo && s <= hi).length / scores.length) * 100);
+                      const pAtRisk = tierPct(portfolioScores, 0, 50);
+                      const oAtRisk = tierPct(orgScores, 0, 50);
+                      const pFair = tierPct(portfolioScores, 51, 75);
+                      const oFair = tierPct(orgScores, 51, 75);
+                      const pHealthy = tierPct(portfolioScores, 76, 100);
+                      const oHealthy = tierPct(orgScores, 76, 100);
+
+                      // Trend comparison (mock: org-wide improvement rate)
+                      const pImproved = Math.round((teamsImproving / totalTeams) * 100);
+                      const oImproved = 38; // mock org-wide % improved
+
+                      const deltaCalc = (pVal: number, oVal: number, lowerIsBetter = false) => {
+                        const d = pVal - oVal;
+                        const good = lowerIsBetter ? d < 0 : d > 0;
+                        return {
+                          text: `${d > 0 ? '+' : ''}${d}`,
+                          color: d === 0 ? '#8993A4' : good ? '#00875A' : '#DE350B',
+                        };
+                      };
+
+                      const rows = [
+                        { label: 'Median', port: String(pMed), org: String(oMed), ...deltaCalc(pMed, oMed) },
+                        { label: 'At risk or below', port: `${pAtRisk}%`, org: `${oAtRisk}%`, ...deltaCalc(pAtRisk, oAtRisk, true) },
+                        { label: 'Fair', port: `${pFair}%`, org: `${oFair}%`, ...deltaCalc(pFair, oFair) },
+                        { label: 'Healthy or above', port: `${pHealthy}%`, org: `${oHealthy}%`, ...deltaCalc(pHealthy, oHealthy) },
+                        { label: 'Improving', port: `${pImproved}%`, org: `${oImproved}%`, ...deltaCalc(pImproved, oImproved) },
+                      ];
+
+                      const thStyle: React.CSSProperties = { textAlign: 'right', fontWeight: 700, color: '#6B778C', fontSize: '9px', letterSpacing: '0.4px', paddingBottom: '4px', borderBottom: '1.5px solid #DFE1E6' };
+                      const tdBase: React.CSSProperties = { padding: '4px 0', fontSize: '11px', borderBottom: '1px solid #F4F5F7' };
+
+                      return (
+                        <div style={{ display: 'flex', gap: '16px' }}>
+                          {/* Left: Spectrum strips */}
+                          <div style={{ flex: '1 1 0%', minWidth: 0 }}>
+                            {[
+                              { label: 'THIS PORTFOLIO', scores: portfolioScores, count: allScores.length, seed: 1 },
+                              { label: 'ALL ORG TEAMS', scores: orgScores, count: orgAllScores.length, seed: 2 },
+                            ].map((row, ri) => (
+                              <div key={ri} style={{ marginBottom: ri === 0 ? '14px' : 0 }}>
+                                <div style={{ fontSize: '8px', fontWeight: 700, color: '#5E6C84', letterSpacing: '0.5px', marginBottom: '4px' }}>
+                                  {row.label} <span style={{ fontWeight: 500, color: '#8993A4' }}>· {row.count} teams</span>
+                                  {orgShowPrevious && <span style={{ fontWeight: 500, color: '#0052CC', marginLeft: '4px' }}>(previous)</span>}
+                                </div>
+                                <svg width="100%" viewBox={`0 0 ${svgW} ${dotArea + barH}`} preserveAspectRatio="xMidYMid meet" style={{ display: 'block' }}>
+                                  <defs>
+                                    <linearGradient id={`orgcomp-grad-${ri}`} x1="0" y1="0" x2="1" y2="0">
+                                      <stop offset="0%" stopColor="#DE350B" stopOpacity="0.3" />
+                                      <stop offset="30%" stopColor="#FF8B00" stopOpacity="0.3" />
+                                      <stop offset="50%" stopColor="#FFAB00" stopOpacity="0.3" />
+                                      <stop offset="75%" stopColor="#36B37E" stopOpacity="0.3" />
+                                      <stop offset="100%" stopColor="#006644" stopOpacity="0.3" />
+                                    </linearGradient>
+                                  </defs>
+                                  <rect x={0} y={dotArea} width={svgW} height={barH} rx={barH / 2} fill={`url(#orgcomp-grad-${ri})`} />
+                                  {row.scores.map((score, i) => (
+                                    <circle
+                                      key={i}
+                                      cx={scoreToX(score)}
+                                      cy={jitterY(i, row.seed, dotArea, dotR)}
+                                      r={dotR}
+                                      fill={getTrustLevel(score).level.color}
+                                      opacity={0.65}
+                                      style={{ transition: 'cx 0.6s ease-in-out' }}
+                                    />
+                                  ))}
+                                </svg>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Right: Comparison table */}
+                          <div style={{ flex: '0 0 auto', minWidth: '190px' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse' as const }}>
+                              <thead>
+                                <tr>
+                                  <th style={{ ...thStyle, textAlign: 'left' }}></th>
+                                  <th style={{ ...thStyle, paddingLeft: '10px' }}>PORT</th>
+                                  <th style={{ ...thStyle, paddingLeft: '10px' }}>ORG</th>
+                                  <th style={{ ...thStyle, paddingLeft: '10px' }}>Δ</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {rows.map((row, i) => (
+                                  <tr key={i}>
+                                    <td style={{ ...tdBase, fontWeight: 600, color: '#42526E', whiteSpace: 'nowrap' as const, borderBottom: i < rows.length - 1 ? '1px solid #F4F5F7' : 'none', paddingRight: '8px' }}>{row.label}</td>
+                                    <td style={{ ...tdBase, textAlign: 'right', fontWeight: 700, color: '#172B4D', paddingLeft: '10px', borderBottom: i < rows.length - 1 ? '1px solid #F4F5F7' : 'none' }}>{row.port}</td>
+                                    <td style={{ ...tdBase, textAlign: 'right', fontWeight: 500, color: '#6B778C', paddingLeft: '10px', borderBottom: i < rows.length - 1 ? '1px solid #F4F5F7' : 'none' }}>{row.org}</td>
+                                    <td style={{ ...tdBase, textAlign: 'right', fontWeight: 700, color: row.color, paddingLeft: '10px', borderBottom: i < rows.length - 1 ? '1px solid #F4F5F7' : 'none' }}>{row.text}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
@@ -1189,7 +1280,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   statsInsightTile: {
     padding: '16px 20px',
-    borderRight: '1px solid #EBECF0',
+    borderRight: '1px solid #D5D9E0',
   },
   statsSectionLabel: {
     fontSize: '9px',
